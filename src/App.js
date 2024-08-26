@@ -5,6 +5,9 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import ProTip from './ProTip';
 import LandingPage from './LandingPage';
+import { ThemeProvider } from '@mui/material/styles';
+import { Route, Routes } from 'react-router-dom';
+
 
 function Copyright() {
   return (
@@ -21,6 +24,8 @@ function Copyright() {
 
 export default function App() {
   return (
-    <LandingPage />
+    <Routes>
+      <Route path='/' element={<LandingPage />} />
+    </Routes>
   );
 }
