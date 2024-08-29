@@ -10,9 +10,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
-import EdgesensorHighRoundedIcon from '@mui/icons-material/EdgesensorHighRounded';
 import WebIcon from '@mui/icons-material/Web';
-import FrutkinLogo from '../assets/frutkinlogo.png';
+import CasinoIcon from '@mui/icons-material/Casino';
 
 const items = [
   {
@@ -24,25 +23,24 @@ const items = [
     imageLight: 'url(/static/media/frutkinlogo.d2379a4e456e21f6e7fb.png)',
   },
   {
-    icon: <EdgesensorHighRoundedIcon />,
-    title: 'Mobile integration',
+    icon: <CasinoIcon />,
+    title: 'calcBasic',
+    link: 'https://github.com/yummydirtx/calcBasic',
     description:
-      'This item could provide information about the mobile app version of the product.',
-    imageLight: 'url("/static/images/templates/templates-images/mobile-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/mobile-dark.png")',
+      'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
+    imageLight: 'url("/static/media/calcbasic.3c7920833418ede4bc3c.png")',
   },
   {
     icon: <DevicesRoundedIcon />,
-    title: 'Available on all platforms',
+    title: 'AlexRPG',
+    link: 'https://github.com/yummydirtDev/AlexRPG',
     description:
-      'This item could let users know the product is available on all platforms, such as web, mobile, and desktop.',
-    imageLight: 'url("/static/images/templates/templates-images/devices-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/devices-dark.png")',
+      'Unfinished C++ text-based RPG game. The gimmick is that the user wins by roasting the opponent.',
+    imageLight: 'url("/static/media/AlexRPG.15078e93461865302ca8.png")',
   },
 ];
 
 export default function Features() {
-  console.log(FrutkinLogo);
   const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
 
   const handleItemClick = (index) => {
@@ -57,16 +55,14 @@ export default function Features() {
         <Grid item xs={12} md={6}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
-              Projects
+              Featured Projects
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ mb: { xs: 2, sm: 4 } }}
             >
-              Here you can provide a brief overview of the key features of the
-              product. For example, you could list the number of features, the types
-              of features, add-ons, or the benefits of the features.
+              This is a collection of projects I have worked on. Click on each one to learn more.
             </Typography>
           </div>
           <Grid container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
@@ -263,6 +259,7 @@ export default function Features() {
                 backgroundSize: 'contain',
                 backgroundImage: items[selectedItemIndex].imageLight,
                 backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
               }}
             />
           </Card>
