@@ -9,9 +9,12 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
 import WebIcon from '@mui/icons-material/Web';
 import CasinoIcon from '@mui/icons-material/Casino';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import FrutkinLogo from '../assets/frutkinlogo.png';
+import CalcBasic from '../assets/calcbasic.png';
+import AlexRPG from '../assets/AlexRPG.png';
 
 const items = [
   {
@@ -20,7 +23,7 @@ const items = [
     link: 'https://frutkin.com',
     description:
       'Fully redesigned the Frutkin.com website to be more modern and user-friendly, while incorporating the latest updates and information.',
-    imageLight: 'url(/static/media/frutkinlogo.d2379a4e456e21f6e7fb.png)',
+    imageLight: ('url(' + FrutkinLogo + ')'),
   },
   {
     icon: <CasinoIcon />,
@@ -28,15 +31,15 @@ const items = [
     link: 'https://github.com/yummydirtx/calcBasic',
     description:
       'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
-    imageLight: 'url("/static/media/calcbasic.3c7920833418ede4bc3c.png")',
+    imageLight: ('url(' + CalcBasic + ')'),
   },
   {
-    icon: <DevicesRoundedIcon />,
+    icon: <TerminalIcon />,
     title: 'AlexRPG',
     link: 'https://github.com/yummydirtDev/AlexRPG',
     description:
       'Unfinished C++ text-based RPG game. The gimmick is that the user wins by roasting the opponent.',
-    imageLight: 'url("/static/media/AlexRPG.15078e93461865302ca8.png")',
+    imageLight: 'url(' + AlexRPG + ')',
   },
 ];
 

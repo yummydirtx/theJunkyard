@@ -7,7 +7,7 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import lands from '../assets/landscape.jpg';
+import lands from '../assets/junkyard.webp';
 
 export default function Hero() {
   return (
