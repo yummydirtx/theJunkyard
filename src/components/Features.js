@@ -11,16 +11,17 @@ import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
 import EdgesensorHighRoundedIcon from '@mui/icons-material/EdgesensorHighRounded';
-import ViewQuiltRoundedIcon from '@mui/icons-material/ViewQuiltRounded';
+import WebIcon from '@mui/icons-material/Web';
+import FrutkinLogo from '../assets/frutkinlogo.png';
 
 const items = [
   {
-    icon: <ViewQuiltRoundedIcon />,
-    title: 'Dashboard',
+    icon: <WebIcon />,
+    title: 'Frutkin.com',
+    link: 'https://frutkin.com',
     description:
-      'This item could provide a snapshot of the most important metrics or data points related to the product.',
-    imageLight: 'url("/static/images/templates/templates-images/dash-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/dash-dark.png")',
+      'Fully redesigned the Frutkin.com website to be more modern and user-friendly, while incorporating the latest updates and information.',
+    imageLight: 'url(/static/media/frutkinlogo.d2379a4e456e21f6e7fb.png)',
   },
   {
     icon: <EdgesensorHighRoundedIcon />,
@@ -41,6 +42,7 @@ const items = [
 ];
 
 export default function Features() {
+  console.log(FrutkinLogo);
   const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
 
   const handleItemClick = (index) => {
@@ -55,7 +57,7 @@ export default function Features() {
         <Grid item xs={12} md={6}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
-              Product features
+              Projects
             </Typography>
             <Typography
               variant="body1"
@@ -147,7 +149,7 @@ export default function Features() {
             useFlexGap
             sx={{ width: '100%', display: { xs: 'none', sm: 'flex' } }}
           >
-            {items.map(({ icon, title, description }, index) => (
+            {items.map(({ icon, title, description, link }, index) => (
               <Card
                 key={index}
                 variant="outlined"
@@ -222,6 +224,7 @@ export default function Features() {
                         '&:hover > svg': { transform: 'translateX(2px)' },
                       }}
                       onClick={(event) => {
+                        window.open(link,'_blank');
                         event.stopPropagation();
                       }}
                     >
@@ -258,10 +261,8 @@ export default function Features() {
                 width: 420,
                 height: 500,
                 backgroundSize: 'contain',
-                backgroundImage: (theme) =>
-                  theme.palette.mode === 'light'
-                    ? items[selectedItemIndex].imageLight
-                    : items[selectedItemIndex].imageDark,
+                backgroundImage: items[selectedItemIndex].imageLight,
+                backgroundRepeat: 'no-repeat',
               }}
             />
           </Card>
