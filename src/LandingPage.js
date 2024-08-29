@@ -18,6 +18,16 @@ import Testimonials from './components/Testimonials';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 
+function useTitle(title) {
+  React.useEffect(() => {
+    const prevTitle = document.title
+    document.title = title
+    return () => {
+      document.title = prevTitle
+    }
+  })
+}
+
 function ToggleCustomTheme({ showCustomTheme, toggleCustomTheme }) {
   return (
     <Box
@@ -61,6 +71,7 @@ ToggleCustomTheme.propTypes = {
 };
 
 export default function LandingPage() {
+  useTitle('theJunkyard: Landing Page');
   const [mode, setMode] = React.useState('light');
   const defaultTheme = createTheme({ palette: { mode } });
 
