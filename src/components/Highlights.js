@@ -82,9 +82,7 @@ export default function Highlights() {
             Highlights
           </Typography>
           <Typography variant="body1" sx={{ color: 'grey.400' }}>
-            Explore why our product stands out: adaptability, durability,
-            user-friendly design, and innovation. Enjoy reliable customer support and
-            precision in every detail.
+            Explore why our products are so good, and why you should consider us for your next mid-large sized tech contract. Please.
           </Typography>
         </Box>
         <Grid container spacing={2.5}>
