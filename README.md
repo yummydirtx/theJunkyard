@@ -32,5 +32,6 @@ Using [Material UI](https://mui.com/material-ui/) to make a homepage for my proj
 <li>About me page</li>
 <li>calcBasic javascript port</li>
 <li>Website favicon downloader</li>
+<li>Individual project pages</li>
 <li>More fun and useful projects</li>
 </ul>

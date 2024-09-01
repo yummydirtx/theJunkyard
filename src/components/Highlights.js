@@ -5,12 +5,13 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
 import ConstructionRoundedIcon from '@mui/icons-material/ConstructionRounded';
 import QueryStatsRoundedIcon from '@mui/icons-material/QueryStatsRounded';
 import SettingsSuggestRoundedIcon from '@mui/icons-material/SettingsSuggestRounded';
 import SupportAgentRoundedIcon from '@mui/icons-material/SupportAgentRounded';
+import PanoramaIcon from '@mui/icons-material/Panorama';
 import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
+import MoodIcon from '@mui/icons-material/Mood';
 
 const items = [
   {
@@ -23,31 +24,31 @@ const items = [
     icon: <ConstructionRoundedIcon />,
     title: 'Built to last',
     description:
-      'Experience unmatched durability that goes above and beyond with lasting investment.',
+      'So few lines of code were used that it\'s impossible for it to break. It\'s just that good.',
   },
   {
-    icon: <ThumbUpAltRoundedIcon />,
+    icon: <PanoramaIcon />,
     title: 'Great user experience',
     description:
-      'Integrate our product into your routine with an intuitive and easy-to-use interface.',
+      'There truly is no interface quite like the command line interface. It\'s just that good.',
   },
   {
-    icon: <AutoFixHighRoundedIcon />,
+    icon: <MoodIcon />,
     title: 'Innovative functionality',
     description:
-      'Stay ahead with features that set new standards, addressing your evolving needs better than the rest.',
+      'From our research, we couldn\'t find another product that can perform the same actions that calcBasic can. It\'s just that good.',
   },
   {
     icon: <SupportAgentRoundedIcon />,
-    title: 'Reliable support',
+    title: 'Amazing READMEs',
     description:
-      'Count on our responsive customer support, offering assistance that goes beyond the purchase.',
+      'Thanks to our top notch markdown development team, our READMEs are the best in the business. It\'s just that good.',
   },
   {
-    icon: <QueryStatsRoundedIcon />,
-    title: 'Precision in every detail',
+    icon: <ThumbUpAltRoundedIcon />,
+    title: 'It\'s just that good',
     description:
-      'Enjoy a meticulously crafted product where small touches make a significant impact on your overall experience.',
+      'It\'s just that good.',
   },
 ];
 
