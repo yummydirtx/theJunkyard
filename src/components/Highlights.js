@@ -15,9 +15,9 @@ import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
 const items = [
   {
     icon: <SettingsSuggestRoundedIcon />,
-    title: 'Adaptable performance',
+    title: 'Predictable performance',
     description:
-      'Our product effortlessly adjusts to your needs, boosting efficiency and simplifying your tasks.',
+      'Our products are so basic that the performance probably couldn\'nt be improved. It\'s just that good.',
   },
   {
     icon: <ConstructionRoundedIcon />,
