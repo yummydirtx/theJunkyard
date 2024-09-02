@@ -7,13 +7,13 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-
+import Logo from '../assets/websitelogo.png';
 import FacebookIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/X';
 
 const logoStyle = {
-  width: '140px',
+  width: '100px',
   height: 'auto',
 };
 
@@ -21,13 +21,28 @@ function Copyright() {
   return (
     <Typography variant="body2" color="text.secondary" mt={1}>
       {'Copyright © '}
-      <Link href="https://mui.com/">Sitemark&nbsp;</Link>
+      Alex Frutkin&nbsp;
       {new Date().getFullYear()}
     </Typography>
   );
 }
 
 export default function Footer() {
+  const [open, setOpen] = React.useState(false);
+  const scrollToSection = (sectionId) => {
+    const sectionElement = document.getElementById(sectionId);
+    const offset = 128;
+    if (sectionElement) {
+      const targetScroll = sectionElement.offsetTop - offset;
+      sectionElement.scrollIntoView({ behavior: 'smooth' });
+      window.scrollTo({
+        top: targetScroll,
+        behavior: 'smooth',
+      });
+      setOpen(false);
+    }
+  };
+
   return (
     <Container
       sx={{
@@ -55,41 +70,6 @@ export default function Footer() {
             minWidth: { xs: '100%', sm: '60%' },
           }}
         >
-          <Box sx={{ width: { xs: '100%', sm: '60%' } }}>
-            <Box sx={{ ml: '-15px' }}>
-              <img
-                src={
-                  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e6faf73568658154dae_SitemarkDefault.svg'
-                }
-                style={logoStyle}
-                alt="logo of sitemark"
-              />
-            </Box>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
-              Newsletter
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
-              Subscribe to our newsletter for weekly updates and promotions.
-            </Typography>
-            <Stack direction="row" spacing={1} useFlexGap>
-              <TextField
-                id="outlined-basic"
-                hiddenLabel
-                size="small"
-                variant="outlined"
-                fullWidth
-                aria-label="Enter your email address"
-                placeholder="Your email address"
-                inputProps={{
-                  autoComplete: 'off',
-                  'aria-label': 'Enter your email address',
-                }}
-              />
-              <Button variant="contained" color="primary" sx={{ flexShrink: 0 }}>
-                Subscribe
-              </Button>
-            </Stack>
-          </Box>
         </Box>
         <Box
           sx={{
@@ -99,21 +79,18 @@ export default function Footer() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            Product
+            Landing Page
           </Typography>
-          <Link color="text.secondary" href="#">
+          <Link color="text.secondary" onClick={() => scrollToSection('features')}>
             Features
           </Link>
-          <Link color="text.secondary" href="#">
+          <Link color="text.secondary" onClick={() => scrollToSection('testimonials')}>
             Testimonials
           </Link>
-          <Link color="text.secondary" href="#">
+          <Link color="text.secondary" onClick={() => scrollToSection('highlights')}>
             Highlights
           </Link>
-          <Link color="text.secondary" href="#">
-            Pricing
-          </Link>
-          <Link color="text.secondary" href="#">
+          <Link color="text.secondary" onClick={() => scrollToSection('faqs')}>
             FAQs
           </Link>
         </Box>
@@ -125,36 +102,16 @@ export default function Footer() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            Company
+            theJunkyard
           </Typography>
           <Link color="text.secondary" href="#">
-            About us
+            About me
           </Link>
           <Link color="text.secondary" href="#">
             Careers
           </Link>
           <Link color="text.secondary" href="#">
             Press
-          </Link>
-        </Box>
-        <Box
-          sx={{
-            display: { xs: 'none', sm: 'flex' },
-            flexDirection: 'column',
-            gap: 1,
-          }}
-        >
-          <Typography variant="body2" fontWeight={600}>
-            Legal
-          </Typography>
-          <Link color="text.secondary" href="#">
-            Terms
-          </Link>
-          <Link color="text.secondary" href="#">
-            Privacy
-          </Link>
-          <Link color="text.secondary" href="#">
-            Contact
           </Link>
         </Box>
       </Box>
@@ -169,15 +126,13 @@ export default function Footer() {
         }}
       >
         <div>
-          <Link color="text.secondary" href="#">
-            Privacy Policy
-          </Link>
-          <Typography display="inline" sx={{ mx: 0.5, opacity: 0.5 }}>
-            &nbsp;•&nbsp;
-          </Typography>
-          <Link color="text.secondary" href="#">
-            Terms of Service
-          </Link>
+        <img
+          src={
+            Logo
+          }
+            style={logoStyle}
+            alt="logo of sitemark"
+          />
           <Copyright />
         </div>
         <Stack
@@ -191,7 +146,7 @@ export default function Footer() {
         >
           <IconButton
             color="inherit"
-            href="https://github.com/mui"
+            href="https://github.com/yummydirtx"
             aria-label="GitHub"
             sx={{ alignSelf: 'center' }}
           >
@@ -199,15 +154,7 @@ export default function Footer() {
           </IconButton>
           <IconButton
             color="inherit"
-            href="https://x.com/MaterialUI"
-            aria-label="X"
-            sx={{ alignSelf: 'center' }}
-          >
-            <TwitterIcon />
-          </IconButton>
-          <IconButton
-            color="inherit"
-            href="https://www.linkedin.com/company/mui/"
+            href="https://www.linkedin.com/in/alex-frutkin-63804597/"
             aria-label="LinkedIn"
             sx={{ alignSelf: 'center' }}
           >
