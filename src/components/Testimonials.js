@@ -13,11 +13,11 @@ import logo from '../assets/websitelogo.png';
 
 const userTestimonials = [
   {
-    avatar: <Avatar alt="Amanda Riordan" src="/static/images/avatar/1.jpg" />,
-    name: 'Amanda Riordan',
-    occupation: 'Picnic Expert',
+    avatar: <Avatar alt="Ayush Lenka" src="/static/images/avatar/1.jpg" />,
+    name: 'Ayush Lenka',
+    occupation: 'Programming Master',
     testimonial:
-      "no",
+      "CS major approval right here from yours truly.",
   },
   {
     avatar: <Avatar alt="Matthew Cohen" src="/static/images/avatar/2.jpg" />,
