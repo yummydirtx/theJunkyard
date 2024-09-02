@@ -8,6 +8,8 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/system';
+import DiscordIcon from '../assets/discord-mark-blue.svg';
+import logo from '../assets/websitelogo.png';
 
 const userTestimonials = [
   {
@@ -46,34 +48,34 @@ const userTestimonials = [
       "I can't give testimony on products I've never used!",
   },
   {
-    avatar: <Avatar alt="Cindy Baker" src="/static/images/avatar/6.jpg" />,
-    name: 'Daniel Wolf',
-    occupation: 'CDO',
+    avatar: <Avatar alt="Alex Frutkin" src="/static/images/avatar/6.jpg" />,
+    name: 'Alex Frutkin',
+    occupation: 'CEO and Founder of theJunkyard',
     testimonial:
-      "The quality of this product exceeded my expectations. It's durable, well-designed, and built to last. Definitely worth the investment!",
+      "Does anyone actually read these?",
   },
 ];
 
 const whiteLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628e8573c43893fe0ace_Sydney-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d520d0517ae8e8ddf13_Bern-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f46794c159024c1af6d44_Montreal-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e891fa22f89efd7477a_TerraLight.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a09d1f6337b1dfed14ab_colorado-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5caa77bf7d69fb78792e_Ankara-white.svg',
+  'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
+  'https://aepi.org/wp-content/uploads/2018/06/AEPi_Greek-1024x576.png',
+  DiscordIcon,
+  'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
+  'https://upload.wikimedia.org/wikipedia/en/0/0e/University_of_California%2C_Irvine_seal.svg',
+  logo,
 ];
 
 const darkLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628889c3bdf1129952dc_Sydney-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d4d8b829a89976a419c_Bern-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f467502f091ccb929529d_Montreal-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e911fa22f2203d7514c_TerraDark.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a0990f3717787fd49245_colorado-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5ca4e548b0deb1041c33_Ankara-black.svg',
+  'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
+  'https://aepi.org/wp-content/uploads/2018/06/AEPi_Greek-1024x576.png',
+  DiscordIcon,
+  'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
+  'https://upload.wikimedia.org/wikipedia/en/0/0e/University_of_California%2C_Irvine_seal.svg',
+  logo,
 ];
 
 const logoStyle = {
-  width: '64px',
+  height: '25px',
   opacity: 0.3,
 };
 
@@ -129,18 +131,13 @@ export default function Testimonials() {
                   display: 'flex',
                   flexDirection: 'row',
                   justifyContent: 'space-between',
-                  pr: 2,
+                  pr: 1,
                 }}
               >
                 <CardHeader
                   avatar={testimonial.avatar}
                   title={testimonial.name}
                   subheader={testimonial.occupation}
-                />
-                <img
-                  src={logos[index]}
-                  alt={`Logo ${index + 1}`}
-                  style={logoStyle}
                 />
               </Box>
             </Card>

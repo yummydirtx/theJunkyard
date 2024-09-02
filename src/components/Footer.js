@@ -102,16 +102,10 @@ export default function Footer() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            theJunkyard
+            theJunkyard (wip)
           </Typography>
           <Link color="text.secondary" href="#">
             About me
-          </Link>
-          <Link color="text.secondary" href="#">
-            Careers
-          </Link>
-          <Link color="text.secondary" href="#">
-            Press
           </Link>
         </Box>
       </Box>
