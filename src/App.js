@@ -6,26 +6,16 @@ import Link from '@mui/material/Link';
 import ProTip from './ProTip';
 import LandingPage from './LandingPage';
 import { ThemeProvider } from '@mui/material/styles';
-import { Route, Routes } from 'react-router-dom';
-
-
-function Copyright() {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import AboutMe from './AboutMe';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path='/' element={<LandingPage />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<LandingPage />} />
+        <Route path='/about' element={<AboutMe />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
