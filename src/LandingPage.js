@@ -72,7 +72,7 @@ ToggleCustomTheme.propTypes = {
 
 export default function LandingPage() {
   useTitle('theJunkyard: Landing Page');
-  const [mode, setMode] = React.useState('light');
+  const [mode, setMode] = React.useState('dark');
   const defaultTheme = createTheme({ palette: { mode } });
 
   const toggleColorMode = () => {
