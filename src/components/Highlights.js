@@ -18,7 +18,7 @@ const items = [
     icon: <SettingsSuggestRoundedIcon />,
     title: 'Predictable performance',
     description:
-      'Our products are so basic that the performance probably couldn\'nt be improved. It\'s just that good.',
+      'Our products are so basic that the performance probably couldn\'t be improved. It\'s just that good.',
   },
   {
     icon: <ConstructionRoundedIcon />,
