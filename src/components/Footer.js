@@ -40,6 +40,8 @@ export default function Footer() {
         behavior: 'smooth',
       });
       setOpen(false);
+    } else {
+      window.open("/","_self")
     }
   };
 
@@ -102,9 +104,9 @@ export default function Footer() {
           }}
         >
           <Typography variant="body2" fontWeight={600}>
-            theJunkyard (wip)
+            theJunkyard
           </Typography>
-          <Link color="text.secondary" href="#">
+          <Link color="text.secondary" href="/about">
             About me
           </Link>
         </Box>
