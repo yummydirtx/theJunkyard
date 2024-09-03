@@ -64,19 +64,14 @@ function useTitle(title) {
     toggleCustomTheme: PropTypes.func.isRequired,
   };
   
-  export default function AboutMe() {
+  export default function AboutMe({ setMode, mode }) {
     useTitle('theJunkyard: About Me');
-    const [mode, setMode] = React.useState('dark');
     const defaultTheme = createTheme({ palette: { mode } });
-  
-    const toggleColorMode = () => {
-      setMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
-    };
   
     return (
       <ThemeProvider theme={defaultTheme}>
         <CssBaseline />
-        <AppAppBar mode={mode} toggleColorMode={toggleColorMode} />
+        <AppAppBar mode={mode} toggleColorMode={setMode} />
         <Box sx={{ bgcolor: 'background.default' }}>
           <Me />
           <Divider />

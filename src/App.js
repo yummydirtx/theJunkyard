@@ -10,11 +10,24 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AboutMe from './AboutMe';
 
 export default function App() {
+  const [mode, setMode] = React.useState(() => {
+    // Retrieve the mode from localStorage or default to 'dark'
+    return localStorage.getItem('mode') || 'dark';
+  });
+
+  const toggleColorMode = () => {
+    setMode((prev) => {
+      const newMode = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('mode', newMode); // Save the new mode to localStorage
+      return newMode;
+    });
+  };
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<LandingPage />} />
-        <Route path='/about' element={<AboutMe />} />
+        <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
+        <Route path='/about' element={<AboutMe setMode={toggleColorMode} mode={mode}/>} />
       </Routes>
     </BrowserRouter>
   );
