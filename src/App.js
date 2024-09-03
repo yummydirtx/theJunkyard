@@ -6,26 +6,35 @@ import Link from '@mui/material/Link';
 import ProTip from './ProTip';
 import LandingPage from './LandingPage';
 import { ThemeProvider } from '@mui/material/styles';
-import { Route, Routes } from 'react-router-dom';
-
-
-function Copyright() {
-  return (
-    <Typography variant="body2" color="text.secondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import AboutMe from './AboutMe';
 
 export default function App() {
+  const [mode, setMode] = React.useState(() => {
+    // Retrieve the mode from localStorage or default to 'dark'
+    let before;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      before = "light";
+    } else {
+      before = "dark";
+    }
+    return localStorage.getItem('mode') || before;
+  });
+
+  const toggleColorMode = () => {
+    setMode((prev) => {
+      const newMode = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('mode', newMode); // Save the new mode to localStorage
+      return newMode;
+    });
+  };
+
   return (
-    <Routes>
-      <Route path='/' element={<LandingPage />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
+        <Route path='/about' element={<AboutMe setMode={toggleColorMode} mode={mode}/>} />
+      </Routes>
+    </BrowserRouter>
   );
 }

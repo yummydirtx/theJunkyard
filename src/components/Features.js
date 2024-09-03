@@ -105,10 +105,7 @@ export default function Features() {
           >
             <Box
               sx={{
-                backgroundImage: (theme) =>
-                  theme.palette.mode === 'light'
-                    ? items[selectedItemIndex].imageLight
-                    : items[selectedItemIndex].imageDark,
+                backgroundImage: items[selectedItemIndex].imageLight,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 minHeight: 280,

@@ -38,6 +38,8 @@ function AppAppBar({ mode, toggleColorMode }) {
         behavior: 'smooth',
       });
       setOpen(false);
+    } else {
+      window.open("/","_self")
     }
   };
 
@@ -125,6 +127,14 @@ function AppAppBar({ mode, toggleColorMode }) {
                     FAQ
                   </Typography>
                 </MenuItem>
+                <MenuItem
+                  onClick={() => window.open("/about","_self")}
+                  sx={{ py: '6px', px: '12px' }}
+                  >
+                  <Typography variant="body2" color="text.primary">
+                    About Me
+                  </Typography>
+                  </MenuItem>
               </Box>
             </Box>
             <Box
@@ -175,6 +185,9 @@ function AppAppBar({ mode, toggleColorMode }) {
                     Highlights
                   </MenuItem>
                   <MenuItem onClick={() => scrollToSection('faq')}>FAQ</MenuItem>
+                  <MenuItem onClick={() => window.open("/about","_self")}>
+                    About Me
+                  </MenuItem>
                   <Divider />
                 </Box>
               </Drawer>
