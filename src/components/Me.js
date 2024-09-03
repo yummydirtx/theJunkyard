@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import lands from '../assets/junkyard.webp';
+import ProfilePic from '../assets/profilepic.jpeg';
 
 export default function Me() {
   return (
@@ -28,10 +29,11 @@ export default function Me() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'left',
-          pt: { xs: 14, sm: 20 },
+          pt: { xs: 12, sm: 15 },
           pb: { xs: 8, sm: 12 },
         }}
       >
+        <Stack direction="row">
         <Stack spacing={2} useFlexGap sx={{ width: { xs: '100%', sm: '100%' } }}>
           <Typography
             variant="h1"
@@ -43,7 +45,7 @@ export default function Me() {
               fontSize: 'clamp(3.5rem, 10vw, 4rem)',
             }}
           >
-            Welcome to the Junkyard
+            About Me
           </Typography>
           <Typography
             textAlign="left"
@@ -52,6 +54,28 @@ export default function Me() {
           >
             Check out these projects I made. Some of them are fun. (No promises.)
           </Typography>
+        </Stack>
+        <Box
+          component="img"
+          id="profilepic"
+          sx={(theme) => ({
+            mt: { xs: 0, sm: 0 },
+            alignSelf: 'right',
+            height: { xs: 50, sm: 100 },
+            width: 'auto',
+            borderRadius: '999px',
+            outline: '1px solid',
+            outlineColor:
+              theme.palette.mode === 'light'
+                ? alpha('#BFCCD9', 0.5)
+                : alpha('#9CCCFC', 0.1),
+            boxShadow:
+              theme.palette.mode === 'light'
+                ? `0 0 12px 8px ${alpha('#9CCCFC', 0.2)}`
+                : `0 0 24px 12px ${alpha('#033363', 0.2)}`,
+          })}
+          src = {ProfilePic}
+        />
         </Stack>
         <Box
           component="img"
