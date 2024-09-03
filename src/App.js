@@ -12,7 +12,13 @@ import AboutMe from './AboutMe';
 export default function App() {
   const [mode, setMode] = React.useState(() => {
     // Retrieve the mode from localStorage or default to 'dark'
-    return localStorage.getItem('mode') || 'dark';
+    let before;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      before = "light";
+    } else {
+      before = "dark";
+    }
+    return localStorage.getItem('mode') || before;
   });
 
   const toggleColorMode = () => {
