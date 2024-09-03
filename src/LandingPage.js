@@ -87,7 +87,7 @@ export default function LandingPage({ setMode, mode }) {
         <Highlights />
         <Divider />
         <FAQ />
-        <Divider />
+        <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
         <Footer />
       </Box>
     </ThemeProvider>

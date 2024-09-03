@@ -74,7 +74,7 @@ function useTitle(title) {
         <AppAppBar mode={mode} toggleColorMode={setMode} />
         <Box sx={{ bgcolor: 'background.default' }}>
           <Me />
-          <Divider />
+          <Divider sx={{display: {xs: 'none', sm: 'inherit'}}} />
           <Footer />
         </Box>
       </ThemeProvider>

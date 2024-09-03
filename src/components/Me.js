@@ -47,11 +47,16 @@ export default function Me() {
             About Me
           </Typography>
           <Typography
-            textAlign="left"
-            color="text.secondary"
-            sx={{ alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
+            variant="h2"
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignSelf: 'left',
+              textAlign: 'left',
+              fontSize: 'clamp(1.5rem, 5vw, 2rem)',
+            }}
           >
-            Check out these projects I made. Some of them are fun. (No promises.)
+            Hi, I'm Alex Frutkin.
           </Typography>
         </Stack>
         <Box
@@ -60,7 +65,7 @@ export default function Me() {
           sx={(theme) => ({
             mt: { xs: 0, sm: 0 },
             alignSelf: 'right',
-            height: { xs: 50, sm: 100 },
+            height: { xs: 75, sm: 120 },
             width: 'auto',
             borderRadius: '999px',
             outline: '1px solid',
@@ -76,6 +81,13 @@ export default function Me() {
           src = {ProfilePic}
         />
         </Stack>
+        <Typography
+            textAlign="left"
+            color="text.secondary"
+            sx={{ mt:{ xs: 1, sm: 1 }, alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
+          >
+            Check out these projects I made. Some of them are fun. (No promises.)
+          </Typography>
       </Container>
     </Box>
   );
