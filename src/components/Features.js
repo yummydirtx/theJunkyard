@@ -128,6 +128,10 @@ export default function Features() {
                   '& > svg': { transition: '0.2s' },
                   '&:hover > svg': { transform: 'translateX(2px)' },
                 }}
+                onClick={(event) => {
+                  window.open(selectedFeature.link,'_blank');
+                  event.stopPropagation();
+                }}
               >
                 <span>Learn more</span>
                 <ChevronRightRoundedIcon
