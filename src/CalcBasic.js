@@ -4,18 +4,16 @@ import PropTypes from 'prop-types';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid2';
+import Button from '@mui/material/Button';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import AppAppBar from './components/AppAppBar';
 import Hero from './components/Hero';
-import LogoCollection from './components/LogoCollection';
-import Highlights from './components/Highlights';
-import Features from './components/Features';
-import Testimonials from './components/Testimonials';
-import FAQ from './components/FAQ';
 import Footer from './components/Footer';
+import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
 function getRandomIntInclusive(min, max) {
     const minCeiled = Math.ceil(min);
@@ -95,8 +93,8 @@ ToggleCustomTheme.propTypes = {
   toggleCustomTheme: PropTypes.func.isRequired,
 };
 
-export default function LandingPage({ setMode, mode }) {
-  useTitle('theJunkyard: Landing Page');
+export default function CalcBasic({ setMode, mode }) {
+  useTitle('theJunkyard: calcBasic');
   const defaultTheme = createTheme({ palette: { mode } });
 
   return (
@@ -104,18 +102,51 @@ export default function LandingPage({ setMode, mode }) {
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} />
       <Hero />
-      <Box sx={{ bgcolor: 'background.default' }}>
-        <LogoCollection />
-        <Features />
-        <Divider />
-        <Testimonials />
-        <Divider />
-        <Highlights />
-        <Divider />
-        <FAQ />
-        <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
-        <Footer />
+      <Box sx={{ 
+        bgcolor: 'background.default',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: { xs: 3, sm: 6 },
+        pb: { sm: 2 },
+        px: { xs: 2, sm: 4 },
+        }}>
+        <Grid container spacing={2}>
+            <Grid size={12}>
+                <Typography component="h2" variant="h4">
+                    Calculate Basic Odds
+                </Typography>
+                <Typography variant="body1" >
+                    Calculate the odds of guessing a number between 1 and a given number.
+                </Typography>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4 }}>
+                <FormControl sx={{width: '100%'}}>
+                    <InputLabel htmlFor="odds">Odds</InputLabel>
+                    <Input
+                    id="odds" 
+                    type="number" 
+                    startAdornment={<InputAdornment position='start'>1 in</InputAdornment>} />
+                </FormControl>
+            </Grid>
+            <Grid size={{ xs: 6, sm: 4 }}>
+                <FormControl sx={{width: '100%'}}>
+                    <InputLabel htmlFor="iterations">Iterations</InputLabel>
+                    <Input 
+                    id="iterations" 
+                    type="number" />
+                </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+                <Button variant="contained" color="primary" sx={{
+                    width: '100%',
+                }}>Calculate</Button>
+            </Grid>
+        </Grid>
       </Box>
+      <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
+      <Footer />
     </ThemeProvider>
   );
 }

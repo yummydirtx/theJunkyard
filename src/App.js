@@ -8,6 +8,7 @@ import LandingPage from './LandingPage';
 import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AboutMe from './AboutMe';
+import CalcBasic from './CalcBasic';
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
@@ -34,6 +35,7 @@ export default function App() {
       <Routes>
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
         <Route path='/about' element={<AboutMe setMode={toggleColorMode} mode={mode}/>} />
+        <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode}/>} />
       </Routes>
     </BrowserRouter>
   );
