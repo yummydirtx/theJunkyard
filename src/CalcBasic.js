@@ -17,6 +17,32 @@ import Testimonials from './components/Testimonials';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 
+function getRandomIntInclusive(min, max) {
+    const minCeiled = Math.ceil(min);
+    const maxFloored = Math.floor(max);
+    return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+}
+
+function calcBasic(odds, iterations) {
+    let lowestTries = Number.MAX_VALUE;
+    let numberOfLowest = 0;
+    for (let i = 0; i < iterations; i++) {
+        let guess = 0;
+        let tries = 0;
+        while (guess !== 1) {
+            guess = getRandomIntInclusive(1, odds);
+            tries++;
+        }
+        if (tries < lowestTries) {
+            lowestTries = tries;
+            numberOfLowest = 1;
+        } else if (tries === lowestTries) {
+            numberOfLowest++;
+        }
+    }
+    return [ lowestTries, numberOfLowest ];
+}
+
 function useTitle(title) {
   React.useEffect(() => {
     const prevTitle = document.title
