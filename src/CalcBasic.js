@@ -100,6 +100,26 @@ export default function CalcBasic({ setMode, mode }) {
   const [lowest, setLowest] = React.useState(0);
   const [numberOfLowest, setNumberOfLowest] = React.useState(0);
   const defaultTheme = createTheme({ palette: { mode } });
+  const [oddsValue, setOddsValue] = React.useState('');
+  const [oddsValid, setOddsValid] = React.useState(false);
+  const [iterationsValue, setIterationsValue] = React.useState('');
+  const [iterationsValid, setIterationsValid] = React.useState(false);
+
+  function validateOdds( value ) {
+    if (value < 1) {
+        setOddsValid(false);
+    } else {
+        setOddsValid(true);
+    }
+  }
+
+  function validateIterations( value ) {
+    if (value < 1) {
+        setIterationsValid(false);
+    } else {
+        setIterationsValid(true);
+    }
+  }
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -142,7 +162,9 @@ export default function CalcBasic({ setMode, mode }) {
                     <InputLabel htmlFor="odds">Odds</InputLabel>
                     <Input
                     id="odds" 
-                    type="number" 
+                    error={!oddsValid && oddsValue !== ''}
+                    type="number"
+                    onChange={event => {setOddsValue(event.target.value), validateOdds(event.target.value)}} 
                     startAdornment={<InputAdornment position='start'>1 in</InputAdornment>} />
                 </FormControl>
             </Grid>
@@ -150,13 +172,18 @@ export default function CalcBasic({ setMode, mode }) {
                 <FormControl sx={{width: '100%'}}>
                     <InputLabel htmlFor="iterations">Iterations</InputLabel>
                     <Input 
+                    error={!iterationsValid && iterationsValue !== ''}
                     id="iterations" 
+                    onChange={event => {setIterationsValue(event.target.value), validateIterations(event.target.value)}}
                     type="number" />
                 </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
                 <Button variant="contained" color="primary"
                 onClick={() => {
+                    if (!oddsValid || !iterationsValid) {
+                        return;
+                    }
                     let calc = calcBasic(document.getElementById('odds').value, document.getElementById('iterations').value);
                     setLowest(calc[0]);
                     setNumberOfLowest(calc[1]);
