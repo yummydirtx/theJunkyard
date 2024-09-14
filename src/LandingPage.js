@@ -79,7 +79,6 @@ export default function LandingPage({ setMode, mode }) {
       <AppAppBar mode={mode} toggleColorMode={setMode} />
       <Hero />
       <Box sx={{ bgcolor: 'background.default' }}>
-        <LogoCollection />
         <Features />
         <Divider />
         <Testimonials />
@@ -87,6 +86,7 @@ export default function LandingPage({ setMode, mode }) {
         <Highlights />
         <Divider />
         <FAQ />
+        <LogoCollection />
         <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
         <Footer />
       </Box>

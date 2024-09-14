@@ -50,7 +50,7 @@ export default function Hero() {
             color="text.secondary"
             sx={{ alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
           >
-            Check out these projects I made. Some of them are fun. (No promises.)
+            Explore the Junkyard's varied collection of open source tools and projects.
           </Typography>
         </Stack>
         <Box

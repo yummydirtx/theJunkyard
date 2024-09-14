@@ -2,6 +2,7 @@ import * as React from 'react';
 import PropTypes from 'prop-types';
 
 import CssBaseline from '@mui/material/CssBaseline';
+import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid2';
@@ -22,6 +23,7 @@ function getRandomIntInclusive(min, max) {
 }
 
 function calcBasic(odds, iterations) {
+    // TODO: Use a better algorithm based on statistics rather than brute simulation.
     let lowestTries = Number.MAX_VALUE;
     let numberOfLowest = 0;
     for (let i = 0; i < iterations; i++) {
@@ -95,22 +97,35 @@ ToggleCustomTheme.propTypes = {
 
 export default function CalcBasic({ setMode, mode }) {
   useTitle('theJunkyard: calcBasic');
+  const [lowest, setLowest] = React.useState(0);
+  const [numberOfLowest, setNumberOfLowest] = React.useState(0);
   const defaultTheme = createTheme({ palette: { mode } });
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} />
-      <Hero />
+      <Box
+      id="hero"
+      sx={(theme) => ({
+        width: '100%',
+        backgroundImage:
+          theme.palette.mode === 'light'
+            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
+            : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
+        backgroundSize: '100% 20%',
+        backgroundRepeat: 'no-repeat',
+      })}
+    >
       <Box sx={{ 
-        bgcolor: 'background.default',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: { xs: 3, sm: 6 },
+        pt: { xs: 14, sm: 20 },
         pb: { sm: 2 },
-        px: { xs: 2, sm: 4 },
+        px: { xs: 2, sm: 15 },
         }}>
         <Grid container spacing={2}>
             <Grid size={12}>
@@ -139,12 +154,24 @@ export default function CalcBasic({ setMode, mode }) {
                 </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
-                <Button variant="contained" color="primary" sx={{
+                <Button variant="contained" color="primary"
+                onClick={() => {
+                    let calc = calcBasic(document.getElementById('odds').value, document.getElementById('iterations').value);
+                    setLowest(calc[0]);
+                    setNumberOfLowest(calc[1]);
+                }}
+                sx={{
                     width: '100%',
                 }}>Calculate</Button>
             </Grid>
+            <Grid size={12}>
+                <Typography variant="body1" sx={{textAlign: 'center'}}>
+                    The lowest number of tries was {lowest} with {numberOfLowest} occurences.
+                </Typography>
+            </Grid>
         </Grid>
       </Box>
+    </Box>
       <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
       <Footer />
     </ThemeProvider>
