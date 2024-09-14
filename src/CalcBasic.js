@@ -106,7 +106,6 @@ export default function CalcBasic({ setMode, mode }) {
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} />
       <Box
-      id="hero"
       sx={(theme) => ({
         width: '100%',
         backgroundImage:
@@ -117,17 +116,19 @@ export default function CalcBasic({ setMode, mode }) {
         backgroundRepeat: 'no-repeat',
       })}
     >
-      <Box sx={{ 
+      <Box useFlexGap sx={{ 
         position: 'relative',
         display: 'flex',
+        width: '100%',
         flexDirection: 'column',
         alignItems: 'center',
         gap: { xs: 3, sm: 6 },
         pt: { xs: 14, sm: 20 },
         pb: { sm: 2 },
-        px: { xs: 2, sm: 15 },
+        px: { xs: 2 },
         }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: {xs: '100%', sm: '75%'},
+        }}>
             <Grid size={12}>
                 <Typography component="h2" variant="h4">
                     Calculate Basic Odds
@@ -164,8 +165,14 @@ export default function CalcBasic({ setMode, mode }) {
                     width: '100%',
                 }}>Calculate</Button>
             </Grid>
-            <Grid size={12}>
-                <Typography variant="body1" sx={{textAlign: 'center'}}>
+            <Grid size={12} sx={() => {
+                if (lowest === 0) {
+                    return {display: 'none'};
+                } else {
+                    return {display: 'flex', flexDirection: 'column', alignItems: 'center'};
+                }
+            }}>
+                <Typography variant="body1" >
                     The lowest number of tries was {lowest} with {numberOfLowest} occurences.
                 </Typography>
             </Grid>
