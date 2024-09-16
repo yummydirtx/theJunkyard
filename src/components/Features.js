@@ -28,7 +28,7 @@ const items = [
   {
     icon: <CasinoIcon />,
     title: 'calcBasic',
-    link: 'https://github.com/yummydirtx/calcBasic',
+    link: './calcbasic-web',
     description:
       'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
     imageLight: ('url(' + CalcBasic + ')'),
