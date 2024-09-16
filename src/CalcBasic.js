@@ -16,20 +16,19 @@ import Hero from './components/Hero';
 import Footer from './components/Footer';
 import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
-function getRandomTriesGeometric(odds) {
-  // Probability of success
-  let p = 1 / odds;
+function getRandomTriesGeometric(p) {
   // Generate a uniform random number between 0 and 1
   let U = Math.random();
   // Use the inverse CDF of the geometric distribution to get the number of tries
-  return Math.ceil(Math.log(U) / Math.log(1 - p));
+  return Math.ceil(Math.log(U) / p);
 }
 
 function calcBasic(odds, iterations) {
     let lowestTries = Number.MAX_VALUE;
     let numberOfLowest = 0;
+    let p = Math.log(1 - (1 / odds));
     for (let i = 0; i < iterations; i++) {
-        let tries = getRandomTriesGeometric(odds);
+        let tries = getRandomTriesGeometric(p);
         if (tries < lowestTries) {
             lowestTries = tries;
             numberOfLowest = 1;
