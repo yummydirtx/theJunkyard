@@ -141,17 +141,16 @@ export default function CalcBasic({ setMode, mode }) {
         alignItems: 'center',
         gap: { xs: 3, sm: 6 },
         pt: { xs: 12, sm: 15 },
-        pb: { sm: 2 },
         px: { xs: 2 },
         }}>
-        <Grid container spacing={2} sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: {xs: '100%', sm: '75%'},
+        <Grid container spacing={3} sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: {xs: '100%', sm: '75%'},
         }}>
             <Grid size={12}>
-                <Typography component="h2" variant="h4">
+                <Typography component="h1" variant="h3">
                     calcBasic-web
                 </Typography>
                 <Typography variant="body1" >
-                    Ever wanted to win your own lottery? Enter the odds of success per ticket and the number of iterations to run, and this tool will simulate the lowest number of tickets bought to win and how many times it occurred.
+                    Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
                 </Typography>
             </Grid>
             <Grid size={{ xs: 6, sm: 4 }}>
@@ -205,10 +204,21 @@ export default function CalcBasic({ setMode, mode }) {
                     The lowest number of tickets bought to win was {lowest}, which happened {numberOfLowest} time{plural}.
                 </Typography>
             </Grid>
+            <Grid size={12} sx={() => {
+                if (lowest != 0) {
+                    return {display: 'none'};
+                } else {
+                    return {display: 'flex', flexDirection: 'column', alignItems: 'center'};
+                }
+            }}>
+                <Typography variant="body1" >
+                    Welcome to calcBasic.
+                </Typography>
+            </Grid>
         </Grid>
       </Box>
     </Box>
-      <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
+      <Divider sx={{pt: { sm: 8 }, display: {xs: 'none', sm: 'inherit'}}}/>
       <Footer />
     </ThemeProvider>
   );
