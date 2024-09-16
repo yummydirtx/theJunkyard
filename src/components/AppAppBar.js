@@ -15,7 +15,7 @@ import ToggleColorMode from './ToggleColorMode';
 import logo from '../assets/websitelogo.png';
 
 const logoStyle = {
-  width: '100px',
+  width: '150px',
   height: 'auto',
   cursor: 'pointer',
 };
@@ -93,38 +93,15 @@ function AppAppBar({ mode, toggleColorMode }) {
                 }
                 style={logoStyle}
                 alt="logo of theJunkyard"
+                onClick={() => window.open("/","_self")}
               />
               <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
                 <MenuItem
-                  onClick={() => scrollToSection('features')}
+                  onClick={() => window.open("/","_self")}
                   sx={{ py: '6px', px: '12px' }}
                 >
                   <Typography variant="body2" color="text.primary">
-                    Projects
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('testimonials')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant="body2" color="text.primary">
-                    Testimonials
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('highlights')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant="body2" color="text.primary">
-                    Highlights
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('faq')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant="body2" color="text.primary">
-                    FAQ
+                    Home
                   </Typography>
                 </MenuItem>
                 <MenuItem
@@ -133,6 +110,14 @@ function AppAppBar({ mode, toggleColorMode }) {
                   >
                   <Typography variant="body2" color="text.primary">
                     About Me
+                  </Typography>
+                  </MenuItem>
+                  <MenuItem
+                  onClick={() => window.open("/calcbasic-web","_self")}
+                  sx={{ py: '6px', px: '12px' }}
+                  >
+                  <Typography variant="body2" color="text.primary">
+                    calcBasic
                   </Typography>
                   </MenuItem>
               </Box>
@@ -175,18 +160,14 @@ function AppAppBar({ mode, toggleColorMode }) {
                   >
                     <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
                   </Box>
-                  <MenuItem onClick={() => scrollToSection('features')}>
-                    Projects
+                  <MenuItem onClick={() => window.open("/", "_self")}>
+                    Home
                   </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('testimonials')}>
-                    Testimonials
-                  </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('highlights')}>
-                    Highlights
-                  </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('faq')}>FAQ</MenuItem>
                   <MenuItem onClick={() => window.open("/about","_self")}>
                     About Me
+                  </MenuItem>
+                  <MenuItem onClick={() => window.open("/calcbasic-web","_self")}>
+                    calcBasic
                   </MenuItem>
                   <Divider />
                 </Box>
