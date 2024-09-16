@@ -16,23 +16,20 @@ import Hero from './components/Hero';
 import Footer from './components/Footer';
 import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
-function getRandomIntInclusive(min, max) {
-    const minCeiled = Math.ceil(min);
-    const maxFloored = Math.floor(max);
-    return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+function getRandomTriesGeometric(odds) {
+  // Probability of success
+  let p = 1 / odds;
+  // Generate a uniform random number between 0 and 1
+  let U = Math.random();
+  // Use the inverse CDF of the geometric distribution to get the number of tries
+  return Math.ceil(Math.log(U) / Math.log(1 - p));
 }
 
 function calcBasic(odds, iterations) {
-    // TODO: Use a better algorithm based on statistics rather than brute simulation.
     let lowestTries = Number.MAX_VALUE;
     let numberOfLowest = 0;
     for (let i = 0; i < iterations; i++) {
-        let guess = 0;
-        let tries = 0;
-        while (guess !== 1) {
-            guess = getRandomIntInclusive(1, odds);
-            tries++;
-        }
+        let tries = getRandomTriesGeometric(odds);
         if (tries < lowestTries) {
             lowestTries = tries;
             numberOfLowest = 1;
