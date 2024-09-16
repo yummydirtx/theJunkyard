@@ -104,6 +104,7 @@ export default function CalcBasic({ setMode, mode }) {
   const [oddsValid, setOddsValid] = React.useState(false);
   const [iterationsValue, setIterationsValue] = React.useState('');
   const [iterationsValid, setIterationsValid] = React.useState(false);
+  const [plural, setPlural] = React.useState('s');
 
   function validateOdds( value ) {
     if (value < 1) {
@@ -143,7 +144,7 @@ export default function CalcBasic({ setMode, mode }) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: { xs: 3, sm: 6 },
-        pt: { xs: 14, sm: 20 },
+        pt: { xs: 12, sm: 15 },
         pb: { sm: 2 },
         px: { xs: 2 },
         }}>
@@ -151,10 +152,10 @@ export default function CalcBasic({ setMode, mode }) {
         }}>
             <Grid size={12}>
                 <Typography component="h2" variant="h4">
-                    Calculate Basic Odds
+                    calcBasic-web
                 </Typography>
                 <Typography variant="body1" >
-                    Calculate the odds of guessing a number between 1 and a given number.
+                    Ever wanted to win your own lottery? Enter the odds of success per ticket and the number of iterations to run, and this tool will simulate the lowest number of tickets bought to win and how many times it occurred.
                 </Typography>
             </Grid>
             <Grid size={{ xs: 6, sm: 4 }}>
@@ -187,6 +188,11 @@ export default function CalcBasic({ setMode, mode }) {
                     let calc = calcBasic(document.getElementById('odds').value, document.getElementById('iterations').value);
                     setLowest(calc[0]);
                     setNumberOfLowest(calc[1]);
+                    if (calc[1] === 1) {
+                        setPlural('');
+                    } else {
+                        setPlural('s');
+                    }
                 }}
                 sx={{
                     width: '100%',
@@ -200,7 +206,7 @@ export default function CalcBasic({ setMode, mode }) {
                 }
             }}>
                 <Typography variant="body1" >
-                    The lowest number of tries was {lowest} with {numberOfLowest} occurences.
+                    The lowest number of tickets bought to win was {lowest}, which happened {numberOfLowest} time{plural}.
                 </Typography>
             </Grid>
         </Grid>
