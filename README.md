@@ -29,7 +29,6 @@ Using [Material UI](https://mui.com/material-ui/) to make a homepage for my proj
 <!-- #default-branch-switch -->
 
 <ul>
-<li>calcBasic javascript port</li>
 <li>Website favicon downloader</li>
 <li>Individual project pages</li>
 <li>Remember your color theme preference</li>
