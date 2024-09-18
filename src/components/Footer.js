@@ -109,6 +109,9 @@ export default function Footer() {
           <Link color="text.secondary" href="/about">
             About me
           </Link>
+          <Link color="text.secondary" href="/calcbasic-web">
+            calcBasic
+          </Link>
         </Box>
       </Box>
       <Box
