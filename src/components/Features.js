@@ -33,7 +33,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import FrutkinLogo from '../assets/frutkinlogo.png';
 import CalcBasic from '../assets/calcbasic.png';
-import AlexRPG from '../assets/AlexRPG.png';
+import LicenserH from '../assets/licenser-h.png';
 
 const items = [
   {
@@ -46,7 +46,7 @@ const items = [
   },
   {
     icon: <CasinoIcon />,
-    title: 'calcBasic',
+    title: 'calcBasic-web',
     link: './calcbasic-web',
     description:
       'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
@@ -54,11 +54,11 @@ const items = [
   },
   {
     icon: <TerminalIcon />,
-    title: 'AlexRPG',
-    link: 'https://github.com/yummydirtDev/AlexRPG',
+    title: 'licenser-h',
+    link: 'https://github.com/yummydirtx/licenser-h',
     description:
-      'Unfinished C++ text-based RPG game. The gimmick is that the user wins by roasting the opponent.',
-    imageLight: 'url(' + AlexRPG + ')',
+      'An easy-to-use and robust license generator for your projects. It is a command-line tool that generates a license file and license headers for your project.',
+    imageLight: 'url(' + LicenserH + ')',
   },
 ];
 
