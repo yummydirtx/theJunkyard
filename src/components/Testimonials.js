@@ -50,7 +50,7 @@ const userTestimonials = [
     name: 'Sam Frutkin',
     occupation: 'Discord Mod',
     testimonial:
-      'You\'re clearly Argentinian.',
+      'You\'re clearly cool and talented.',
   },
   {
     avatar: <Avatar alt="Amanda Riordan" src="/static/images/avatar/4.jpg" />,
