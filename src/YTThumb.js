@@ -118,34 +118,24 @@ export default function YTThumb({ setMode, mode }) {
         }}>
             <Grid size={12}>
                 <Typography component="h1" variant="h3">
-                    calcBasic-web
+                    YTThumb
                 </Typography>
                 <Typography variant="body1" >
-                    Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
+                    Input the URL of a YouTube video to get the thumbnail.
                 </Typography>
             </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 8 }}>
                 <FormControl sx={{width: '100%'}}>
-                    <InputLabel htmlFor="odds">Odds</InputLabel>
+                    <InputLabel htmlFor="url">Youtube Url</InputLabel>
                     <Input
-                    id="odds" 
-                    type="number"
-                    startAdornment={<InputAdornment position='start'>1 in</InputAdornment>} />
-                </FormControl>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}>
-                <FormControl sx={{width: '100%'}}>
-                    <InputLabel htmlFor="iterations">Iterations</InputLabel>
-                    <Input 
-                    id="iterations" 
-                    type="number" />
+                    id="url" />
                 </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
                 <Button variant="contained" color="primary"
                 sx={{
                     width: '100%',
-                }}>Calculate</Button>
+                }}>Fetch</Button>
             </Grid>
             <Grid size={12} sx={() => {
                 if (1 === 0) {
