@@ -139,6 +139,14 @@ function AppAppBar({ mode, toggleColorMode }) {
                     calcBasic
                   </Typography>
                   </MenuItem>
+                  <MenuItem
+                  onClick={() => window.open("/ytthumb","_self")}
+                  sx={{ py: '6px', px: '12px' }}
+                  >
+                  <Typography variant="body2" color="text.primary">
+                    YTThumb
+                  </Typography>
+                  </MenuItem>
               </Box>
             </Box>
             <Box
@@ -187,6 +195,9 @@ function AppAppBar({ mode, toggleColorMode }) {
                   </MenuItem>
                   <MenuItem onClick={() => window.open("/calcbasic-web","_self")}>
                     calcBasic
+                  </MenuItem>
+                  <MenuItem onClick={() => window.open("/ytthumb","_self")}>
+                    YTThumb
                   </MenuItem>
                   <Divider />
                 </Box>
