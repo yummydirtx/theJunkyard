@@ -26,7 +26,6 @@ import ProTip from './ProTip';
 import LandingPage from './LandingPage';
 import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import AboutMe from './AboutMe';
 import CalcBasic from './CalcBasic';
 import YTThumb from './YTThumb';
 
@@ -54,7 +53,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
-        <Route path='/about' element={<AboutMe setMode={toggleColorMode} mode={mode}/>} />
         <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode}/>} />
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode}/>} />
       </Routes>

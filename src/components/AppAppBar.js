@@ -123,14 +123,6 @@ function AppAppBar({ mode, toggleColorMode }) {
                     Home
                   </Typography>
                 </MenuItem>
-                <MenuItem
-                  onClick={() => window.open("/about","_self")}
-                  sx={{ py: '6px', px: '12px' }}
-                  >
-                  <Typography variant="body2" color="text.primary">
-                    About Me
-                  </Typography>
-                  </MenuItem>
                   <MenuItem
                   onClick={() => window.open("/calcbasic-web","_self")}
                   sx={{ py: '6px', px: '12px' }}
@@ -189,9 +181,6 @@ function AppAppBar({ mode, toggleColorMode }) {
                   </Box>
                   <MenuItem onClick={() => window.open("/", "_self")}>
                     Home
-                  </MenuItem>
-                  <MenuItem onClick={() => window.open("/about","_self")}>
-                    About Me
                   </MenuItem>
                   <MenuItem onClick={() => window.open("/calcbasic-web","_self")}>
                     calcBasic
