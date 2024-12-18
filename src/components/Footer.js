@@ -125,11 +125,11 @@ export default function Footer() {
           <Typography variant="body2" fontWeight={600}>
             theJunkyard
           </Typography>
-          <Link color="text.secondary" href="/about">
-            About me
-          </Link>
           <Link color="text.secondary" href="/calcbasic-web">
             calcBasic
+          </Link>
+          <Link color="text.secondary" href="/ytthumb">
+            YTThumb
           </Link>
         </Box>
       </Box>
