@@ -35,6 +35,8 @@ import Features from './components/Features';
 import Testimonials from './components/Testimonials';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
+import Me from './components/Me';
+import PastWebsites from './components/PastWebsites';
 
 function useTitle(title) {
   React.useEffect(() => {
@@ -96,16 +98,14 @@ export default function LandingPage({ setMode, mode }) {
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} />
-      <Hero />
+      <Me />
       <Box sx={{ bgcolor: 'background.default' }}>
         <Features />
         <Divider />
         <Testimonials />
         <Divider />
-        <Highlights />
-        <Divider />
         <FAQ />
-        <LogoCollection />
+        <PastWebsites />
         <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
         <Footer />
       </Box>
