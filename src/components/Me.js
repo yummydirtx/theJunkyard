@@ -63,7 +63,7 @@ export default function Me() {
               textAlign: 'left',
               fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
               fontWeight: 'bold',
-              pb: '0.2rem',
+              pb: '1rem',
             }}
           >
             Welcome to the Junkyard
