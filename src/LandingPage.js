@@ -105,6 +105,7 @@ export default function LandingPage({ setMode, mode }) {
         <Testimonials />
         <Divider />
         <FAQ />
+        <Divider />
         <PastWebsites />
         <Divider sx={{display: {xs: 'none', sm: 'inherit'}}}/>
         <Footer />
