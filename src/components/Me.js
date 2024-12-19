@@ -41,7 +41,7 @@ export default function Me() {
             theme.palette.mode === 'light'
               ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
               : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-          backgroundSize: '100% 20%',
+          backgroundSize: '100% 40%',
           backgroundRepeat: 'no-repeat',
         })}
       >
@@ -51,22 +51,37 @@ export default function Me() {
             flexDirection: 'column',
             alignItems: 'left',
             pt: { xs: 12, sm: 15 },
-            pb: { xs: 8, sm: 12 },
+            pb: { xs: 8, sm: 8 },
           }}
         >
+          <Typography
+            variant='h2'
+            sx={{
+              display: {xs: 'flex', sm: 'none'},
+              flexDirection: { xs: 'column', md: 'row' },
+              alignSelf: 'left',
+              textAlign: 'left',
+              fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+              fontWeight: 'bold',
+              pb: '0.2rem',
+            }}
+          >
+            Welcome to the Junkyard
+          </Typography>
           <Stack direction="row">
           <Stack spacing={2} useFlexGap sx={{ width: { xs: '100%', sm: '100%' } }}>
             <Typography
               variant="h1"
               sx={{
-                display: 'flex',
+                display: {xs: 'none', sm: 'flex'},
                 flexDirection: { xs: 'column', md: 'row' },
                 alignSelf: 'left',
                 textAlign: 'left',
-                fontSize: 'clamp(3.5rem, 10vw, 4rem)',
+                fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+                fontWeight: 'bold',
               }}
             >
-              About Me
+              Welcome to the Junkyard
             </Typography>
             <Typography
               variant="h2"
@@ -75,7 +90,8 @@ export default function Me() {
                 flexDirection: { xs: 'column', md: 'row' },
                 alignSelf: 'left',
                 textAlign: 'left',
-                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
+                fontSize: 'clamp(1.9rem, 5vw, 2rem)',
+                pt: { xs: 6, sm: 0 },
               }}
             >
               Hi, I'm Alex Frutkin.
@@ -87,7 +103,7 @@ export default function Me() {
             sx={(theme) => ({
               mt: { xs: 0, sm: 0 },
               alignSelf: 'right',
-              height: { xs: 75, sm: 120 },
+              height: { xs: 85, sm: 120 },
               width: 'auto',
               borderRadius: '999px',
               outline: '1px solid',
@@ -113,7 +129,6 @@ export default function Me() {
         </Container>
       </Box>
       <Divider />
-      <PastWebsites />
     </div>
   );
 }
