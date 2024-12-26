@@ -165,7 +165,7 @@ export default function CalcBasic({ setMode, mode }) {
         <Grid container spacing={3} sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: {xs: '100%', sm: '75%'},
         }}>
             <Grid size={12}>
-                <Typography component="h1" variant="h3">
+                <Typography component="h1" variant="h3" sx={{pb: '1rem', fontWeight: 'bold'}}>
                     calcBasic-web
                 </Typography>
                 <Typography variant="body1" >

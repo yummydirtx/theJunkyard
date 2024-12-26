@@ -169,7 +169,7 @@ export default function YTThumb({ setMode, mode }) {
             }}
           >
             <Grid size={12}>
-              <Typography component="h1" variant="h3">
+              <Typography component="h1" variant="h3" sx={{pb: '1rem', fontWeight: 'bold'}}>
                 YouTube Thumbnail Downloader
               </Typography>
               <Typography variant="body1">
