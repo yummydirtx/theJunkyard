@@ -31,7 +31,6 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import AppAppBar from './components/AppAppBar';
-import Hero from './components/Hero';
 import Footer from './components/Footer';
 import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
