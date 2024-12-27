@@ -22,6 +22,7 @@ import PropTypes from 'prop-types';
 import { alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
+import DOMPurify from 'dompurify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from './components/AppAppBar';
 import Grid from '@mui/material/Grid2';
@@ -218,7 +219,7 @@ export default function YTThumb({ setMode, mode }) {
                 }}
               >
                 <img
-                  src={thumbnailUrl}
+                  src={DOMPurify.sanitize(thumbnailUrl)}
                   alt="YouTube Video Thumbnail"
                   onError={handleImageError}
                   style={{
