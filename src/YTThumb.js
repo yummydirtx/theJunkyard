@@ -101,7 +101,7 @@ export default function YTThumb({ setMode, mode }) {
     ];
 
     // Set the initial thumbnail URL
-    setThumbnailUrl(thumbnailSizesRef.current[0]);
+    setThumbnailUrl(DOMPurify.sanitize(thumbnailSizesRef.current[0]));
     setLoading(false);
   };
 
@@ -110,7 +110,7 @@ export default function YTThumb({ setMode, mode }) {
     if (thumbnailIndex < thumbnailSizesRef.current.length - 1) {
       const nextIndex = thumbnailIndex + 1;
       setThumbnailIndex(nextIndex);
-      setThumbnailUrl(thumbnailSizesRef.current[nextIndex]);
+      setThumbnailUrl(DOMPurify.sanitize(thumbnailSizesRef.current[nextIndex]));
     } else {
       // No more thumbnails to try
       setError('Failed to load thumbnail images.');
