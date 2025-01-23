@@ -1,25 +1,6 @@
-// Copyright (c) 2024 Alex Frutkin
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy of
-// this software and associated documentation files (theJunkyard), to deal in
-// theJunkyard without restriction, including without limitation the rights to
-// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-// theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
-// subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of theJunkyard.
-// 
-// THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-// CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
-
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -39,27 +20,31 @@ const logoStyle = {
   cursor: 'pointer',
 };
 
-function AppAppBar({ mode, toggleColorMode }) {
-  const [open, setOpen] = React.useState(false);
+function AppAppBar({ mode, toggleColorMode, app }) {
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(null); // Track the signed-in user
+  const auth = getAuth(app);
+
+  useEffect(() => {
+    // Listen to authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // Update the user state
+    });
+    return unsubscribe; // Cleanup the listener on unmount
+  }, [auth]);
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
   };
 
-  const scrollToSection = (sectionId) => {
-    const sectionElement = document.getElementById(sectionId);
-    const offset = 128;
-    if (sectionElement) {
-      const targetScroll = sectionElement.offsetTop - offset;
-      sectionElement.scrollIntoView({ behavior: 'smooth' });
-      window.scrollTo({
-        top: targetScroll,
-        behavior: 'smooth',
+  const handleSignOut = () => {
+    signOut(auth)
+      .then(() => {
+        window.open("/", "_self"); // Redirect to home after sign-out
+      })
+      .catch((error) => {
+        console.error("Sign out error:", error);
       });
-      setOpen(false);
-    } else {
-      window.open("/","_self")
-    }
   };
 
   return (
@@ -107,38 +92,27 @@ function AppAppBar({ mode, toggleColorMode }) {
               }}
             >
               <img
-                src={
-                  logo
-                }
+                src={logo}
                 style={logoStyle}
                 alt="logo of theJunkyard"
-                onClick={() => window.open("/","_self")}
+                onClick={() => window.open("/", "_self")}
               />
               <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-                <MenuItem
-                  onClick={() => window.open("/","_self")}
-                  sx={{ py: '6px', px: '12px' }}
-                >
+                <MenuItem onClick={() => window.open("/", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     Home
                   </Typography>
                 </MenuItem>
-                  <MenuItem
-                  onClick={() => window.open("/calcbasic-web","_self")}
-                  sx={{ py: '6px', px: '12px' }}
-                  >
+                <MenuItem onClick={() => window.open("/calcbasic-web", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     calcBasic
                   </Typography>
-                  </MenuItem>
-                  <MenuItem
-                  onClick={() => window.open("/ytthumb","_self")}
-                  sx={{ py: '6px', px: '12px' }}
-                  >
+                </MenuItem>
+                <MenuItem onClick={() => window.open("/ytthumb", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     YTThumb
                   </Typography>
-                  </MenuItem>
+                </MenuItem>
               </Box>
             </Box>
             <Box
@@ -148,6 +122,26 @@ function AppAppBar({ mode, toggleColorMode }) {
                 alignItems: 'center',
               }}
             >
+              {user ? (
+                <MenuItem onClick={handleSignOut} sx={{ py: '6px', px: '12px' }}>
+                  <Typography variant="body2" color="text.primary">
+                    Sign Out
+                  </Typography>
+                </MenuItem>
+              ) : (
+                <>
+                  <MenuItem onClick={() => window.open("/signup", "_self")} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">
+                      Sign Up
+                    </Typography>
+                  </MenuItem>
+                  <MenuItem onClick={() => window.open("/login", "_self")} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">
+                      Log In
+                    </Typography>
+                  </MenuItem>
+                </>
+              )}
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
@@ -182,13 +176,27 @@ function AppAppBar({ mode, toggleColorMode }) {
                   <MenuItem onClick={() => window.open("/", "_self")}>
                     Home
                   </MenuItem>
-                  <MenuItem onClick={() => window.open("/calcbasic-web","_self")}>
+                  <MenuItem onClick={() => window.open("/calcbasic-web", "_self")}>
                     calcBasic
                   </MenuItem>
-                  <MenuItem onClick={() => window.open("/ytthumb","_self")}>
+                  <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
                     YTThumb
                   </MenuItem>
                   <Divider />
+                  {user ? (
+                    <MenuItem onClick={handleSignOut}>
+                      Sign Out
+                    </MenuItem>
+                  ) : (
+                    <>
+                      <MenuItem onClick={() => window.open("/signup", "_self")}>
+                        Sign Up
+                      </MenuItem>
+                      <MenuItem onClick={() => window.open("/login", "_self")}>
+                        Log In
+                      </MenuItem>
+                    </>
+                  )}
                 </Box>
               </Drawer>
             </Box>

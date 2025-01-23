@@ -28,9 +28,6 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import AppAppBar from './components/AppAppBar';
-import Hero from './components/Hero';
-import LogoCollection from './components/LogoCollection';
-import Highlights from './components/Highlights';
 import Features from './components/Features';
 import Testimonials from './components/Testimonials';
 import FAQ from './components/FAQ';
@@ -90,14 +87,14 @@ ToggleCustomTheme.propTypes = {
   toggleCustomTheme: PropTypes.func.isRequired,
 };
 
-export default function LandingPage({ setMode, mode }) {
+export default function LandingPage({ setMode, mode, app }) {
   useTitle('theJunkyard: Landing Page');
   const defaultTheme = createTheme({ palette: { mode } });
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} />
+      <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
       <Me />
       <Box sx={{ bgcolor: 'background.default' }}>
         <Features />

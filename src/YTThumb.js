@@ -22,6 +22,7 @@ import PropTypes from 'prop-types';
 import { alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
+import DOMPurify from 'dompurify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from './components/AppAppBar';
 import Grid from '@mui/material/Grid2';
@@ -49,7 +50,7 @@ function useTitle(title) {
   });
 }
 
-export default function YTThumb({ setMode, mode }) {
+export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');
   const defaultTheme = createTheme({ palette: { mode } });
 
@@ -100,7 +101,7 @@ export default function YTThumb({ setMode, mode }) {
     ];
 
     // Set the initial thumbnail URL
-    setThumbnailUrl(thumbnailSizesRef.current[0]);
+    setThumbnailUrl(DOMPurify.sanitize(thumbnailSizesRef.current[0]));
     setLoading(false);
   };
 
@@ -109,7 +110,7 @@ export default function YTThumb({ setMode, mode }) {
     if (thumbnailIndex < thumbnailSizesRef.current.length - 1) {
       const nextIndex = thumbnailIndex + 1;
       setThumbnailIndex(nextIndex);
-      setThumbnailUrl(thumbnailSizesRef.current[nextIndex]);
+      setThumbnailUrl(DOMPurify.sanitize(thumbnailSizesRef.current[nextIndex]));
     } else {
       // No more thumbnails to try
       setError('Failed to load thumbnail images.');
@@ -218,7 +219,7 @@ export default function YTThumb({ setMode, mode }) {
                 }}
               >
                 <img
-                  src={thumbnailUrl}
+                  src={DOMPurify.sanitize(thumbnailUrl)}
                   alt="YouTube Video Thumbnail"
                   onError={handleImageError}
                   style={{

@@ -31,7 +31,6 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import AppAppBar from './components/AppAppBar';
-import Hero from './components/Hero';
 import Footer from './components/Footer';
 import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
@@ -110,7 +109,7 @@ ToggleCustomTheme.propTypes = {
   toggleCustomTheme: PropTypes.func.isRequired,
 };
 
-export default function CalcBasic({ setMode, mode }) {
+export default function CalcBasic({ setMode, mode, app }) {
   useTitle('theJunkyard: calcBasic');
   const [lowest, setLowest] = React.useState(0);
   const [numberOfLowest, setNumberOfLowest] = React.useState(0);
