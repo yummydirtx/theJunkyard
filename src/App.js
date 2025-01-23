@@ -22,6 +22,7 @@ import LandingPage from './LandingPage';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import CalcBasic from './CalcBasic';
 import YTThumb from './YTThumb';
+import SignUp from './SignUp';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -70,6 +71,7 @@ export default function App() {
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
         <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
+        <Route path='/signup' element={<SignUp setMode={toggleColorMode} mode={mode} app={app}/>} />
       </Routes>
     </BrowserRouter>
   );
