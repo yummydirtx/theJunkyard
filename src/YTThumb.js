@@ -50,7 +50,7 @@ function useTitle(title) {
   });
 }
 
-export default function YTThumb({ setMode, mode }) {
+export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');
   const defaultTheme = createTheme({ palette: { mode } });
 

@@ -109,7 +109,7 @@ ToggleCustomTheme.propTypes = {
   toggleCustomTheme: PropTypes.func.isRequired,
 };
 
-export default function CalcBasic({ setMode, mode }) {
+export default function CalcBasic({ setMode, mode, app }) {
   useTitle('theJunkyard: calcBasic');
   const [lowest, setLowest] = React.useState(0);
   const [numberOfLowest, setNumberOfLowest] = React.useState(0);

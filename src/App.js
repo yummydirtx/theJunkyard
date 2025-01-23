@@ -22,6 +22,27 @@ import LandingPage from './LandingPage';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import CalcBasic from './CalcBasic';
 import YTThumb from './YTThumb';
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
+  authDomain: "thejunkyard-b1858.firebaseapp.com",
+  projectId: "thejunkyard-b1858",
+  storageBucket: "thejunkyard-b1858.firebasestorage.app",
+  messagingSenderId: "66694016123",
+  appId: "1:66694016123:web:1c659a2c06d31c5a7b86de",
+  measurementId: "G-HEJ6YMFJY6"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
@@ -46,9 +67,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
-        <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode}/>} />
-        <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode}/>} />
+        <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
+        <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
+        <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
       </Routes>
     </BrowserRouter>
   );

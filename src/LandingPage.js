@@ -87,14 +87,14 @@ ToggleCustomTheme.propTypes = {
   toggleCustomTheme: PropTypes.func.isRequired,
 };
 
-export default function LandingPage({ setMode, mode }) {
+export default function LandingPage({ setMode, mode, app }) {
   useTitle('theJunkyard: Landing Page');
   const defaultTheme = createTheme({ palette: { mode } });
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} />
+      <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
       <Me />
       <Box sx={{ bgcolor: 'background.default' }}>
         <Features />
