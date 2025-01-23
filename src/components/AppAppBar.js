@@ -32,6 +32,7 @@ import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from './ToggleColorMode';
 import logo from '../assets/websitelogo.png';
+import { getAuth } from "firebase/auth";
 
 const logoStyle = {
   width: '150px',
@@ -39,8 +40,9 @@ const logoStyle = {
   cursor: 'pointer',
 };
 
-function AppAppBar({ mode, toggleColorMode }) {
+function AppAppBar({ mode, toggleColorMode, app }) {
   const [open, setOpen] = React.useState(false);
+  const auth = getAuth(app);
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
@@ -148,6 +150,38 @@ function AppAppBar({ mode, toggleColorMode }) {
                 alignItems: 'center',
               }}
             >
+              {auth.currentUser ? (
+                <MenuItem
+                  onClick={() => {
+                    auth.signOut();
+                    window.open("/", "_self");
+                  }}
+                  sx={{ py: '6px', px: '12px' }}
+                >
+                  <Typography variant="body2" color="text.primary">
+                    Sign Out
+                  </Typography>
+                </MenuItem>
+              ) : (
+                <>
+                  <MenuItem
+                    onClick={() => window.open("/signup", "_self")}
+                    sx={{ py: '6px', px: '12px' }}
+                  >
+                    <Typography variant="body2" color="text.primary">
+                      Sign Up
+                    </Typography>
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => window.open("/login", "_self")}
+                    sx={{ py: '6px', px: '12px' }}
+                  >
+                    <Typography variant="body2" color="text.primary">
+                      Log In
+                    </Typography>
+                  </MenuItem>
+                </>
+              )}
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
@@ -189,6 +223,25 @@ function AppAppBar({ mode, toggleColorMode }) {
                     YTThumb
                   </MenuItem>
                   <Divider />
+                  {auth.currentUser ? (
+                    <MenuItem
+                      onClick={() => {
+                        auth.signOut();
+                        window.open("/", "_self");
+                      }}
+                    >
+                      Sign Out
+                    </MenuItem>
+                  ) : (
+                    <>
+                      <MenuItem onClick={() => window.open("/signup", "_self")}>
+                        Sign Up
+                      </MenuItem>
+                      <MenuItem onClick={() => window.open("/login", "_self")}>
+                        Log In
+                      </MenuItem>
+                    </>
+                  )}
                 </Box>
               </Drawer>
             </Box>
