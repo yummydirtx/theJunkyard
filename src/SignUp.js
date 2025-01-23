@@ -31,7 +31,8 @@ import {
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
 import AppAppBar from './components/AppAppBar';
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import GoogleIcon from '@mui/icons-material/Google';
 
 function useTitle(title) {
   React.useEffect(() => {
@@ -149,6 +150,23 @@ export default function SignUp({ setMode, mode, app }) {
               sx={{ mt: 3, mb: 2 }}
             >
               Sign Up
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={() => {
+                const provider = new GoogleAuthProvider();
+                signInWithPopup(auth, provider)
+                  .then(() => {
+                    window.location.href = '/';
+                  })
+                  .catch((error) => {
+                    setError(error.message);
+                  });
+              }}
+            >
+              Sign up with Google
             </Button>
           </Box>
         </Box>
