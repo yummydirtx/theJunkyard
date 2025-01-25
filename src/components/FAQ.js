@@ -104,7 +104,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Yes, all of our projects are open source and available on <Link href="https://github.com/yummydirtx/theJunkyard">GitHub</Link>.
+              Yes, all of my projects are open source and available on <Link href="https://github.com/yummydirtx">GitHub</Link>.
             </Typography>
           </AccordionDetails>
         </Accordion>
