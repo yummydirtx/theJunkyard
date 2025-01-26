@@ -18,12 +18,12 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import LandingPage from './LandingPage';
+import LandingPage from './pages/LandingPage';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import CalcBasic from './CalcBasic';
-import YTThumb from './YTThumb';
-import SignUp from './SignUp';
-import LogIn from './LogIn';
+import CalcBasic from './pages/CalcBasic';
+import YTThumb from './pages/YTThumb';
+import SignUp from './pages/SignUp';
+import LogIn from './pages/LogIn';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";

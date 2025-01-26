@@ -30,8 +30,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
-import AppAppBar from './components/AppAppBar';
-import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import AppAppBar from '../components/AppAppBar';
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import GoogleIcon from '@mui/icons-material/Google';
 
 function useTitle(title) {
@@ -44,8 +44,8 @@ function useTitle(title) {
   })
 }
 
-export default function SignUp({ setMode, mode, app }) {
-  useTitle('theJunkyard: Sign Up');
+export default function SignIn({ setMode, mode, app }) {
+  useTitle('theJunkyard: Sign In');
   const defaultTheme = createTheme({ palette: { mode } });
 
   const auth = getAuth(app);
@@ -53,18 +53,13 @@ export default function SignUp({ setMode, mode, app }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
   });
   const [error, setError] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
       window.location.href = '/';
     } catch (error) {
       setError(error.message);
@@ -103,7 +98,7 @@ export default function SignUp({ setMode, mode, app }) {
           }}
         >
           <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
-            <strong>Sign Up</strong>
+            <strong>Log In</strong>
           </Typography>
           
           {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
@@ -132,24 +127,13 @@ export default function SignUp({ setMode, mode, app }) {
               value={formData.password}
               onChange={handleChange}
             />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              id="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign Up
+              Log in
             </Button>
             <Button
               fullWidth
@@ -166,7 +150,7 @@ export default function SignUp({ setMode, mode, app }) {
                   });
               }}
             >
-              Sign up with Google
+              Sign in with Google
             </Button>
           </Box>
         </Box>

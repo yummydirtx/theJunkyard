@@ -30,8 +30,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
-import AppAppBar from './components/AppAppBar';
-import Footer from './components/Footer';
+import AppAppBar from '../components/AppAppBar';
+import Footer from '../components/Footer';
 import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 
 function getRandomTriesGeometric(p) {

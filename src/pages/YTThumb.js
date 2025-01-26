@@ -24,7 +24,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import DOMPurify from 'dompurify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from './components/AppAppBar';
+import AppAppBar from '../components/AppAppBar';
 import Grid from '@mui/material/Grid2';
 import {
   Typography,
@@ -38,7 +38,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import Footer from './components/Footer';
+import Footer from '../components/Footer';
 
 function useTitle(title) {
   React.useEffect(() => {

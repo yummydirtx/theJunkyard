@@ -27,13 +27,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
-import AppAppBar from './components/AppAppBar';
-import Features from './components/Features';
-import Testimonials from './components/Testimonials';
-import FAQ from './components/FAQ';
-import Footer from './components/Footer';
-import Me from './components/Me';
-import PastWebsites from './components/PastWebsites';
+import AppAppBar from '../components/AppAppBar';
+import Features from '../components/Features';
+import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import Footer from '../components/Footer';
+import Me from '../components/Me';
+import PastWebsites from '../components/PastWebsites';
 
 function useTitle(title) {
   React.useEffect(() => {
