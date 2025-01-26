@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -23,8 +24,9 @@ const logoStyle = {
 function AppAppBar({ mode, toggleColorMode, app }) {
   const [open, setOpen] = useState(false);
   const auth = getAuth(app);
+  const db = getFirestore(app);
   const [user, setUser] = useState(auth.currentUser);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -46,6 +48,20 @@ function AppAppBar({ mode, toggleColorMode, app }) {
       .catch((error) => {
         console.error("Sign out error:", error);
       });
+  };
+
+  const handleThemeChange = async () => {
+    toggleColorMode();
+    if (user) {
+      try {
+        const newMode = mode === 'light' ? 'dark' : 'light';
+        await setDoc(doc(db, 'userPreferences', user.uid), {
+          theme: newMode
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error saving theme preference:", error);
+      }
+    }
   };
 
   return (
@@ -145,7 +161,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   </>
                 )
               )}
-              <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
+              <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
               <Button
@@ -174,7 +190,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                       flexGrow: 1,
                     }}
                   >
-                    <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
+                    <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
                   </Box>
                   <MenuItem onClick={() => window.open("/", "_self")}>
                     Home

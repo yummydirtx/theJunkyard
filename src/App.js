@@ -27,6 +27,8 @@ import LogIn from './LogIn';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -48,15 +50,38 @@ const analytics = getAnalytics(app);
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
-    // Retrieve the mode from localStorage or default to 'dark'
-    let before;
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-      before = "light";
-    } else {
-      before = "dark";
-    }
-    return localStorage.getItem('mode') || before;
+    // Default to system preference initially
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
+
+  React.useEffect(() => {
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in, get their preference from Firestore
+        try {
+          const userPrefs = await getDoc(doc(db, 'userPreferences', user.uid));
+          if (userPrefs.exists() && userPrefs.data().theme) {
+            setMode(userPrefs.data().theme);
+          } else {
+            // If no Firestore preference, use localStorage
+            const localMode = localStorage.getItem('mode');
+            if (localMode) setMode(localMode);
+          }
+        } catch (error) {
+          console.error("Error fetching theme preference:", error);
+        }
+      } else {
+        // User is signed out, use localStorage
+        const localMode = localStorage.getItem('mode');
+        if (localMode) setMode(localMode);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleColorMode = () => {
     setMode((prev) => {
