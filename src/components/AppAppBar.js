@@ -22,15 +22,16 @@ const logoStyle = {
 
 function AppAppBar({ mode, toggleColorMode, app }) {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState(null); // Track the signed-in user
   const auth = getAuth(app);
+  const [user, setUser] = useState(auth.currentUser);
+  const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
-    // Listen to authentication state changes
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // Update the user state
+      setUser(currentUser);
+      setLoading(false); // Set loading to false once we have the initial auth state
     });
-    return unsubscribe; // Cleanup the listener on unmount
+    return unsubscribe;
   }, [auth]);
 
   const toggleDrawer = (newOpen) => () => {
@@ -122,25 +123,27 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                 alignItems: 'center',
               }}
             >
-              {user ? (
-                <MenuItem onClick={handleSignOut} sx={{ py: '6px', px: '12px' }}>
-                  <Typography variant="body2" color="text.primary">
-                    Sign Out
-                  </Typography>
-                </MenuItem>
-              ) : (
-                <>
-                  <MenuItem onClick={() => window.open("/signup", "_self")} sx={{ py: '6px', px: '12px' }}>
+              {!loading && ( // Only show auth UI after loading
+                user ? (
+                  <MenuItem onClick={handleSignOut} sx={{ py: '6px', px: '12px' }}>
                     <Typography variant="body2" color="text.primary">
-                      Sign Up
+                      Sign Out
                     </Typography>
                   </MenuItem>
-                  <MenuItem onClick={() => window.open("/login", "_self")} sx={{ py: '6px', px: '12px' }}>
-                    <Typography variant="body2" color="text.primary">
-                      Log In
-                    </Typography>
-                  </MenuItem>
-                </>
+                ) : (
+                  <>
+                    <MenuItem onClick={() => window.open("/signup", "_self")} sx={{ py: '6px', px: '12px' }}>
+                      <Typography variant="body2" color="text.primary">
+                        Sign Up
+                      </Typography>
+                    </MenuItem>
+                    <MenuItem onClick={() => window.open("/login", "_self")} sx={{ py: '6px', px: '12px' }}>
+                      <Typography variant="body2" color="text.primary">
+                        Log In
+                      </Typography>
+                    </MenuItem>
+                  </>
+                )
               )}
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
             </Box>
@@ -183,19 +186,21 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     YTThumb
                   </MenuItem>
                   <Divider />
-                  {user ? (
-                    <MenuItem onClick={handleSignOut}>
-                      Sign Out
-                    </MenuItem>
-                  ) : (
-                    <>
-                      <MenuItem onClick={() => window.open("/signup", "_self")}>
-                        Sign Up
+                  {!loading && ( // Only show auth UI after loading
+                    user ? (
+                      <MenuItem onClick={handleSignOut}>
+                        Sign Out
                       </MenuItem>
-                      <MenuItem onClick={() => window.open("/login", "_self")}>
-                        Log In
-                      </MenuItem>
-                    </>
+                    ) : (
+                      <>
+                        <MenuItem onClick={() => window.open("/signup", "_self")}>
+                          Sign Up
+                        </MenuItem>
+                        <MenuItem onClick={() => window.open("/login", "_self")}>
+                          Log In
+                        </MenuItem>
+                      </>
+                    )
                   )}
                 </Box>
               </Drawer>
