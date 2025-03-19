@@ -74,7 +74,7 @@ export default function PastWebsites() {
   return (
     <Container id="websites" sx={{ py: { xs: 2, sm: 4 } }}>
       <Grid2 container spacing={6}>
-        <Grid2 item xs={12} md={6}>
+        <Grid2>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
               Past Websites
@@ -87,7 +87,7 @@ export default function PastWebsites() {
               Here is a collection of my past personal websites, of varying levels of quality and completion.
             </Typography>
           </div>
-          <Grid2 container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
+          <Grid2 container gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
             {items.map(({ title }, index) => (
               <Chip
                 key={index}
@@ -262,9 +262,6 @@ export default function PastWebsites() {
           </Stack>
         </Grid2>
         <Grid2
-          item
-          xs={12}
-          md={6}
           sx={{ display: { xs: 'none', sm: 'flex' }, width: '100%' }}
         >
           <Card
