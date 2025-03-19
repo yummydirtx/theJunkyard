@@ -28,21 +28,21 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import WebIcon from '@mui/icons-material/Web';
 import CasinoIcon from '@mui/icons-material/Casino';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import FrutkinLogo from '../assets/frutkinlogo.png';
+import AnteaterFindLogo from '../assets/anteaterfind.png';
 import CalcBasic from '../assets/calcbasic.png';
 import LicenserH from '../assets/licenser-h.png';
+import SearchIcon from '@mui/icons-material/Search';
 
 const items = [
   {
-    icon: <WebIcon />,
-    title: 'Frutkin.com',
-    link: 'https://frutkin.com',
+    icon: <SearchIcon />,
+    title: 'AnteaterFind',
+    link: 'https://ics.uci.edu/~afrutkin',
     description:
-      'Fully redesigned the Frutkin.com website to be more modern and user-friendly, while incorporating the latest updates and information.',
-    imageLight: ('url(' + FrutkinLogo + ')'),
+      'Designed and implemented a high-performance search engine from scratch, efficiently indexing over 55,000 web pages while operating under strict constraints and maintaining sub-300ms query response times',
+    imageLight: ('url(' + AnteaterFindLogo + ')'),
   },
   {
     icon: <CasinoIcon />,
