@@ -34,20 +34,24 @@ import AnteaterFindLogo from '../assets/anteaterfind.png';
 import CalcBasic from '../assets/calcbasic.png';
 import LicenserH from '../assets/licenser-h.png';
 import SearchIcon from '@mui/icons-material/Search';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 const items = [
   {
     icon: <SearchIcon />,
     title: 'AnteaterFind',
-    link: 'https://ics.uci.edu/~afrutkin',
+    demoLink: 'https://ics.uci.edu/~afrutkin',
+    githubLink: 'https://github.com/yummydirtx/AnteaterFind',
     description:
-      'Designed and implemented a high-performance search engine from scratch, efficiently indexing over 55,000 web pages while operating under strict constraints and maintaining sub-300ms query response times',
+      'AnteaterFind is a full stack web application and search engine, written using Python and React. It was written from the ground up, and is capable of handling over fifty thousand web pages, with a query response time under 300ms.',
     imageLight: ('url(' + AnteaterFindLogo + ')'),
   },
   {
     icon: <CasinoIcon />,
     title: 'calcBasic-web',
-    link: './calcbasic-web',
+    demoLink: './calcbasic-web',
+    githubLink: null,
     description:
       'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
     imageLight: ('url(' + CalcBasic + ')'),
@@ -55,7 +59,8 @@ const items = [
   {
     icon: <TerminalIcon />,
     title: 'licenser-h',
-    link: 'https://github.com/yummydirtx/licenser-h',
+    demoLink: null,
+    githubLink: 'https://github.com/yummydirtx/licenser-h',
     description:
       'An easy-to-use and robust license generator for your projects. It is a command-line tool that generates a license file and license headers for your project.',
     imageLight: 'url(' + LicenserH + ')',
@@ -137,27 +142,48 @@ export default function Features() {
               <Typography color="text.secondary" variant="body2" sx={{ my: 0.5 }}>
                 {selectedFeature.description}
               </Typography>
-              <Link
-                color="primary"
-                variant="body2"
-                fontWeight="bold"
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  '& > svg': { transition: '0.2s' },
-                  '&:hover > svg': { transform: 'translateX(2px)' },
-                }}
-                onClick={(event) => {
-                  window.open(selectedFeature.link,'_blank');
-                  event.stopPropagation();
-                }}
-              >
-                <span>Learn more</span>
-                <ChevronRightRoundedIcon
-                  fontSize="small"
-                  sx={{ mt: '1px', ml: '2px' }}
-                />
-              </Link>
+              <Stack direction="row" spacing={2}>
+                {selectedFeature.githubLink && (
+                  <Link
+                    color="primary"
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      '& > svg': { transition: '0.2s' },
+                      '&:hover > svg': { transform: 'translateX(2px)' },
+                    }}
+                    onClick={(event) => {
+                      window.open(selectedFeature.githubLink, '_blank');
+                      event.stopPropagation();
+                    }}
+                  >
+                    <GitHubIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    <span>View Source on GitHub</span>
+                  </Link>
+                )}
+                {selectedFeature.demoLink && (
+                  <Link
+                    color="primary"
+                    variant="body2"
+                    fontWeight="bold"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      '& > svg': { transition: '0.2s' },
+                      '&:hover > svg': { transform: 'translateX(2px)' },
+                    }}
+                    onClick={(event) => {
+                      window.open(selectedFeature.demoLink, '_blank');
+                      event.stopPropagation();
+                    }}
+                  >
+                    <PlayArrowIcon fontSize="small" sx={{ mr: 0.5 }} />
+                    <span>Try it out</span>
+                  </Link>
+                )}
+              </Stack>
             </Box>
           </Box>
           <Stack
@@ -232,27 +258,48 @@ export default function Features() {
                     >
                       {description}
                     </Typography>
-                    <Link
-                      color="primary"
-                      variant="body2"
-                      fontWeight="bold"
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        '& > svg': { transition: '0.2s' },
-                        '&:hover > svg': { transform: 'translateX(2px)' },
-                      }}
-                      onClick={(event) => {
-                        window.open(link,'_blank');
-                        event.stopPropagation();
-                      }}
-                    >
-                      <span>Learn more</span>
-                      <ChevronRightRoundedIcon
-                        fontSize="small"
-                        sx={{ mt: '1px', ml: '2px' }}
-                      />
-                    </Link>
+                    <Stack direction="row" spacing={2}>
+                      {items[index].githubLink && (
+                        <Link
+                          color="primary"
+                          variant="body2"
+                          fontWeight="bold"
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            '& > svg': { transition: '0.2s' },
+                            '&:hover > svg': { transform: 'translateX(2px)' },
+                          }}
+                          onClick={(event) => {
+                            window.open(items[index].githubLink, '_blank');
+                            event.stopPropagation();
+                          }}
+                        >
+                          <GitHubIcon fontSize="small" sx={{ mr: 0.5 }} />
+                          <span>View Source on GitHub</span>
+                        </Link>
+                      )}
+                      {items[index].demoLink && (
+                        <Link
+                          color="primary"
+                          variant="body2"
+                          fontWeight="bold"
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            '& > svg': { transition: '0.2s' },
+                            '&:hover > svg': { transform: 'translateX(2px)' },
+                          }}
+                          onClick={(event) => {
+                            window.open(items[index].demoLink, '_blank');
+                            event.stopPropagation();
+                          }}
+                        >
+                          <PlayArrowIcon fontSize="small" sx={{ mr: 0.5 }} />
+                          <span>Try it out</span>
+                        </Link>
+                      )}
+                    </Stack>
                   </Box>
                 </Box>
               </Card>
