@@ -170,7 +170,7 @@ export default function CalcBasic({ setMode, mode, app }) {
               flexDirection: { xs: 'column', md: 'row' },
               alignSelf: 'left',
               textAlign: 'left',
-              fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+              fontSize: {xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
               fontWeight: 'bold',
               pb: '1rem',
             }}>
