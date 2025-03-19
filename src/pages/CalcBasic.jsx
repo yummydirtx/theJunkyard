@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Alex Frutkin
+// Copyright (c) 2025 Alex Frutkin
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
@@ -32,7 +32,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
-import { Typography, FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
+import { Typography, FormControl, InputLabel, InputAdornment, Input, Container } from '@mui/material';
 
 function getRandomTriesGeometric(p) {
   // Generate a uniform random number between 0 and 1
@@ -161,13 +161,27 @@ export default function CalcBasic({ setMode, mode, app }) {
         pt: { xs: 12, sm: 15 },
         px: { xs: 2 },
         }}>
-        <Grid container spacing={3} sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: {xs: '100%', sm: '75%'},
-        }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={3} sx={{
+            display: 'flex', 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            width: '100%',
+          }}>
             <Grid size={12}>
-                <Typography component="h1" variant="h3" sx={{pb: '1rem', fontWeight: 'bold'}}>
+                <Typography variant='h2'
+                sx={{
+                  display: {xs: 'flex', sm: 'flex'},
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignSelf: 'left',
+                  textAlign: 'left',
+                  fontSize: {xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+                  fontWeight: 'bold',
+                  pb: '0.25rem',
+                }}>
                     calcBasic-web
                 </Typography>
-                <Typography variant="body1" >
+                <Typography variant="body1" color="text.secondary">
                     Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
                 </Typography>
             </Grid>
@@ -233,7 +247,8 @@ export default function CalcBasic({ setMode, mode, app }) {
                     Welcome to calcBasic.
                 </Typography>
             </Grid>
-        </Grid>
+          </Grid>
+        </Container>
       </Box>
     </Box>
       <Divider sx={{pt: { sm: 8 }, display: {xs: 'none', sm: 'inherit'}}}/>

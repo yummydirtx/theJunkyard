@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Alex Frutkin
+// Copyright (c) 2025 Alex Frutkin
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
@@ -25,7 +25,6 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export default function FAQ() {

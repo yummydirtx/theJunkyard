@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Alex Frutkin
+// Copyright (c) 2025 Alex Frutkin
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
@@ -23,46 +23,46 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid2 from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import WebIcon from '@mui/icons-material/Web';
-import CasinoIcon from '@mui/icons-material/Casino';
-import TerminalIcon from '@mui/icons-material/Terminal';
-import FrutkinLogo from '../assets/frutkinlogo.png';
-import CalcBasic from '../assets/calcbasic.png';
-import LicenserH from '../assets/licenser-h.png';
+import Yummydirt from '../assets/yummydirt.png';
+import YummyLogo from '../assets/yummylogo.png';
+import YummyMe from '../assets/yummyme.png';
+import MeLogo from '../assets/MeLogo.ico';
+import Lobster from '../assets/lobster.png';
+import LobsterTeck from '../assets/lobsterteck.png';
 
 const items = [
   {
-    icon: <WebIcon />,
-    title: 'Frutkin.com',
-    link: 'https://frutkin.com',
+    icon: <img src={YummyLogo}/>,
+    title: 'yummydirt.com (2016-2018)',
+    link: 'https://web.archive.org/web/20161106100941/http://www.yummydirt.com/',
     description:
-      'Fully redesigned the Frutkin.com website to be more modern and user-friendly, while incorporating the latest updates and information.',
-    imageLight: ('url(' + FrutkinLogo + ')'),
+      'My first personal website, created in 2016. I was 10 years old at the beginning of this project, and I created it using a text editor, HTML, CSS, and very basic JavaScript. It was a fun project, and I learned a lot from it.',
+    imageLight: ('url(' + Yummydirt + ')'),
   },
   {
-    icon: <CasinoIcon />,
-    title: 'calcBasic-web',
-    link: './calcbasic-web',
+    icon: <img src={MeLogo} />,
+    title: 'yummydirt.me (2022-2023)',
+    link: 'https://yummydirtx.github.io/',
     description:
-      'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
-    imageLight: ('url(' + CalcBasic + ')'),
+      'This website was designed in raw HTML, CSS, and Javascript based on real Web 1.0 websites, with vintage graphics. It includes a bottom bar with a (slightly outdated) population counter, an engaging choose your own adventure game, and a beautiful art gallery.',
+    imageLight: ('url(' + YummyMe + ')'),
   },
   {
-    icon: <TerminalIcon />,
-    title: 'licenser-h',
-    link: 'https://github.com/yummydirtx/licenser-h',
+    icon: <img src={Lobster} />,
+    title: 'LobsterTeck.tech (2022-forever)',
+    link: 'https://yummydirtx.github.io/lobsterteck/',
     description:
-      'An easy-to-use and robust license generator for your projects. It is a command-line tool that generates a license file and license headers for your project.',
-    imageLight: 'url(' + LicenserH + ')',
+      'As a C suite executive at LobsterTeck, we patented and released world peace*. This website was created to showcase our flagship product, but we never actually got around to making a product. The website is still up, though!',
+    imageLight: 'url(' + LobsterTeck + ')',
   },
 ];
 
-export default function Features() {
+export default function PastWebsites() {
   const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
 
   const handleItemClick = (index) => {
@@ -72,22 +72,22 @@ export default function Features() {
   const selectedFeature = items[selectedItemIndex];
 
   return (
-    <Container id="features" sx={{ py: { xs: 4, sm: 4 } }}>
-      <Grid container spacing={6}>
-        <Grid item xs={12} md={6}>
+    <Container id="websites" sx={{ py: { xs: 2, sm: 4 } }}>
+      <Grid2 container spacing={6}>
+        <Grid2 item xs={12} md={6}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
-              Featured Projects
+              Past Websites
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ mb: { xs: 2, sm: 4 } }}
             >
-              This is a collection of projects I have worked on. Click on each one to learn more.
+              Here is a collection of my past personal websites, of varying levels of quality and completion.
             </Typography>
           </div>
-          <Grid container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
+          <Grid2 container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
             {items.map(({ title }, index) => (
               <Chip
                 key={index}
@@ -113,7 +113,7 @@ export default function Features() {
                 }}
               />
             ))}
-          </Grid>
+          </Grid2>
           <Box
             component={Card}
             variant="outlined"
@@ -152,7 +152,7 @@ export default function Features() {
                   event.stopPropagation();
                 }}
               >
-                <span>Learn more</span>
+                <span>Visit archive</span>
                 <ChevronRightRoundedIcon
                   fontSize="small"
                   sx={{ mt: '1px', ml: '2px' }}
@@ -213,6 +213,8 @@ export default function Features() {
                           ? 'primary.main'
                           : 'grey.700';
                       },
+                      height: '48px',
+                      width: '48px',
                     }}
                   >
                     {icon}
@@ -247,7 +249,7 @@ export default function Features() {
                         event.stopPropagation();
                       }}
                     >
-                      <span>Learn more</span>
+                      <span>Visit archive</span>
                       <ChevronRightRoundedIcon
                         fontSize="small"
                         sx={{ mt: '1px', ml: '2px' }}
@@ -258,8 +260,8 @@ export default function Features() {
               </Card>
             ))}
           </Stack>
-        </Grid>
-        <Grid
+        </Grid2>
+        <Grid2
           item
           xs={12}
           md={6}
@@ -277,17 +279,18 @@ export default function Features() {
             <Box
               sx={{
                 m: 'auto',
-                width: 420,
+                width: '100%',
                 height: 500,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundImage: items[selectedItemIndex].imageLight,
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
               }}
             />
           </Card>
-        </Grid>
-      </Grid>
+        </Grid2>
+      </Grid2>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>*We did not actually patent nor release world peace.</Typography>
     </Container>
   );
 }

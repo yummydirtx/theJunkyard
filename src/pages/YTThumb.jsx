@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Alex Frutkin
+// Copyright (c) 2025 Alex Frutkin
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
@@ -37,6 +37,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Container,
 } from '@mui/material';
 import Footer from '../components/Footer';
 
@@ -159,86 +160,96 @@ export default function YTThumb({ setMode, mode, app }) {
             px: { xs: 2 },
           }}
         >
-          <Grid
-            container
-            spacing={3}
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              width: { xs: '100%', sm: '75%' },
-            }}
-          >
-            <Grid size={12}>
-              <Typography component="h1" variant="h3" sx={{pb: '1rem', fontWeight: 'bold'}}>
-                YouTube Thumbnail Downloader
-              </Typography>
-              <Typography variant="body1">
-                Input the URL of a YouTube video to get the highest quality available version of the thumbnail.
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 8 }}>
-              <FormControl sx={{ width: '100%' }}>
-                <InputLabel htmlFor="url">YouTube URL</InputLabel>
-                <Input
-                  id="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  fullWidth
-                  endAdornment={
-                    loading ? (
-                      <InputAdornment position="end">
-                        <CircularProgress size={20} />
-                      </InputAdornment>
-                    ) : null
-                  }
-                />
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={fetchThumbnail}
-                disabled={!url || loading}
-                sx={{
-                  width: '100%',
-                }}
-              >
-                Fetch Thumbnail
-              </Button>
-            </Grid>
-
-            {thumbnailUrl && (
-              <Grid
-                size={12}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-              >
-                <img
-                  src={DOMPurify.sanitize(thumbnailUrl)}
-                  alt="YouTube Video Thumbnail"
-                  onError={handleImageError}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '400px',
-                    objectFit: 'contain',
-                  }}
-                />
+          <Container maxWidth="lg">
+            <Grid
+              container
+              spacing={3}
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <Grid size={12}>
+                <Typography component="h1" variant="h3" sx={{
+                    display: {xs: 'flex', sm: 'flex'},
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignSelf: 'left',
+                    textAlign: 'left',
+                    fontSize: {xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+                    fontWeight: 'bold',
+                    pb: '0.25rem',
+                  }}>
+                  YouTube Thumbnail Downloader
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Input the URL of a YouTube video to get the highest quality available version of the thumbnail.
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <FormControl sx={{ width: '100%' }}>
+                  <InputLabel htmlFor="url">YouTube URL</InputLabel>
+                  <Input
+                    id="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    fullWidth
+                    endAdornment={
+                      loading ? (
+                        <InputAdornment position="end">
+                          <CircularProgress size={20} />
+                        </InputAdornment>
+                      ) : null
+                    }
+                  />
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Button
                   variant="contained"
-                  color="secondary"
-                  onClick={handleDownload}
-                  sx={{ mt: 2 }}
+                  color="primary"
+                  onClick={fetchThumbnail}
+                  disabled={!url || loading}
+                  sx={{
+                    width: '100%',
+                  }}
                 >
-                  Download Thumbnail
+                  Fetch Thumbnail
                 </Button>
               </Grid>
-            )}
-          </Grid>
+
+              {thumbnailUrl && (
+                <Grid
+                  size={12}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
+                  <img
+                    src={DOMPurify.sanitize(thumbnailUrl)}
+                    alt="YouTube Video Thumbnail"
+                    onError={handleImageError}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '400px',
+                      objectFit: 'contain',
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleDownload}
+                    sx={{ mt: 2 }}
+                  >
+                    Download Thumbnail
+                  </Button>
+                </Grid>
+              )}
+            </Grid>
+          </Container>
         </Box>
       </Box>
       <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
