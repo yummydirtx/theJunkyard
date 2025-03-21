@@ -36,7 +36,7 @@ import { getFirestore, doc, getDoc } from "firebase/firestore";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
-  authDomain: "thejunkyard-b1858.firebaseapp.com",
+  authDomain: "thejunkyard.dev",
   projectId: "thejunkyard-b1858",
   storageBucket: "thejunkyard-b1858.firebasestorage.app",
   messagingSenderId: "66694016123",
