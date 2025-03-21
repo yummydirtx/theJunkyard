@@ -173,14 +173,14 @@ export default function YTThumb({ setMode, mode, app }) {
             >
               <Grid size={12}>
                 <Typography component="h1" variant="h3" sx={{
-                    display: {xs: 'flex', sm: 'flex'},
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignSelf: 'left',
-                    textAlign: 'left',
-                    fontSize: {xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
-                    fontWeight: 'bold',
-                    pb: '0.25rem',
-                  }}>
+                  display: { xs: 'flex', sm: 'flex' },
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignSelf: 'left',
+                  textAlign: 'left',
+                  fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                  fontWeight: 'bold',
+                  pb: '0.25rem',
+                }}>
                   YouTube Thumbnail Downloader
                 </Typography>
                 <Typography variant="body1" color="text.secondary">

@@ -27,7 +27,6 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import CasinoIcon from '@mui/icons-material/Casino';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import AnteaterFindLogo from '../assets/anteaterfind.png';

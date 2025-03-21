@@ -37,7 +37,7 @@ import LobsterTeck from '../assets/lobsterteck.png';
 
 const items = [
   {
-    icon: <img src={YummyLogo}/>,
+    icon: <img src={YummyLogo} />,
     title: 'yummydirt.com (2016-2018)',
     link: 'https://web.archive.org/web/20161106100941/http://www.yummydirt.com/',
     description:
@@ -148,7 +148,7 @@ export default function PastWebsites() {
                   '&:hover > svg': { transform: 'translateX(2px)' },
                 }}
                 onClick={(event) => {
-                  window.open(selectedFeature.link,'_blank');
+                  window.open(selectedFeature.link, '_blank');
                   event.stopPropagation();
                 }}
               >
@@ -245,7 +245,7 @@ export default function PastWebsites() {
                         '&:hover > svg': { transform: 'translateX(2px)' },
                       }}
                       onClick={(event) => {
-                        window.open(link,'_blank');
+                        window.open(link, '_blank');
                         event.stopPropagation();
                       }}
                     >

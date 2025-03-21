@@ -42,19 +42,19 @@ function getRandomTriesGeometric(p) {
 }
 
 function calcBasic(odds, iterations) {
-    let lowestTries = Number.MAX_VALUE;
-    let numberOfLowest = 0;
-    let p = Math.log(1 - (1 / odds));
-    for (let i = 0; i < iterations; i++) {
-        let tries = getRandomTriesGeometric(p);
-        if (tries < lowestTries) {
-            lowestTries = tries;
-            numberOfLowest = 1;
-        } else if (tries === lowestTries) {
-            numberOfLowest++;
-        }
+  let lowestTries = Number.MAX_VALUE;
+  let numberOfLowest = 0;
+  let p = Math.log(1 - (1 / odds));
+  for (let i = 0; i < iterations; i++) {
+    let tries = getRandomTriesGeometric(p);
+    if (tries < lowestTries) {
+      lowestTries = tries;
+      numberOfLowest = 1;
+    } else if (tries === lowestTries) {
+      numberOfLowest++;
     }
-    return [ lowestTries, numberOfLowest ];
+  }
+  return [lowestTries, numberOfLowest];
 }
 
 function useTitle(title) {
@@ -120,19 +120,19 @@ export default function CalcBasic({ setMode, mode, app }) {
   const [iterationsValid, setIterationsValid] = React.useState(false);
   const [plural, setPlural] = React.useState('s');
 
-  function validateOdds( value ) {
+  function validateOdds(value) {
     if (value < 1) {
-        setOddsValid(false);
+      setOddsValid(false);
     } else {
-        setOddsValid(true);
+      setOddsValid(true);
     }
   }
 
-  function validateIterations( value ) {
+  function validateIterations(value) {
     if (value < 1) {
-        setIterationsValid(false);
+      setIterationsValid(false);
     } else {
-        setIterationsValid(true);
+      setIterationsValid(true);
     }
   }
 
@@ -141,117 +141,117 @@ export default function CalcBasic({ setMode, mode, app }) {
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} />
       <Box
-      sx={(theme) => ({
-        width: '100%',
-        backgroundImage:
-          theme.palette.mode === 'light'
-            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-            : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-        backgroundSize: '100% 20%',
-        backgroundRepeat: 'no-repeat',
-      })}
-    >
-      <Box useFlexGap sx={{ 
-        position: 'relative',
-        display: 'flex',
-        width: '100%',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: { xs: 3, sm: 6 },
-        pt: { xs: 12, sm: 15 },
-        px: { xs: 2 },
+        sx={(theme) => ({
+          width: '100%',
+          backgroundImage:
+            theme.palette.mode === 'light'
+              ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
+              : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
+          backgroundSize: '100% 20%',
+          backgroundRepeat: 'no-repeat',
+        })}
+      >
+        <Box useFlexGap sx={{
+          position: 'relative',
+          display: 'flex',
+          width: '100%',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: { xs: 3, sm: 6 },
+          pt: { xs: 12, sm: 15 },
+          px: { xs: 2 },
         }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={3} sx={{
-            display: 'flex', 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            width: '100%',
-          }}>
-            <Grid size={12}>
+          <Container maxWidth="lg">
+            <Grid container spacing={3} sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              width: '100%',
+            }}>
+              <Grid size={12}>
                 <Typography variant='h2'
-                sx={{
-                  display: {xs: 'flex', sm: 'flex'},
-                  flexDirection: { xs: 'column', md: 'row' },
-                  alignSelf: 'left',
-                  textAlign: 'left',
-                  fontSize: {xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
-                  fontWeight: 'bold',
-                  pb: '0.25rem',
-                }}>
-                    calcBasic-web
+                  sx={{
+                    display: { xs: 'flex', sm: 'flex' },
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignSelf: 'left',
+                    textAlign: 'left',
+                    fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                    fontWeight: 'bold',
+                    pb: '0.25rem',
+                  }}>
+                  calcBasic-web
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                    Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
+                  Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
                 </Typography>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}>
-                <FormControl sx={{width: '100%'}}>
-                    <InputLabel htmlFor="odds">Odds</InputLabel>
-                    <Input
-                    id="odds" 
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4 }}>
+                <FormControl sx={{ width: '100%' }}>
+                  <InputLabel htmlFor="odds">Odds</InputLabel>
+                  <Input
+                    id="odds"
                     error={!oddsValid && oddsValue !== ''}
                     type="number"
-                    onChange={event => {setOddsValue(event.target.value), validateOdds(event.target.value)}} 
+                    onChange={event => { setOddsValue(event.target.value), validateOdds(event.target.value) }}
                     startAdornment={<InputAdornment position='start'>1 in</InputAdornment>} />
                 </FormControl>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}>
-                <FormControl sx={{width: '100%'}}>
-                    <InputLabel htmlFor="iterations">Iterations</InputLabel>
-                    <Input 
+              </Grid>
+              <Grid size={{ xs: 6, sm: 4 }}>
+                <FormControl sx={{ width: '100%' }}>
+                  <InputLabel htmlFor="iterations">Iterations</InputLabel>
+                  <Input
                     error={!iterationsValid && iterationsValue !== ''}
-                    id="iterations" 
-                    onChange={event => {setIterationsValue(event.target.value), validateIterations(event.target.value)}}
+                    id="iterations"
+                    onChange={event => { setIterationsValue(event.target.value), validateIterations(event.target.value) }}
                     type="number" />
                 </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Button variant="contained" color="primary"
-                onClick={() => {
+                  onClick={() => {
                     if (!oddsValid || !iterationsValid) {
-                        return;
+                      return;
                     }
                     let calc = calcBasic(document.getElementById('odds').value, document.getElementById('iterations').value);
                     setLowest(calc[0]);
                     setNumberOfLowest(calc[1]);
                     if (calc[1] === 1) {
-                        setPlural('');
+                      setPlural('');
                     } else {
-                        setPlural('s');
+                      setPlural('s');
                     }
-                }}
-                sx={{
+                  }}
+                  sx={{
                     width: '100%',
-                }}>Calculate</Button>
-            </Grid>
-            <Grid size={12} sx={() => {
+                  }}>Calculate</Button>
+              </Grid>
+              <Grid size={12} sx={() => {
                 if (lowest === 0) {
-                    return {display: 'none'};
+                  return { display: 'none' };
                 } else {
-                    return {display: 'flex', flexDirection: 'column', alignItems: 'center'};
+                  return { display: 'flex', flexDirection: 'column', alignItems: 'center' };
                 }
-            }}>
+              }}>
                 <Typography variant="body1" >
-                    The lowest number of tickets bought to win was {lowest}, which happened {numberOfLowest} time{plural}.
+                  The lowest number of tickets bought to win was {lowest}, which happened {numberOfLowest} time{plural}.
                 </Typography>
-            </Grid>
-            <Grid size={12} sx={() => {
+              </Grid>
+              <Grid size={12} sx={() => {
                 if (lowest != 0) {
-                    return {display: 'none'};
+                  return { display: 'none' };
                 } else {
-                    return {display: 'flex', flexDirection: 'column', alignItems: 'center'};
+                  return { display: 'flex', flexDirection: 'column', alignItems: 'center' };
                 }
-            }}>
+              }}>
                 <Typography variant="body1" >
-                    Welcome to calcBasic.
+                  Welcome to calcBasic.
                 </Typography>
+              </Grid>
             </Grid>
-          </Grid>
-        </Container>
+          </Container>
+        </Box>
       </Box>
-    </Box>
-      <Divider sx={{pt: { sm: 8 }, display: {xs: 'none', sm: 'inherit'}}}/>
+      <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
       <Footer />
     </ThemeProvider>
   );
