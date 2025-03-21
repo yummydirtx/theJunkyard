@@ -18,6 +18,7 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
+import { useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
     Box,
@@ -34,8 +35,9 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
 
@@ -53,7 +55,18 @@ export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
     const auth = getAuth(app);
+    const db = getFirestore(app);
+    const [user, setUser] = useState(auth.currentUser);
     const [selectedOption, setSelectedOption] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const authChange = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            setLoading(false);
+        });
+        return authChange;
+    }, [auth]);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
@@ -74,7 +87,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
-                <Container maxWidth="lg" sx={{ pt: 12 }}>
+                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 } }}>
                     <FormControl sx={{ minWidth: 200 }}>
                         <InputLabel id="budget-select-label">Budget Options</InputLabel>
                         <Select
@@ -90,6 +103,11 @@ export default function ManualBudget({ setMode, mode, app }) {
                             <MenuItem value="option4">Option 4</MenuItem>
                         </Select>
                     </FormControl>
+                    {!loading && (user ? (
+                        <Typography>Hello NAME, welcome to Manual Budget</Typography>
+                    ) : (
+                        <Typography>You must be signed in to save your budget option.</Typography>
+                    ))}
                 </Container>
                 <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
                 <Footer />
