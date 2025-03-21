@@ -20,77 +20,80 @@
 import * as React from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
-  Box,
-  Button,
-  CssBaseline,
-  TextField,
-  Typography,
-  Container,
-  Alert,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
+    Box,
+    Button,
+    CssBaseline,
+    TextField,
+    Typography,
+    Container,
+    Alert,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import GoogleIcon from '@mui/icons-material/Google';
+import Divider from '@mui/material/Divider';
+import Footer from '../components/Footer';
 
 function useTitle(title) {
-  React.useEffect(() => {
-    const prevTitle = document.title
-    document.title = title
-    return () => {
-      document.title = prevTitle
-    }
-  })
+    React.useEffect(() => {
+        const prevTitle = document.title
+        document.title = title
+        return () => {
+            document.title = prevTitle
+        }
+    })
 }
 
 export default function ManualBudget({ setMode, mode, app }) {
-  useTitle('theJunkyard: Manual Budget');
-  const defaultTheme = createTheme({ palette: { mode } });
-  const auth = getAuth(app);
-  const [selectedOption, setSelectedOption] = useState('');
+    useTitle('theJunkyard: Manual Budget');
+    const defaultTheme = createTheme({ palette: { mode } });
+    const auth = getAuth(app);
+    const [selectedOption, setSelectedOption] = useState('');
 
-  const handleChange = (event) => {
-    setSelectedOption(event.target.value);
-  };
+    const handleChange = (event) => {
+        setSelectedOption(event.target.value);
+    };
 
-  return (
-    <ThemeProvider theme={defaultTheme}>
-      <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
-      <Box
-            sx={(theme) => ({
-              width: '100%',
-              backgroundImage:
-                theme.palette.mode === 'light'
-                  ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-                  : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-              backgroundSize: '100% 20%',
-              backgroundRepeat: 'no-repeat',
-            })}
-          >
-            <Container maxWidth="lg" sx={{ pt: 12 }}>
-                <FormControl sx={{ minWidth: 200 }}>
-                  <InputLabel id="budget-select-label">Budget Options</InputLabel>
-                  <Select
-                    labelId="budget-select-label"
-                    id="budget-select"
-                    value={selectedOption}
-                    label="Budget Options"
-                    onChange={handleChange}
-                  >
-                    <MenuItem value="option1">Option 1</MenuItem>
-                    <MenuItem value="option2">Option 2</MenuItem>
-                    <MenuItem value="option3">Option 3</MenuItem>
-                    <MenuItem value="option4">Option 4</MenuItem>
-                  </Select>
-                </FormControl>
-            </Container>
-      </Box>
-    </ThemeProvider>
-  );
+    return (
+        <ThemeProvider theme={defaultTheme}>
+            <CssBaseline />
+            <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
+            <Box
+                sx={(theme) => ({
+                    width: '100%',
+                    backgroundImage:
+                        theme.palette.mode === 'light'
+                            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
+                            : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
+                    backgroundSize: '100% 20%',
+                    backgroundRepeat: 'no-repeat',
+                })}
+            >
+                <Container maxWidth="lg" sx={{ pt: 12 }}>
+                    <FormControl sx={{ minWidth: 200 }}>
+                        <InputLabel id="budget-select-label">Budget Options</InputLabel>
+                        <Select
+                            labelId="budget-select-label"
+                            id="budget-select"
+                            value={selectedOption}
+                            label="Budget Options"
+                            onChange={handleChange}
+                        >
+                            <MenuItem value="option1">Option 1</MenuItem>
+                            <MenuItem value="option2">Option 2</MenuItem>
+                            <MenuItem value="option3">Option 3</MenuItem>
+                            <MenuItem value="option4">Option 4</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Container>
+                <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
+                <Footer />
+            </Box>
+        </ThemeProvider>
+    );
 }
