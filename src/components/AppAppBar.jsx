@@ -149,6 +149,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     YTThumb
                   </Typography>
                 </MenuItem>
+                <MenuItem onClick={() => window.open("/manualbudget", "_self")} sx={{ py: '6px', px: '12px' }}>
+                  <Typography variant="body2" color="text.primary">
+                    Manual Budget
+                  </Typography>
+                </MenuItem>
               </Box>
             </Box>
             <Box
@@ -219,6 +224,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   </MenuItem>
                   <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
                     YTThumb
+                  </MenuItem>
+                  <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
+                    Manual Budget
                   </MenuItem>
                   <Divider />
                   {!loading && ( // Only show auth UI after loading
