@@ -40,16 +40,7 @@ import {
   Container,
 } from '@mui/material';
 import Footer from '../components/Footer';
-
-function useTitle(title) {
-  React.useEffect(() => {
-    const prevTitle = document.title;
-    document.title = title;
-    return () => {
-      document.title = prevTitle;
-    };
-  });
-}
+import { useTitle } from '../components/useTitle';
 
 export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');

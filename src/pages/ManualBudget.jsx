@@ -44,16 +44,7 @@ import Footer from '../components/Footer';
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt';
-
-function useTitle(title) {
-    React.useEffect(() => {
-        const prevTitle = document.title
-        document.title = title
-        return () => {
-            document.title = prevTitle
-        }
-    })
-}
+import { useTitle } from '../components/useTitle';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
@@ -161,8 +152,8 @@ export default function ManualBudget({ setMode, mode, app }) {
                             <Typography>Hello {name}, welcome to Manual Budget</Typography>
                         </>
                     ) : (
-                        [<LoginPrompt 
-                            openLoginModal={openLoginModal} 
+                        [<LoginPrompt
+                            openLoginModal={openLoginModal}
                             openSignUpModal={openSignUpModal}
                             loading={loading}
                             user={user}

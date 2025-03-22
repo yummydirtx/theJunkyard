@@ -33,16 +33,7 @@ import { alpha } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import GoogleIcon from '@mui/icons-material/Google';
-
-function useTitle(title) {
-  React.useEffect(() => {
-    const prevTitle = document.title
-    document.title = title
-    return () => {
-      document.title = prevTitle
-    }
-  })
-}
+import { useTitle } from '../components/useTitle';
 
 export default function SignIn({ setMode, mode, app }) {
   useTitle('theJunkyard: Sign In');
