@@ -100,7 +100,7 @@ export default function App() {
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/signup' element={<SignUp setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/login' element={<LogIn setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} />
+        {/* <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} /> */}
       </Routes>
     </BrowserRouter>
   );
