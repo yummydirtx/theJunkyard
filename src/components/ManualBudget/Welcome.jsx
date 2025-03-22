@@ -17,6 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -26,6 +27,18 @@ import {
 import Stack from '@mui/material/Stack';
 
 export default function Welcome ({ name }) {
+    const [visible, setVisible] = useState(true);
+    
+    useEffect(() => {
+        // Set timeout to hide the welcome message after 2 seconds
+        const timer = setTimeout(() => {
+            setVisible(false);
+        }, 2000);
+        
+        // Clean up the timer if component unmounts
+        return () => clearTimeout(timer);
+    }, []);
+    
     return (
         <Box sx={{
             display: 'flex',
@@ -33,7 +46,7 @@ export default function Welcome ({ name }) {
             alignItems: 'center',
             height: '50vh'
         }}>
-            <Fade in={name} timeout={1000}>
+            <Fade in={visible && Boolean(name)} timeout={1000}>
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="h5" sx={{ mb: 2 }}>Hello {name}, welcome to Manual Budget.</Typography>
                 </Box>
