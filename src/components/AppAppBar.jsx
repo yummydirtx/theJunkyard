@@ -65,9 +65,6 @@ function AppAppBar({ mode, toggleColorMode, app }) {
 
   const handleSignOut = () => {
     signOut(auth)
-      .then(() => {
-        window.open("/", "_self"); // Redirect to home after sign-out
-      })
       .catch((error) => {
         console.error("Sign out error:", error);
       });
