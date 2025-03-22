@@ -28,12 +28,12 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import Yummydirt from '../assets/yummydirt.png';
-import YummyLogo from '../assets/yummylogo.png';
-import YummyMe from '../assets/yummyme.png';
-import MeLogo from '../assets/MeLogo.ico';
-import Lobster from '../assets/lobster.png';
-import LobsterTeck from '../assets/lobsterteck.png';
+import Yummydirt from '../../assets/yummydirt.png';
+import YummyLogo from '../../assets/yummylogo.png';
+import YummyMe from '../../assets/yummyme.png';
+import MeLogo from '../../assets/MeLogo.ico';
+import Lobster from '../../assets/lobster.png';
+import LobsterTeck from '../../assets/lobsterteck.png';
 
 const items = [
   {
