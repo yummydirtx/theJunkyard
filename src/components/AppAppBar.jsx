@@ -32,6 +32,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from './ToggleColorMode';
+import LoginModal from './LoginModal';
+import SignUpModal from './SignUpModal';
 import logo from '../assets/websitelogo.png';
 
 const logoStyle = {
@@ -46,6 +48,8 @@ function AppAppBar({ mode, toggleColorMode, app }) {
   const db = getFirestore(app);
   const [user, setUser] = useState(auth.currentUser);
   const [loading, setLoading] = useState(true);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [signUpModalOpen, setSignUpModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -81,6 +85,24 @@ function AppAppBar({ mode, toggleColorMode, app }) {
         console.error("Error saving theme preference:", error);
       }
     }
+  };
+
+  const openLoginModal = () => {
+    setLoginModalOpen(true);
+    if (open) setOpen(false); // Close drawer if open
+  };
+
+  const closeLoginModal = () => {
+    setLoginModalOpen(false);
+  };
+
+  const openSignUpModal = () => {
+    setSignUpModalOpen(true);
+    if (open) setOpen(false); // Close drawer if open
+  };
+
+  const closeSignUpModal = () => {
+    setSignUpModalOpen(false);
   };
 
   return (
@@ -149,6 +171,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     YTThumb
                   </Typography>
                 </MenuItem>
+                {/* <MenuItem onClick={() => window.open("/manualbudget", "_self")} sx={{ py: '6px', px: '12px' }}>
+                  <Typography variant="body2" color="text.primary">
+                    Manual Budget
+                  </Typography>
+                </MenuItem> */}
               </Box>
             </Box>
             <Box
@@ -167,12 +194,12 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   </MenuItem>
                 ) : (
                   <>
-                    <MenuItem onClick={() => window.open("/signup", "_self")} sx={{ py: '6px', px: '12px' }}>
+                    <MenuItem onClick={openSignUpModal} sx={{ py: '6px', px: '12px' }}>
                       <Typography variant="body2" color="text.primary">
                         Sign Up
                       </Typography>
                     </MenuItem>
-                    <MenuItem onClick={() => window.open("/login", "_self")} sx={{ py: '6px', px: '12px' }}>
+                    <MenuItem onClick={openLoginModal} sx={{ py: '6px', px: '12px' }}>
                       <Typography variant="body2" color="text.primary">
                         Log In
                       </Typography>
@@ -220,6 +247,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
                     YTThumb
                   </MenuItem>
+                  {/* <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
+                    Manual Budget
+                  </MenuItem> */}
                   <Divider />
                   {!loading && ( // Only show auth UI after loading
                     user ? (
@@ -228,10 +258,10 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                       </MenuItem>
                     ) : (
                       <>
-                        <MenuItem onClick={() => window.open("/signup", "_self")}>
+                        <MenuItem onClick={openSignUpModal}>
                           Sign Up
                         </MenuItem>
-                        <MenuItem onClick={() => window.open("/login", "_self")}>
+                        <MenuItem onClick={openLoginModal}>
                           Log In
                         </MenuItem>
                       </>
@@ -243,6 +273,16 @@ function AppAppBar({ mode, toggleColorMode, app }) {
           </Toolbar>
         </Container>
       </AppBar>
+      <LoginModal
+        open={loginModalOpen}
+        onClose={closeLoginModal}
+        app={app}
+      />
+      <SignUpModal
+        open={signUpModalOpen}
+        onClose={closeSignUpModal}
+        app={app}
+      />
     </div>
   );
 }

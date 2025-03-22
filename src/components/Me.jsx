@@ -52,11 +52,11 @@ export default function Me() {
           <Typography
             variant='h2'
             sx={{
-              display: {xs: 'flex', sm: 'none'},
+              display: { xs: 'flex', sm: 'none' },
               flexDirection: { xs: 'column', md: 'row' },
               alignSelf: 'left',
               textAlign: 'left',
-              fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
+              fontSize: { xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
               fontWeight: 'bold',
               pb: '1rem',
             }}
@@ -64,63 +64,63 @@ export default function Me() {
             Welcome to the Junkyard
           </Typography>
           <Stack direction="row">
-          <Stack spacing={2} useFlexGap sx={{ width: { xs: '100%', sm: '100%' } }}>
-            <Typography
-              variant="h1"
-              sx={{
-                display: {xs: 'none', sm: 'flex'},
-                flexDirection: { xs: 'column', md: 'row' },
-                alignSelf: 'left',
-                textAlign: 'left',
-                fontSize: {xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)'},
-                fontWeight: 'bold',
-              }}
-            >
-              Welcome to the Junkyard
-            </Typography>
-            <Typography
-              variant="h2"
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                alignSelf: 'left',
-                textAlign: 'left',
-                fontSize: 'clamp(1.9rem, 5vw, 2rem)',
-                pt: { xs: 6, sm: 0 },
-              }}
-            >
-              Hi, I'm Alex Frutkin.
-            </Typography>
-          </Stack>
-          <Box
-            component="img"
-            id="profilepic"
-            sx={(theme) => ({
-              mt: { xs: 0, sm: 0 },
-              alignSelf: 'right',
-              height: { xs: 85, sm: 120 },
-              width: 'auto',
-              borderRadius: '999px',
-              outline: '1px solid',
-              outlineColor:
-                theme.palette.mode === 'light'
-                  ? alpha('#BFCCD9', 0.5)
-                  : alpha('#9CCCFC', 0.1),
-              boxShadow:
-                theme.palette.mode === 'light'
-                  ? `0 0 12px 8px ${alpha('#9CCCFC', 0.2)}`
-                  : `0 0 24px 12px ${alpha('#033363', 0.2)}`,
-            })}
-            src = {ProfilePic}
-          />
+            <Stack spacing={2} useFlexGap sx={{ width: { xs: '100%', sm: '100%' } }}>
+              <Typography
+                variant="h1"
+                sx={{
+                  display: { xs: 'none', sm: 'flex' },
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignSelf: 'left',
+                  textAlign: 'left',
+                  fontSize: { xs: 'clamp(3.5rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                  fontWeight: 'bold',
+                }}
+              >
+                Welcome to the Junkyard
+              </Typography>
+              <Typography
+                variant="h2"
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignSelf: 'left',
+                  textAlign: 'left',
+                  fontSize: 'clamp(1.9rem, 5vw, 2rem)',
+                  pt: { xs: 6, sm: 0 },
+                }}
+              >
+                Hi, I'm Alex Frutkin.
+              </Typography>
+            </Stack>
+            <Box
+              component="img"
+              id="profilepic"
+              sx={(theme) => ({
+                mt: { xs: 0, sm: 0 },
+                alignSelf: 'right',
+                height: { xs: 85, sm: 120 },
+                width: 'auto',
+                borderRadius: '999px',
+                outline: '1px solid',
+                outlineColor:
+                  theme.palette.mode === 'light'
+                    ? alpha('#BFCCD9', 0.5)
+                    : alpha('#9CCCFC', 0.1),
+                boxShadow:
+                  theme.palette.mode === 'light'
+                    ? `0 0 12px 8px ${alpha('#9CCCFC', 0.2)}`
+                    : `0 0 24px 12px ${alpha('#033363', 0.2)}`,
+              })}
+              src={ProfilePic}
+            />
           </Stack>
           <Typography
-              textAlign="left"
-              color="text.secondary"
-              sx={{ mt:{ xs: 1, sm: 1 }, alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
-            >
-              I'm a student at the University of California, Irvine studying Software Engineering. I'm passionate about software development, and I'm always looking for new opportunities to learn and grow. I'm currently seeking internships for Summer 2025.
-            </Typography>
+            textAlign="left"
+            color="text.secondary"
+            sx={{ mt: { xs: 1, sm: 1 }, alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
+          >
+            I'm a student at the University of California, Irvine studying Software Engineering. I'm passionate about software development, and I'm always looking for new opportunities to learn and grow. I'm currently seeking internships for Summer 2025.
+          </Typography>
         </Container>
       </Box>
       <Divider />

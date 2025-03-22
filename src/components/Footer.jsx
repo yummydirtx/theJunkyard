@@ -57,7 +57,7 @@ export default function Footer() {
       });
       setOpen(false);
     } else {
-      window.open("/","_self")
+      window.open("/", "_self")
     }
   };
 
@@ -141,10 +141,10 @@ export default function Footer() {
         }}
       >
         <div>
-        <img
-          src={
-            Logo
-          }
+          <img
+            src={
+              Logo
+            }
             style={logoStyle}
             alt="logo of sitemark"
           />

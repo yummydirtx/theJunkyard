@@ -24,6 +24,7 @@ import CalcBasic from './pages/CalcBasic';
 import YTThumb from './pages/YTThumb';
 import SignUp from './pages/SignUp';
 import LogIn from './pages/LogIn';
+import ManualBudget from './pages/ManualBudget';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -99,6 +100,7 @@ export default function App() {
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/signup' element={<SignUp setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/login' element={<LogIn setMode={toggleColorMode} mode={mode} app={app}/>} />
+        {/* <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} /> */}
       </Routes>
     </BrowserRouter>
   );

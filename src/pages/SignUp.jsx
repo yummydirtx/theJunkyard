@@ -83,94 +83,96 @@ export default function SignUp({ setMode, mode, app }) {
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
       <Box
-            sx={(theme) => ({
-              width: '100%',
-              backgroundImage:
-                theme.palette.mode === 'light'
-                  ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-                  : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-              backgroundSize: '100% 20%',
-              backgroundRepeat: 'no-repeat',
-            })}
+        sx={(theme) => ({
+          width: '100%',
+          backgroundImage:
+            theme.palette.mode === 'light'
+              ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
+              : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
+          backgroundSize: '100% 20%',
+          backgroundRepeat: 'no-repeat',
+        })}
+      >
+        <Container component="main" maxWidth="xs">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              pt: { xs: 12, sm: 15 },
+            }}
           >
-      <Container component="main" maxWidth="xs">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            pt: { xs: 12, sm: 15 },
-          }}
-        >
-          <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
-            <strong>Sign Up</strong>
-          </Typography>
-          
-          {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
+            <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
+              <strong>Sign Up</strong>
+            </Typography>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              id="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Sign Up
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<GoogleIcon />}
-              onClick={() => {
-                const provider = new GoogleAuthProvider();
-                signInWithPopup(auth, provider)
-                  .then(() => {
-                    window.location.href = '/';
-                  })
-                  .catch((error) => {
-                    setError(error.message);
-                  });
-              }}
-            >
-              Sign up with Google
-            </Button>
+            {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
+
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+              <TextField
+                margin="dense"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                value={formData.email}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="dense"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                id="password"
+                value={formData.password}
+                onChange={handleChange}
+                sx={{ mt: 1 }}
+              />
+              <TextField
+                margin="dense"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="Confirm Password"
+                type="password"
+                id="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                sx={{ mt: 1 }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+              >
+                Sign Up
+              </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<GoogleIcon />}
+                onClick={() => {
+                  const provider = new GoogleAuthProvider();
+                  signInWithPopup(auth, provider)
+                    .then(() => {
+                      window.location.href = '/';
+                    })
+                    .catch((error) => {
+                      setError(error.message);
+                    });
+                }}
+              >
+                Sign up with Google
+              </Button>
+            </Box>
           </Box>
-        </Box>
-      </Container>
+        </Container>
       </Box>
     </ThemeProvider>
   );

@@ -79,7 +79,7 @@ export default function FAQ() {
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
               You can reach our support team by
-              emailing <Link href="mailto:support@theJunkyard.dev">support@theJunkyard.dev</Link> or 
+              emailing <Link href="mailto:support@theJunkyard.dev">support@theJunkyard.dev</Link> or
               by using the link in the footer of our website.
             </Typography>
           </AccordionDetails>
