@@ -63,6 +63,13 @@ export default function ForgotPasswordModal({ open, onClose, app, initialEmail =
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSubmit(event);
+    }
+  };
+
   const handleChange = (event) => {
     setEmail(event.target.value);
   };
@@ -111,7 +118,7 @@ export default function ForgotPasswordModal({ open, onClose, app, initialEmail =
           Enter your email address and we'll send you instructions to reset your password.
         </Typography>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
+        <Box component="form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate sx={{ mt: 0.5 }}>
           <TextField
             margin="dense"
             fullWidth

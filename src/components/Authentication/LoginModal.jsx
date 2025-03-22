@@ -62,6 +62,13 @@ export default function LoginModal({ open, onClose, app }) {
     });
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSubmit(event);
+    }
+  };
+
   const handleGoogleSignIn = () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
@@ -119,7 +126,7 @@ export default function LoginModal({ open, onClose, app }) {
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          <Box component="form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} sx={{ mt: 1 }}>
             <TextField
               margin="dense"
               required
@@ -151,6 +158,7 @@ export default function LoginModal({ open, onClose, app }) {
                 onClick={openForgotPassword}
                 type="button" // This ensures it doesn't submit the form
                 sx={{ cursor: 'pointer' }}
+                tabIndex={-1} // Prevents focusing when tabbing through form
               >
                 Forgot password?
               </Link>

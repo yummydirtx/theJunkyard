@@ -57,6 +57,13 @@ export default function SignUpModal({ open, onClose, app }) {
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSubmit(event);
+    }
+  };
+
   const handleChange = (event) => {
     setFormData({
       ...formData,
@@ -107,7 +114,7 @@ export default function SignUpModal({ open, onClose, app }) {
       <DialogContent>
         {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+        <Box component="form" onSubmit={handleSubmit} onKeyDown={handleKeyDown} sx={{ mt: 1 }}>
           <TextField
             margin="dense"
             required
