@@ -17,7 +17,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
 import { useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
@@ -33,18 +32,18 @@ import {
     MenuItem,
     Fade
 } from '@mui/material';
-import Stack from '@mui/material/Stack';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
 import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt';
 import { useTitle } from '../components/useTitle';
+import Welcome from '../components/ManualBudget/Welcome';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
@@ -149,7 +148,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                     ))}
                                 </Select>
                             </FormControl>
-                            <Typography>Hello {name}, welcome to Manual Budget</Typography>
+                            <Welcome name={name} />
                         </>
                     ) : (
                         [<LoginPrompt
