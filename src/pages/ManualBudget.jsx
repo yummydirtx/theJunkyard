@@ -35,7 +35,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
@@ -59,14 +59,33 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [user, setUser] = useState(auth.currentUser);
     const [selectedOption, setSelectedOption] = useState('');
     const [loading, setLoading] = useState(true);
+    const [name, setName] = useState('');
+    const [categories, setCategories] = useState([]);
 
     useEffect(() => {
-        const authChange = onAuthStateChanged(auth, (currentUser) => {
+        const authChange = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
+            if (currentUser) {
+                // User is signed in, get their name from Firestore
+                try {
+                    var userDoc = await getDoc(doc(db, 'manualBudget', currentUser.uid));
+                    if (userDoc.exists()) {
+                        setName(userDoc.data().name);
+                    }
+                    
+                    // Fetch categories from the specified path
+                    const categoriesPath = `manualBudget/${currentUser.uid}/months/2025-03/categories`;
+                    const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
+                    const categoriesList = categoriesSnapshot.docs.map(doc => doc.id);
+                    setCategories(categoriesList);
+                } catch (error) {
+                    console.error('Error getting user data:', error);
+                }
+            }
             setLoading(false);
         });
         return authChange;
-    }, [auth]);
+    }, [auth, db]);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
@@ -87,7 +106,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
-                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 } }}>
+                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
                     <FormControl sx={{ minWidth: 200 }}>
                         <InputLabel id="budget-select-label">Budget Options</InputLabel>
                         <Select
@@ -97,14 +116,13 @@ export default function ManualBudget({ setMode, mode, app }) {
                             label="Budget Options"
                             onChange={handleChange}
                         >
-                            <MenuItem value="option1">Option 1</MenuItem>
-                            <MenuItem value="option2">Option 2</MenuItem>
-                            <MenuItem value="option3">Option 3</MenuItem>
-                            <MenuItem value="option4">Option 4</MenuItem>
+                            {categories.map((category) => (
+                                <MenuItem key={category} value={category}>{category}</MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                     {!loading && (user ? (
-                        <Typography>Hello NAME, welcome to Manual Budget</Typography>
+                        <Typography>Hello {name}, welcome to Manual Budget</Typography>
                     ) : (
                         <Typography>You must be signed in to save your budget option.</Typography>
                     ))}
