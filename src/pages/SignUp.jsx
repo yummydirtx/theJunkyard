@@ -110,7 +110,7 @@ export default function SignUp({ setMode, mode, app }) {
 
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
               <TextField
-                margin="normal"
+                margin="dense"
                 required
                 fullWidth
                 id="email"
@@ -122,7 +122,7 @@ export default function SignUp({ setMode, mode, app }) {
                 onChange={handleChange}
               />
               <TextField
-                margin="normal"
+                margin="dense"
                 required
                 fullWidth
                 name="password"
@@ -131,9 +131,10 @@ export default function SignUp({ setMode, mode, app }) {
                 id="password"
                 value={formData.password}
                 onChange={handleChange}
+                sx={{ mt: 1 }}
               />
               <TextField
-                margin="normal"
+                margin="dense"
                 required
                 fullWidth
                 name="confirmPassword"
@@ -142,6 +143,7 @@ export default function SignUp({ setMode, mode, app }) {
                 id="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                sx={{ mt: 1 }}
               />
               <Button
                 type="submit"

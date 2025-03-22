@@ -27,12 +27,13 @@ import {
     TextField,
     Typography,
     Container,
-    Alert,
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Fade
 } from '@mui/material';
+import Stack from '@mui/material/Stack';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
 import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
@@ -40,6 +41,8 @@ import AppAppBar from '../components/AppAppBar';
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
+import LoginModal from '../components/LoginModal';
+import SignUpModal from '../components/SignUpModal';
 
 function useTitle(title) {
     React.useEffect(() => {
@@ -61,6 +64,8 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [loading, setLoading] = useState(true);
     const [name, setName] = useState('');
     const [categories, setCategories] = useState([]);
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+    const [signUpModalOpen, setSignUpModalOpen] = useState(false);
 
     useEffect(() => {
         const authChange = onAuthStateChanged(auth, async (currentUser) => {
@@ -72,7 +77,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     if (userDoc.exists()) {
                         setName(userDoc.data().name);
                     }
-                    
+
                     // Fetch categories from the specified path
                     const categoriesPath = `manualBudget/${currentUser.uid}/months/2025-03/categories`;
                     const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
@@ -91,6 +96,22 @@ export default function ManualBudget({ setMode, mode, app }) {
         setSelectedOption(event.target.value);
     };
 
+    const openLoginModal = () => {
+        setLoginModalOpen(true);
+    };
+
+    const closeLoginModal = () => {
+        setLoginModalOpen(false);
+    };
+
+    const openSignUpModal = () => {
+        setSignUpModalOpen(true);
+    };
+
+    const closeSignUpModal = () => {
+        setSignUpModalOpen(false);
+    };
+
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
@@ -102,34 +123,86 @@ export default function ManualBudget({ setMode, mode, app }) {
                         theme.palette.mode === 'light'
                             ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
                             : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-                    backgroundSize: '100% 20%',
+                    backgroundSize: '100% 10%',
                     backgroundRepeat: 'no-repeat',
                 })}
             >
                 <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
-                    <FormControl sx={{ minWidth: 200 }}>
-                        <InputLabel id="budget-select-label">Budget Options</InputLabel>
-                        <Select
-                            labelId="budget-select-label"
-                            id="budget-select"
-                            value={selectedOption}
-                            label="Budget Options"
-                            onChange={handleChange}
-                        >
-                            {categories.map((category) => (
-                                <MenuItem key={category} value={category}>{category}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <Typography variant='h2'
+                        sx={{
+                            display: { xs: 'flex', sm: 'flex' },
+                            flexDirection: { xs: 'column', md: 'row' },
+                            alignSelf: 'left',
+                            textAlign: 'left',
+                            fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                            fontWeight: 'bold',
+                            pb: '0.25rem',
+                        }}>
+                        Manual Budget
+                    </Typography>
+
                     {!loading && (user ? (
-                        <Typography>Hello {name}, welcome to Manual Budget</Typography>
+                        <>
+                            <FormControl sx={{ minWidth: 200 }}>
+                                <InputLabel id="budget-select-label">Budget Options</InputLabel>
+                                <Select
+                                    labelId="budget-select-label"
+                                    id="budget-select"
+                                    value={selectedOption}
+                                    label="Budget Options"
+                                    onChange={handleChange}
+                                >
+                                    {categories.map((category) => (
+                                        <MenuItem key={category} value={category}>{category}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <Typography>Hello {name}, welcome to Manual Budget</Typography>
+                        </>
                     ) : (
-                        <Typography>You must be signed in to save your budget option.</Typography>
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: '50vh'
+                        }}>
+                            <Fade in={!loading && !user} timeout={1000}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="h5" sx={{ mb: 2 }}>Please log in to use Manual Budget</Typography>
+                                    <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={openSignUpModal}
+                                        >
+                                            Sign Up
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={openLoginModal}
+                                        >
+                                            Log In
+                                        </Button>
+                                    </Stack>
+                                </Box>
+                            </Fade>
+                        </Box>
                     ))}
                 </Container>
                 <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
                 <Footer />
             </Box>
+            <LoginModal
+                open={loginModalOpen}
+                onClose={closeLoginModal}
+                app={app}
+            />
+            <SignUpModal
+                open={signUpModalOpen}
+                onClose={closeSignUpModal}
+                app={app}
+            />
         </ThemeProvider>
     );
 }
