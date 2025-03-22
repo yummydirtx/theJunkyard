@@ -32,8 +32,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from './ToggleColorMode';
-import LoginModal from './LoginModal';
-import SignUpModal from './SignUpModal';
+import LoginModal from './Authentication/LoginModal';
+import SignUpModal from './Authentication/SignUpModal';
 import logo from '../assets/websitelogo.png';
 
 const logoStyle = {
@@ -171,11 +171,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     YTThumb
                   </Typography>
                 </MenuItem>
-                {/* <MenuItem onClick={() => window.open("/manualbudget", "_self")} sx={{ py: '6px', px: '12px' }}>
+                <MenuItem onClick={() => window.open("/manualbudget", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     Manual Budget
                   </Typography>
-                </MenuItem> */}
+                </MenuItem>
               </Box>
             </Box>
             <Box
@@ -247,9 +247,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
                     YTThumb
                   </MenuItem>
-                  {/* <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
+                  <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
                     Manual Budget
-                  </MenuItem> */}
+                  </MenuItem>
                   <Divider />
                   {!loading && ( // Only show auth UI after loading
                     user ? (

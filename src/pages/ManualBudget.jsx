@@ -41,8 +41,9 @@ import AppAppBar from '../components/AppAppBar';
 import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
-import LoginModal from '../components/LoginModal';
-import SignUpModal from '../components/SignUpModal';
+import LoginModal from '../components/Authentication/LoginModal';
+import SignUpModal from '../components/Authentication/SignUpModal';
+import LoginPrompt from '../components/ManualBudget/LoginPrompt';
 
 function useTitle(title) {
     React.useEffect(() => {
@@ -160,34 +161,13 @@ export default function ManualBudget({ setMode, mode, app }) {
                             <Typography>Hello {name}, welcome to Manual Budget</Typography>
                         </>
                     ) : (
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '50vh'
-                        }}>
-                            <Fade in={!loading && !user} timeout={1000}>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="h5" sx={{ mb: 2 }}>Please log in to use Manual Budget</Typography>
-                                    <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={openSignUpModal}
-                                        >
-                                            Sign Up
-                                        </Button>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={openLoginModal}
-                                        >
-                                            Log In
-                                        </Button>
-                                    </Stack>
-                                </Box>
-                            </Fade>
-                        </Box>
+                        [<LoginPrompt 
+                            openLoginModal={openLoginModal} 
+                            openSignUpModal={openSignUpModal}
+                            loading={loading}
+                            user={user}
+                            key="login-prompt"
+                        />]
                     ))}
                 </Container>
                 <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
