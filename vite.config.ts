@@ -18,5 +18,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+        }
+      }
+    }
   },
 });
