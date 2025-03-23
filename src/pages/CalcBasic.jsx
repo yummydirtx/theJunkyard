@@ -18,7 +18,6 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-
 import CssBaseline from '@mui/material/CssBaseline';
 import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -27,8 +26,8 @@ import Grid from '@mui/material/Grid2';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
-import { Typography, Container } from '@mui/material';
-import { CalcForm, ResultsDisplay } from '../components/CalcBasic';
+import { Container } from '@mui/material';
+import { CalcTitle, CalcForm, ResultsDisplay } from '../components/CalcBasic';
 import { useTitle } from '../components/useTitle';
 
 export default function CalcBasic({ setMode, mode, app }) {
@@ -70,23 +69,7 @@ export default function CalcBasic({ setMode, mode, app }) {
               alignItems: 'center',
               width: '100%',
             }}>
-              <Grid size={12}>
-                <Typography variant='h2'
-                  sx={{
-                    display: { xs: 'flex', sm: 'flex' },
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignSelf: 'left',
-                    textAlign: 'left',
-                    fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
-                    fontWeight: 'bold',
-                    pb: '0.25rem',
-                  }}>
-                  calcBasic-web
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
-                </Typography>
-              </Grid>
+              <CalcTitle />
               
               <CalcForm 
                 setLowest={setLowest}
@@ -103,7 +86,6 @@ export default function CalcBasic({ setMode, mode, app }) {
           </Container>
         </Box>
       </Box>
-      <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
       <Footer />
     </ThemeProvider>
   );

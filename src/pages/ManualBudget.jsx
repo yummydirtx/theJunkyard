@@ -160,7 +160,6 @@ export default function ManualBudget({ setMode, mode, app }) {
                         />]
                     ))}
                 </Container>
-                <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
                 <Footer />
             </Box>
             <LoginModal

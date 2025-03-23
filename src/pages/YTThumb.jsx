@@ -243,7 +243,6 @@ export default function YTThumb({ setMode, mode, app }) {
           </Container>
         </Box>
       </Box>
-      <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
       <Footer />
 
       <Snackbar

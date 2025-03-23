@@ -48,7 +48,6 @@ export default function LandingPage({ setMode, mode, app }) {
         <FAQ />
         <Divider />
         <PastWebsites />
-        <Divider sx={{ display: { xs: 'none', sm: 'inherit' } }} />
         <Footer />
       </Box>
     </ThemeProvider>
