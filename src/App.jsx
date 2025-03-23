@@ -18,7 +18,7 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
@@ -32,8 +32,6 @@ import { getFirestore, doc, getDoc } from "firebase/firestore";
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const CalcBasic = lazy(() => import('./pages/CalcBasic'));
 const YTThumb = lazy(() => import('./pages/YTThumb'));
-const SignUp = lazy(() => import('./pages/SignUp'));
-const LogIn = lazy(() => import('./pages/LogIn'));
 const ManualBudget = lazy(() => import('./pages/ManualBudget'));
 
 // Your web app's Firebase configuration
@@ -101,8 +99,6 @@ export default function App() {
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
         <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/signup' element={<SignUp setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/login' element={<LogIn setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} />
       </Routes>
     </BrowserRouter>
