@@ -44,6 +44,7 @@ import { useTitle } from '../components/useTitle';
 import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
+import useModal from '../hooks/useModal';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
@@ -55,11 +56,13 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [loading, setLoading] = useState(true);
     const [name, setName] = useState('');
     const [categories, setCategories] = useState([]);
-    const [loginModalOpen, setLoginModalOpen] = useState(false);
-    const [signUpModalOpen, setSignUpModalOpen] = useState(false);
-    const [addCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState('');
-    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    
+    // Use the custom hook for modal state management
+    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
+    const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
+    const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
 
     useEffect(() => {
         const authChange = onAuthStateChanged(auth, async (currentUser) => {
@@ -93,38 +96,6 @@ export default function ManualBudget({ setMode, mode, app }) {
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
-    };
-
-    const openLoginModal = () => {
-        setLoginModalOpen(true);
-    };
-
-    const closeLoginModal = () => {
-        setLoginModalOpen(false);
-    };
-
-    const openSignUpModal = () => {
-        setSignUpModalOpen(true);
-    };
-
-    const closeSignUpModal = () => {
-        setSignUpModalOpen(false);
-    };
-
-    const openAddCategoryModal = () => {
-        setAddCategoryModalOpen(true);
-    };
-
-    const closeAddCategoryModal = () => {
-        setAddCategoryModalOpen(false);
-    };
-
-    const openConfirmDialog = () => {
-        setConfirmDialogOpen(true);
-    };
-
-    const closeConfirmDialog = () => {
-        setConfirmDialogOpen(false);
     };
 
     const handleCategoryAdded = (newCategory) => {
