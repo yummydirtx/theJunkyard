@@ -23,6 +23,13 @@ import {
     CssBaseline,
     Typography,
     Container,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    Grid2,
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
@@ -36,31 +43,36 @@ import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
 import CategorySelector from '../components/ManualBudget/CategorySelector';
+import AddEntryModal from '../components/ManualBudget/AddEntryModal';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
-    
+
     // Use custom hook for data fetching and authentication
-    const { 
-        user, 
-        loading, 
-        name, 
-        categories, 
-        currentMonth, 
-        db, 
-        updateCategories 
+    const {
+        user,
+        loading,
+        name,
+        categories,
+        currentMonth,
+        db,
+        updateCategories,
+        needsNamePrompt,
+        createUserDocument
     } = useManualBudgetData(app);
-    
+
     const [selectedOption, setSelectedOption] = useState('');
-    
+    const [nameInput, setNameInput] = useState('');
+
     // Use custom hook for modal state management
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
     const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
+    const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
@@ -80,6 +92,12 @@ export default function ManualBudget({ setMode, mode, app }) {
         setSelectedOption('');
     };
 
+    const handleNameSubmit = () => {
+        if (nameInput.trim()) {
+            createUserDocument(nameInput.trim());
+        }
+    };
+
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
@@ -95,6 +113,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
+                {/* Application container, stays constant height */}
                 <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
                     <Typography variant='h2'
                         sx={{
@@ -111,13 +130,44 @@ export default function ManualBudget({ setMode, mode, app }) {
 
                     {!loading && (user ? (
                         <>
-                            <CategorySelector
-                                categories={categories}
-                                selectedOption={selectedOption}
-                                onCategoryChange={handleChange}
-                                onAddCategory={openAddCategoryModal}
-                                onRemoveCategory={handleRemoveCategory}
-                            />
+                            <Grid2 container spacing={2} sx={{ mb: 3 }}>
+                                <Grid2 item xs={12}>
+                                    <CategorySelector
+                                        categories={categories}
+                                        selectedOption={selectedOption}
+                                        onCategoryChange={handleChange}
+
+                                    />
+                                </Grid2>
+                                <Grid2 item xs={12} sx={{ mt: 1 }}>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Button
+                                            variant="contained"
+                                            onClick={openAddCategoryModal}
+                                            sx={{ height: 'fit-content' }}
+                                        >
+                                            Add Category
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            onClick={handleRemoveCategory}
+                                            disabled={!selectedOption}
+                                            sx={{ height: 'fit-content' }}
+                                        >
+                                            Remove Category
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            disabled={!selectedOption}
+                                            onClick={openAddEntryModal}
+                                        >
+                                            Add Entry
+                                        </Button>
+                                    </Box>
+                                </Grid2>
+                            </Grid2>
                             <Welcome name={name} />
                         </>
                     ) : (
@@ -132,7 +182,37 @@ export default function ManualBudget({ setMode, mode, app }) {
                 </Container>
                 <Footer />
             </Box>
-            
+
+            {/* Name Prompt Dialog */}
+            <Dialog open={needsNamePrompt && !loading && user} onClose={() => { }}>
+                <DialogTitle>Welcome to Manual Budget</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>
+                        Please enter your name to get started:
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="name"
+                        label="Your Name"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={handleNameSubmit}
+                        variant="contained"
+                        disabled={!nameInput.trim()}
+                    >
+                        Start Budgeting
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Authentication Modals */}
             <LoginModal
                 open={loginModalOpen}
@@ -144,7 +224,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                 onClose={closeSignUpModal}
                 app={app}
             />
-            
+
             {/* Add Category Modal */}
             <AddCategoryModal
                 open={addCategoryModalOpen}
@@ -154,7 +234,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                 currentMonth={currentMonth}
                 onCategoryAdded={handleCategoryAdded}
             />
-            
+
             {/* Remove Category Dialog */}
             <RemoveCategoryDialog
                 open={confirmDialogOpen}
@@ -164,6 +244,16 @@ export default function ManualBudget({ setMode, mode, app }) {
                 user={user}
                 currentMonth={currentMonth}
                 onCategoryRemoved={handleCategoryRemoved}
+            />
+
+            {/* Add Entry Modal */}
+            <AddEntryModal
+                open={addEntryModalOpen}
+                onClose={closeAddEntryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
             />
         </ThemeProvider>
     );

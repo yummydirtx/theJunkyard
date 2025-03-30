@@ -52,22 +52,6 @@ export default function CategorySelector({
                     ))}
                 </Select>
             </FormControl>
-            <Button 
-                variant="contained" 
-                onClick={onAddCategory}
-                sx={{ height: 'fit-content' }}
-            >
-                Add Category
-            </Button>
-            <Button 
-                variant="outlined" 
-                color="error"
-                onClick={onRemoveCategory}
-                disabled={!selectedOption}
-                sx={{ height: 'fit-content' }}
-            >
-                Remove Category
-            </Button>
         </Box>
     );
 }

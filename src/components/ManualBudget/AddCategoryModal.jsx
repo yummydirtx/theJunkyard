@@ -54,6 +54,18 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
         const goalAmount = spendingGoal ? Math.round(parseFloat(spendingGoal) * 100) / 100 : 0;
 
         try {
+            // First, check if the month document exists and create it if needed
+            const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
+            const monthDoc = await getDoc(doc(db, monthPath));
+            
+            // If month document doesn't exist yet, create it with initial values
+            if (!monthDoc.exists()) {
+                await setDoc(doc(db, monthPath), { 
+                    goal: 0,
+                    total: 0
+                });
+            }
+            
             // Add the new category to Firestore
             const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${newCategoryName}`;
             await setDoc(doc(db, categoryPath), {
@@ -62,9 +74,8 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             });
 
             // Update the current month total goal
-            const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
-            const monthDoc = await getDoc(doc(db, monthPath));
-            const monthData = monthDoc.data();
+            const updatedMonthDoc = await getDoc(doc(db, monthPath));
+            const monthData = updatedMonthDoc.data();
             const newTotalGoal = (monthData.goal || 0) + goalAmount;
             await setDoc(doc(db, monthPath), { goal: newTotalGoal }, { merge: true });
 

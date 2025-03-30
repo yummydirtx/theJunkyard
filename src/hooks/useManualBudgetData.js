@@ -19,7 +19,7 @@
 
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, collection, setDoc } from 'firebase/firestore';
 
 /**
  * Custom hook for managing authentication and data fetching in ManualBudget
@@ -34,6 +34,7 @@ export default function useManualBudgetData(app) {
     const [name, setName] = useState('');
     const [categories, setCategories] = useState([]);
     const [currentMonth, setCurrentMonth] = useState('');
+    const [needsNamePrompt, setNeedsNamePrompt] = useState(false);
 
     useEffect(() => {
         const authChange = onAuthStateChanged(auth, async (currentUser) => {
@@ -44,6 +45,10 @@ export default function useManualBudgetData(app) {
                     var userDoc = await getDoc(doc(db, 'manualBudget', currentUser.uid));
                     if (userDoc.exists()) {
                         setName(userDoc.data().name);
+                        setNeedsNamePrompt(false);
+                    } else {
+                        // User document doesn't exist, need to prompt for name
+                        setNeedsNamePrompt(true);
                     }
 
                     // Calculate current month in YYYY-MM format
@@ -71,6 +76,21 @@ export default function useManualBudgetData(app) {
         setCategories(newCategories);
     };
 
+    const createUserDocument = async (userName) => {
+        if (!user) return;
+        
+        try {
+            await setDoc(doc(db, 'manualBudget', user.uid), {
+                name: userName
+            });
+            
+            setName(userName);
+            setNeedsNamePrompt(false);
+        } catch (error) {
+            console.error('Error creating user document:', error);
+        }
+    };
+
     return {
         user,
         loading,
@@ -78,6 +98,8 @@ export default function useManualBudgetData(app) {
         categories,
         currentMonth,
         db,
-        updateCategories
+        updateCategories,
+        needsNamePrompt,
+        createUserDocument
     };
 }
