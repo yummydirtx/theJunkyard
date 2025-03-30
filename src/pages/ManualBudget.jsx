@@ -32,7 +32,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
-import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, collection, deleteDoc, setDoc } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
@@ -43,6 +43,7 @@ import LoginPrompt from '../components/ManualBudget/LoginPrompt';
 import { useTitle } from '../components/useTitle';
 import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
+import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
@@ -58,6 +59,7 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [signUpModalOpen, setSignUpModalOpen] = useState(false);
     const [addCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState('');
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
     useEffect(() => {
         const authChange = onAuthStateChanged(auth, async (currentUser) => {
@@ -117,8 +119,26 @@ export default function ManualBudget({ setMode, mode, app }) {
         setAddCategoryModalOpen(false);
     };
 
+    const openConfirmDialog = () => {
+        setConfirmDialogOpen(true);
+    };
+
+    const closeConfirmDialog = () => {
+        setConfirmDialogOpen(false);
+    };
+
     const handleCategoryAdded = (newCategory) => {
         setCategories([...categories, newCategory]);
+    };
+
+    const handleRemoveCategory = () => {
+        if (!selectedOption) return;
+        openConfirmDialog();
+    };
+
+    const handleCategoryRemoved = (categoryName) => {
+        setCategories(categories.filter(cat => cat !== categoryName));
+        setSelectedOption('');
     };
 
     return (
@@ -174,6 +194,15 @@ export default function ManualBudget({ setMode, mode, app }) {
                                 >
                                     Add Category
                                 </Button>
+                                <Button 
+                                    variant="outlined" 
+                                    color="error"
+                                    onClick={handleRemoveCategory}
+                                    disabled={!selectedOption}
+                                    sx={{ height: 'fit-content' }}
+                                >
+                                    Remove Category
+                                </Button>
                             </Box>
                             <Welcome name={name} />
                         </>
@@ -210,6 +239,17 @@ export default function ManualBudget({ setMode, mode, app }) {
                 user={user}
                 currentMonth={currentMonth}
                 onCategoryAdded={handleCategoryAdded}
+            />
+            
+            {/* Remove Category Dialog */}
+            <RemoveCategoryDialog
+                open={confirmDialogOpen}
+                onClose={closeConfirmDialog}
+                categoryName={selectedOption}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onCategoryRemoved={handleCategoryRemoved}
             />
         </ThemeProvider>
     );
