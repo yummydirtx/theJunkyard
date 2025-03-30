@@ -45,6 +45,7 @@ import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialo
 import CategorySelector from '../components/ManualBudget/CategorySelector';
 import AddEntryModal from '../components/ManualBudget/AddEntryModal';
 import EntryList from '../components/ManualBudget/EntryList';
+import BudgetGraphsModal from '../components/ManualBudget/BudgetGraphsModal';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 
@@ -74,6 +75,7 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
     const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
     const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
+    const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
 
     const entryListRef = useRef(null);
 
@@ -150,7 +152,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                     />
                                 </Grid2>
                                 <Grid2 item xs={12} sx={{ mt: 1 }}>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                         <Button
                                             variant="contained"
                                             onClick={openAddCategoryModal}
@@ -174,6 +176,14 @@ export default function ManualBudget({ setMode, mode, app }) {
                                             onClick={openAddEntryModal}
                                         >
                                             Add Entry
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={openBudgetGraphsModal}
+                                            sx={{ height: 'fit-content' }}
+                                        >
+                                            View Budget Graphs
                                         </Button>
                                     </Box>
                                 </Grid2>
@@ -277,6 +287,17 @@ export default function ManualBudget({ setMode, mode, app }) {
                 currentMonth={currentMonth}
                 selectedCategory={selectedOption}
                 onEntryAdded={handleEntryAdded}
+                mode={mode}
+            />
+
+            {/* Budget Graphs Modal */}
+            <BudgetGraphsModal
+                open={budgetGraphsModalOpen}
+                onClose={closeBudgetGraphsModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
                 mode={mode}
             />
         </ThemeProvider>
