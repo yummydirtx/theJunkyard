@@ -17,7 +17,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
     Box,
@@ -32,10 +31,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
-import { getFirestore, doc, getDoc, getDocs, collection, deleteDoc, setDoc } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
@@ -45,61 +41,37 @@ import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
 import useModal from '../hooks/useModal';
+import useManualBudgetData from '../hooks/useManualBudgetData';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const [user, setUser] = useState(auth.currentUser);
-    const [selectedOption, setSelectedOption] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [name, setName] = useState('');
-    const [categories, setCategories] = useState([]);
-    const [currentMonth, setCurrentMonth] = useState('');
     
-    // Use the custom hook for modal state management
+    // Use custom hook for data fetching and authentication
+    const { 
+        user, 
+        loading, 
+        name, 
+        categories, 
+        currentMonth, 
+        db, 
+        updateCategories 
+    } = useManualBudgetData(app);
+    
+    const [selectedOption, setSelectedOption] = useState('');
+    
+    // Use custom hook for modal state management
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
     const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
-
-    useEffect(() => {
-        const authChange = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                // User is signed in, get their name from Firestore
-                try {
-                    var userDoc = await getDoc(doc(db, 'manualBudget', currentUser.uid));
-                    if (userDoc.exists()) {
-                        setName(userDoc.data().name);
-                    }
-
-                    // Calculate current month in YYYY-MM format
-                    const today = new Date();
-                    const thisMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-                    setCurrentMonth(thisMonth);
-                    
-                    // Fetch categories from the current month
-                    const categoriesPath = `manualBudget/${currentUser.uid}/months/${thisMonth}/categories`;
-                    const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
-                    const categoriesList = categoriesSnapshot.docs.map(doc => doc.id);
-                    setCategories(categoriesList);
-                } catch (error) {
-                    console.error('Error getting user data:', error);
-                }
-            }
-            setLoading(false);
-        });
-        return authChange;
-    }, [auth, db]);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
     };
 
     const handleCategoryAdded = (newCategory) => {
-        setCategories([...categories, newCategory]);
+        updateCategories([...categories, newCategory]);
     };
 
     const handleRemoveCategory = () => {
@@ -108,7 +80,7 @@ export default function ManualBudget({ setMode, mode, app }) {
     };
 
     const handleCategoryRemoved = (categoryName) => {
-        setCategories(categories.filter(cat => cat !== categoryName));
+        updateCategories(categories.filter(cat => cat !== categoryName));
         setSelectedOption('');
     };
 
