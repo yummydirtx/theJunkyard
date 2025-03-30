@@ -35,6 +35,7 @@ import ToggleColorMode from './ToggleColorMode';
 import LoginModal from './Authentication/LoginModal';
 import SignUpModal from './Authentication/SignUpModal';
 import logo from '../assets/websitelogo.png';
+import useModal from '../hooks/useModal';
 
 const logoStyle = {
   width: '150px',
@@ -48,8 +49,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
   const db = getFirestore(app);
   const [user, setUser] = useState(auth.currentUser);
   const [loading, setLoading] = useState(true);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [signUpModalOpen, setSignUpModalOpen] = useState(false);
+
+  const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+  const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -84,22 +86,14 @@ function AppAppBar({ mode, toggleColorMode, app }) {
     }
   };
 
-  const openLoginModal = () => {
-    setLoginModalOpen(true);
+  const handleOpenLoginModal = () => {
+    openLoginModal();
     if (open) setOpen(false); // Close drawer if open
   };
 
-  const closeLoginModal = () => {
-    setLoginModalOpen(false);
-  };
-
-  const openSignUpModal = () => {
-    setSignUpModalOpen(true);
+  const handleOpenSignUpModal = () => {
+    openSignUpModal();
     if (open) setOpen(false); // Close drawer if open
-  };
-
-  const closeSignUpModal = () => {
-    setSignUpModalOpen(false);
   };
 
   return (
@@ -191,12 +185,12 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   </MenuItem>
                 ) : (
                   <>
-                    <MenuItem onClick={openSignUpModal} sx={{ py: '6px', px: '12px' }}>
+                    <MenuItem onClick={handleOpenSignUpModal} sx={{ py: '6px', px: '12px' }}>
                       <Typography variant="body2" color="text.primary">
                         Sign Up
                       </Typography>
                     </MenuItem>
-                    <MenuItem onClick={openLoginModal} sx={{ py: '6px', px: '12px' }}>
+                    <MenuItem onClick={handleOpenLoginModal} sx={{ py: '6px', px: '12px' }}>
                       <Typography variant="body2" color="text.primary">
                         Log In
                       </Typography>
@@ -255,10 +249,10 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                       </MenuItem>
                     ) : (
                       <>
-                        <MenuItem onClick={openSignUpModal}>
+                        <MenuItem onClick={handleOpenSignUpModal}>
                           Sign Up
                         </MenuItem>
-                        <MenuItem onClick={openLoginModal}>
+                        <MenuItem onClick={handleOpenLoginModal}>
                           Log In
                         </MenuItem>
                       </>
