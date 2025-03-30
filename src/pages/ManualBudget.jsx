@@ -20,14 +20,9 @@
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
     Box,
-    Button,
     CssBaseline,
     Typography,
     Container,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
@@ -40,6 +35,7 @@ import { useTitle } from '../components/useTitle';
 import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
+import CategorySelector from '../components/ManualBudget/CategorySelector';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 
@@ -115,38 +111,13 @@ export default function ManualBudget({ setMode, mode, app }) {
 
                     {!loading && (user ? (
                         <>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                                <FormControl sx={{ minWidth: 200 }}>
-                                    <InputLabel id="budget-select-label">Budget Options</InputLabel>
-                                    <Select
-                                        labelId="budget-select-label"
-                                        id="budget-select"
-                                        value={selectedOption}
-                                        label="Budget Options"
-                                        onChange={handleChange}
-                                    >
-                                        {categories.map((category) => (
-                                            <MenuItem key={category} value={category}>{category}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <Button 
-                                    variant="contained" 
-                                    onClick={openAddCategoryModal}
-                                    sx={{ height: 'fit-content' }}
-                                >
-                                    Add Category
-                                </Button>
-                                <Button 
-                                    variant="outlined" 
-                                    color="error"
-                                    onClick={handleRemoveCategory}
-                                    disabled={!selectedOption}
-                                    sx={{ height: 'fit-content' }}
-                                >
-                                    Remove Category
-                                </Button>
-                            </Box>
+                            <CategorySelector
+                                categories={categories}
+                                selectedOption={selectedOption}
+                                onCategoryChange={handleChange}
+                                onAddCategory={openAddCategoryModal}
+                                onRemoveCategory={handleRemoveCategory}
+                            />
                             <Welcome name={name} />
                         </>
                     ) : (
