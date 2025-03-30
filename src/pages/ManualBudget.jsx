@@ -23,18 +23,16 @@ import {
     Box,
     Button,
     CssBaseline,
-    TextField,
     Typography,
     Container,
     FormControl,
     InputLabel,
     Select,
     MenuItem,
-    Fade
 } from '@mui/material';
 import { useState } from 'react';
 import { alpha } from '@mui/material/styles';
-import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocs, collection } from 'firebase/firestore';
 import AppAppBar from '../components/AppAppBar';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Divider from '@mui/material/Divider';
@@ -44,6 +42,7 @@ import SignUpModal from '../components/Authentication/SignUpModal';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt';
 import { useTitle } from '../components/useTitle';
 import Welcome from '../components/ManualBudget/Welcome';
+import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
@@ -57,6 +56,8 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [categories, setCategories] = useState([]);
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [signUpModalOpen, setSignUpModalOpen] = useState(false);
+    const [addCategoryModalOpen, setAddCategoryModalOpen] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState('');
 
     useEffect(() => {
         const authChange = onAuthStateChanged(auth, async (currentUser) => {
@@ -69,8 +70,13 @@ export default function ManualBudget({ setMode, mode, app }) {
                         setName(userDoc.data().name);
                     }
 
-                    // Fetch categories from the specified path
-                    const categoriesPath = `manualBudget/${currentUser.uid}/months/2025-03/categories`;
+                    // Calculate current month in YYYY-MM format
+                    const today = new Date();
+                    const thisMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                    setCurrentMonth(thisMonth);
+                    
+                    // Fetch categories from the current month
+                    const categoriesPath = `manualBudget/${currentUser.uid}/months/${thisMonth}/categories`;
                     const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
                     const categoriesList = categoriesSnapshot.docs.map(doc => doc.id);
                     setCategories(categoriesList);
@@ -101,6 +107,18 @@ export default function ManualBudget({ setMode, mode, app }) {
 
     const closeSignUpModal = () => {
         setSignUpModalOpen(false);
+    };
+
+    const openAddCategoryModal = () => {
+        setAddCategoryModalOpen(true);
+    };
+
+    const closeAddCategoryModal = () => {
+        setAddCategoryModalOpen(false);
+    };
+
+    const handleCategoryAdded = (newCategory) => {
+        setCategories([...categories, newCategory]);
     };
 
     return (
@@ -134,20 +152,29 @@ export default function ManualBudget({ setMode, mode, app }) {
 
                     {!loading && (user ? (
                         <>
-                            <FormControl sx={{ minWidth: 200 }}>
-                                <InputLabel id="budget-select-label">Budget Options</InputLabel>
-                                <Select
-                                    labelId="budget-select-label"
-                                    id="budget-select"
-                                    value={selectedOption}
-                                    label="Budget Options"
-                                    onChange={handleChange}
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                <FormControl sx={{ minWidth: 200 }}>
+                                    <InputLabel id="budget-select-label">Budget Options</InputLabel>
+                                    <Select
+                                        labelId="budget-select-label"
+                                        id="budget-select"
+                                        value={selectedOption}
+                                        label="Budget Options"
+                                        onChange={handleChange}
+                                    >
+                                        {categories.map((category) => (
+                                            <MenuItem key={category} value={category}>{category}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                                <Button 
+                                    variant="contained" 
+                                    onClick={openAddCategoryModal}
+                                    sx={{ height: 'fit-content' }}
                                 >
-                                    {categories.map((category) => (
-                                        <MenuItem key={category} value={category}>{category}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                                    Add Category
+                                </Button>
+                            </Box>
                             <Welcome name={name} />
                         </>
                     ) : (
@@ -162,6 +189,8 @@ export default function ManualBudget({ setMode, mode, app }) {
                 </Container>
                 <Footer />
             </Box>
+            
+            {/* Authentication Modals */}
             <LoginModal
                 open={loginModalOpen}
                 onClose={closeLoginModal}
@@ -171,6 +200,16 @@ export default function ManualBudget({ setMode, mode, app }) {
                 open={signUpModalOpen}
                 onClose={closeSignUpModal}
                 app={app}
+            />
+            
+            {/* Add Category Modal */}
+            <AddCategoryModal
+                open={addCategoryModalOpen}
+                onClose={closeAddCategoryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onCategoryAdded={handleCategoryAdded}
             />
         </ThemeProvider>
     );
