@@ -31,7 +31,7 @@ import {
     Button,
     Grid2,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { alpha } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
@@ -44,6 +44,7 @@ import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
 import CategorySelector from '../components/ManualBudget/CategorySelector';
 import AddEntryModal from '../components/ManualBudget/AddEntryModal';
+import EntryList from '../components/ManualBudget/EntryList';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 
@@ -74,6 +75,8 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
     const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
 
+    const entryListRef = useRef(null);
+
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
     };
@@ -95,6 +98,13 @@ export default function ManualBudget({ setMode, mode, app }) {
     const handleNameSubmit = () => {
         if (nameInput.trim()) {
             createUserDocument(nameInput.trim());
+        }
+    };
+
+    const handleEntryAdded = () => {
+        // Refresh entries list after adding a new entry
+        if (entryListRef.current) {
+            entryListRef.current.refreshEntries();
         }
     };
 
@@ -168,6 +178,18 @@ export default function ManualBudget({ setMode, mode, app }) {
                                     </Box>
                                 </Grid2>
                             </Grid2>
+                            
+                            {/* Display entries for the selected category */}
+                            {selectedOption && (
+                                <EntryList 
+                                    ref={entryListRef}
+                                    db={db}
+                                    user={user}
+                                    currentMonth={currentMonth}
+                                    selectedCategory={selectedOption}
+                                />
+                            )}
+                            
                             <Welcome name={name} />
                         </>
                     ) : (
@@ -254,6 +276,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                 user={user}
                 currentMonth={currentMonth}
                 selectedCategory={selectedOption}
+                onEntryAdded={handleEntryAdded}
             />
         </ThemeProvider>
     );

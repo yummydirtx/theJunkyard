@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import { doc, setDoc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
 
-export default function AddEntryModal({ open, onClose, db, user, currentMonth, selectedCategory }) {
+export default function AddEntryModal({ open, onClose, db, user, currentMonth, selectedCategory, onEntryAdded }) {
     const [amount, setAmount] = useState('');
     const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
     const [description, setDescription] = useState('');
@@ -86,6 +86,11 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
             const monthData = monthDoc.data();
             const newMonthTotal = (monthData.total || 0) + entryAmount;
             await updateDoc(doc(db, monthPath), { total: newMonthTotal });
+            
+            // Notify parent that a new entry was added
+            if (onEntryAdded) {
+                onEntryAdded();
+            }
             
             // Reset form and close modal
             resetForm();
