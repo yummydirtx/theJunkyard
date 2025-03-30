@@ -18,14 +18,13 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { 
-    Box, 
-    Typography, 
-    Paper, 
-    List, 
-    ListItem, 
-    ListItemText, 
-    ListItemSecondaryAction,
+import {
+    Box,
+    Typography,
+    Paper,
+    List,
+    ListItem,
+    ListItemText,
     Divider,
     CircularProgress
 } from '@mui/material';
@@ -38,7 +37,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
 
     const fetchEntries = async () => {
         if (!selectedCategory || !user || !db) return;
-        
+
         setLoading(true);
         try {
             const entriesPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries`;
@@ -47,7 +46,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
                 orderBy('date', 'desc'),
                 orderBy('createdAt', 'desc')
             );
-            
+
             const entriesSnapshot = await getDocs(entriesQuery);
             const entriesList = entriesSnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -56,7 +55,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
                 date: doc.data().date?.toDate() || new Date(),
                 createdAt: doc.data().createdAt?.toDate() || new Date()
             }));
-            
+
             setEntries(entriesList);
         } catch (error) {
             console.error('Error fetching entries:', error);
@@ -73,10 +72,10 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
     useEffect(() => {
         // Reset entries when category changes
         setEntries([]);
-        
+
         // Only fetch if we have a selected category
         if (!selectedCategory || !user || !db) return;
-        
+
         fetchEntries();
     }, [db, user, currentMonth, selectedCategory]);
 
@@ -84,7 +83,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString();
     };
-    
+
     // Format amount for display with dollar sign
     const formatAmount = (amount) => {
         return `$${amount.toFixed(2)}`;
@@ -110,7 +109,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
             <Typography variant="h6" gutterBottom>
                 Entries for {selectedCategory}
             </Typography>
-            
+
             <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
