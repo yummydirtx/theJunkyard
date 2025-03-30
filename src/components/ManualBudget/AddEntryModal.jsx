@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
     Modal,
     Fade,
@@ -30,11 +30,13 @@ import {
     InputAdornment
 } from '@mui/material';
 import { doc, setDoc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-export default function AddEntryModal({ open, onClose, db, user, currentMonth, selectedCategory, onEntryAdded }) {
+export default function AddEntryModal({ open, onClose, db, user, currentMonth, selectedCategory, onEntryAdded, mode }) {
     const [amount, setAmount] = useState('');
     const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
     const [description, setDescription] = useState('');
+    const dateInputRef = useRef(null);
 
     const handleAmountChange = (event) => {
         // Only allow numbers and decimal points
@@ -48,6 +50,21 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
 
     const handleDescriptionChange = (event) => {
         setDescription(event.target.value);
+    };
+
+    const handleCalendarClick = () => {
+        if (dateInputRef.current) {
+            // Try to open the native date picker using multiple methods for cross-browser compatibility
+            dateInputRef.current.focus();
+            
+            // For modern browsers that support showPicker
+            if (typeof dateInputRef.current.showPicker === 'function') {
+                dateInputRef.current.showPicker();
+            } else {
+                // Fallback - simulate click on the input to open the date picker
+                dateInputRef.current.click();
+            }
+        }
     };
 
     const handleAddEntry = async (event) => {
@@ -142,8 +159,10 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                                 variant="outlined"
                                 value={amount}
                                 onChange={handleAmountChange}
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                                slotProps={{
+                                    input: {
+                                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                                    },
                                 }}
                                 placeholder="0.00"
                                 required
@@ -156,8 +175,29 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                                 value={entryDate}
                                 onChange={handleDateChange}
                                 required
-                                InputLabelProps={{
-                                    shrink: true,
+                                inputRef={dateInputRef}
+                                sx={{
+                                    '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                                        display: 'none' // Hide default calendar icon
+                                    }
+                                }}
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <CalendarTodayIcon 
+                                                    sx={{ 
+                                                        color: mode === 'light' ? 'black' : 'white',
+                                                        cursor: 'pointer' 
+                                                    }} 
+                                                    onClick={handleCalendarClick}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                    inputLabel: {
+                                        shrink: true,
+                                    },
                                 }}
                             />
                             <TextField

@@ -277,6 +277,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                 currentMonth={currentMonth}
                 selectedCategory={selectedOption}
                 onEntryAdded={handleEntryAdded}
+                mode={mode}
             />
         </ThemeProvider>
     );
