@@ -366,7 +366,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                     )}
                     
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                        <Button onClick={onClose}>Close</Button>
+                        <Button variant="outlined" onClick={onClose}>Close</Button>
                     </Box>
                 </Paper>
             </Fade>

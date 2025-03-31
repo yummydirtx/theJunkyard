@@ -43,6 +43,7 @@ import LoginPrompt from '../components/ManualBudget/LoginPrompt';
 import { useTitle } from '../components/useTitle';
 import Welcome from '../components/ManualBudget/Welcome';
 import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
+import EditCategoryModal from '../components/ManualBudget/EditCategoryModal';
 import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
 import CategorySelector from '../components/ManualBudget/CategorySelector';
 import AddEntryModal from '../components/ManualBudget/AddEntryModal';
@@ -82,6 +83,7 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
     const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
     const [monthSelectorOpen, openMonthSelector, closeMonthSelector] = useModal(false);
+    const [editCategoryModalOpen, openEditCategoryModal, closeEditCategoryModal] = useModal(false);
     const [shouldRefreshGraphs, setShouldRefreshGraphs] = useState(false);
 
     const entryListRef = useRef(null);
@@ -97,6 +99,30 @@ export default function ManualBudget({ setMode, mode, app }) {
     const handleRemoveCategory = () => {
         if (!selectedOption) return;
         openConfirmDialog();
+    };
+
+    const handleEditCategory = () => {
+        if (!selectedOption) return;
+        openEditCategoryModal();
+    };
+
+    const handleCategoryUpdated = (newCategoryName, oldCategoryName) => {
+        // Update local categories list
+        if (newCategoryName !== oldCategoryName) {
+            const updatedCategories = categories.map(cat => 
+                cat === oldCategoryName ? newCategoryName : cat
+            );
+            updateCategories(updatedCategories);
+            setSelectedOption(newCategoryName);
+        }
+        
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+        
+        // Refresh entry list if category is selected
+        if (entryListRef.current && selectedOption === oldCategoryName) {
+            entryListRef.current.refreshEntries();
+        }
     };
 
     const handleCategoryRemoved = (categoryName) => {
@@ -149,6 +175,7 @@ export default function ManualBudget({ setMode, mode, app }) {
         closeAddCategoryModal();
         closeAddEntryModal();
         closeConfirmDialog();
+        closeEditCategoryModal();
         closeBudgetGraphsModal();
         closeMonthSelector();
     }, [user]);
@@ -219,6 +246,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         categories={categories}
                                         selectedOption={selectedOption}
                                         onCategoryChange={handleChange}
+                                        onEditCategory={handleEditCategory}
                                     />
                                 </Grid2>
                                 <Grid2 md={12} sx={{ mt: 1 }}>
@@ -308,6 +336,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     <Button
                         onClick={handleNameSubmit}
                         variant="contained"
+                        color="primary"
                         disabled={!nameInput.trim()}
                     >
                         Start Budgeting
@@ -382,6 +411,17 @@ export default function ManualBudget({ setMode, mode, app }) {
                 onMonthSelect={handleMonthSelect}
                 mode={mode}
                 addNewMonth={addNewMonth}
+            />
+
+            {/* Edit Category Modal */}
+            <EditCategoryModal
+                open={editCategoryModalOpen}
+                onClose={closeEditCategoryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
+                onCategoryUpdated={handleCategoryUpdated}
             />
         </ThemeProvider>
     );

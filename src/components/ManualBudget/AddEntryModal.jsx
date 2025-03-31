@@ -215,10 +215,11 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                                 rows={2}
                             />
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                                <Button onClick={handleClose}>Cancel</Button>
+                                <Button variant="outlined" onClick={handleClose}>Cancel</Button>
                                 <Button 
                                     type="submit" 
                                     variant="contained" 
+                                    color="primary"
                                     disabled={!amount || !entryDate}
                                 >
                                     Add Entry

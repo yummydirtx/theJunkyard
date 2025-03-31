@@ -95,8 +95,8 @@ export default function RemoveCategoryDialog({
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={confirmRemoveCategory} color="error" autoFocus>
+                <Button variant="outlined" onClick={onClose}>Cancel</Button>
+                <Button variant="contained" onClick={confirmRemoveCategory} color="error" autoFocus>
                     Delete
                 </Button>
             </DialogActions>

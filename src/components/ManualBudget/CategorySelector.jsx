@@ -24,7 +24,10 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    IconButton,
+    Tooltip
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 
 /**
  * Component for selecting, adding, and removing budget categories
@@ -34,17 +37,18 @@ export default function CategorySelector({
     selectedOption,
     onCategoryChange,
     onAddCategory,
-    onRemoveCategory
+    onRemoveCategory,
+    onEditCategory
 }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
             <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel id="budget-select-label">Budget Options</InputLabel>
+                <InputLabel id="budget-select-label">Categories</InputLabel>
                 <Select
                     labelId="budget-select-label"
                     id="budget-select"
                     value={selectedOption}
-                    label="Budget Options"
+                    label="Categories"
                     onChange={onCategoryChange}
                 >
                     {categories.map((category) => (
@@ -52,6 +56,18 @@ export default function CategorySelector({
                     ))}
                 </Select>
             </FormControl>
+            
+            {selectedOption && (
+                <Tooltip title="Edit category">
+                    <IconButton 
+                        color="primary" 
+                        onClick={() => onEditCategory(selectedOption)}
+                        size="small"
+                    >
+                        <EditIcon />
+                    </IconButton>
+                </Tooltip>
+            )}
         </Box>
     );
 }

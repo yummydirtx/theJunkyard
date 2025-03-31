@@ -143,8 +143,8 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
                                 helperText="Set a monthly spending target for this category"
                             />
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                                <Button onClick={handleClose}>Cancel</Button>
-                                <Button type="submit" variant="contained">Add</Button>
+                                <Button variant="outlined" onClick={handleClose}>Cancel</Button>
+                                <Button type="submit" variant="contained" color="primary">Add</Button>
                             </Box>
                         </Stack>
                     </form>
