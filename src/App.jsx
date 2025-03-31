@@ -94,7 +94,12 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <Routes>
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
         <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
