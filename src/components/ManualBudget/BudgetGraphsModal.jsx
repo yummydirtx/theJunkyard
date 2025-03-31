@@ -31,7 +31,7 @@ import {
     useMediaQuery,
     useTheme
 } from '@mui/material';
-import { collection, getDocs, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, setDoc } from 'firebase/firestore';
 import {
     BarChart,
     Bar,
@@ -79,8 +79,12 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
     
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#F39C12', '#1ABC9C', '#3498DB'];
 
+    const isValidMonth = (month) => {
+        return month && /^\d{4}-\d{2}$/.test(month);
+    };
+
     useEffect(() => {
-        if (open && user) {
+        if (open && user && isValidMonth(currentMonth)) {
             fetchBudgetData();
         }
     }, [open, user, currentMonth, selectedCategory]);
@@ -89,12 +93,21 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         setLoading(true);
         
         try {
-            // Get the month data
+            console.log(`Fetching budget data for month: ${currentMonth}`);
+            
             const monthDocRef = doc(db, `manualBudget/${user.uid}/months/${currentMonth}`);
             const monthDoc = await getDoc(monthDocRef);
+            
+            if (!monthDoc.exists()) {
+                console.log(`Month document ${currentMonth} does not exist, creating it`);
+                await setDoc(monthDocRef, {
+                    total: 0,
+                    createdAt: new Date()
+                });
+            }
+            
             const monthData = monthDoc.data() || {};
             
-            // Get all categories
             const categoriesCollectionRef = collection(db, `manualBudget/${user.uid}/months/${currentMonth}/categories`);
             const categoriesSnapshot = await getDocs(categoriesCollectionRef);
             
@@ -105,7 +118,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
             const categoriesData = [];
             
             categoriesSnapshot.forEach(doc => {
-                const categoryData = doc.data();
+                const categoryData = doc.data() || {};
                 const categoryName = doc.id;
                 const categoryTotal = categoryData.total || 0;
                 const categoryBudget = categoryData.goal || 0;
@@ -124,6 +137,8 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                     budget: categoryBudget
                 });
             });
+            
+            console.log(`Loaded ${categoriesData.length} categories`);
             
             setBudgetData({
                 totalSpent,
