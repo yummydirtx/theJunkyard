@@ -22,7 +22,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid2';
+import Grid2 from '@mui/material/Grid2';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
@@ -63,7 +63,7 @@ export default function CalcBasic({ setMode, mode, app }) {
           px: { xs: 2 },
         }}>
           <Container maxWidth="lg">
-            <Grid container spacing={3} sx={{
+            <Grid2 container spacing={3} sx={{
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'center',
@@ -82,7 +82,7 @@ export default function CalcBasic({ setMode, mode, app }) {
                 numberOfLowest={numberOfLowest}
                 plural={plural}
               />
-            </Grid>
+            </Grid2>
           </Container>
         </Box>
       </Box>
