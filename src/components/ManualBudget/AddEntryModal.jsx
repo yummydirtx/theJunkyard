@@ -76,10 +76,14 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
         const entryAmount = Math.round(parseFloat(amount) * 100) / 100;
 
         try {
+            // Parse the date correctly to avoid timezone issues
+            const [year, month, day] = entryDate.split('-').map(num => parseInt(num, 10));
+            const dateObject = new Date(year, month - 1, day);  // month is 0-indexed in JavaScript Date
+            
             // Create entry object
             const entry = {
                 amount: entryAmount,
-                date: new Date(entryDate),
+                date: dateObject,
                 description: description.trim(),
                 createdAt: new Date()
             };
