@@ -72,9 +72,9 @@ export default function PastWebsites() {
   const selectedFeature = items[selectedItemIndex];
 
   return (
-    <Container id="websites" sx={{ py: { xs: 2, sm: 4 } }}>
+    <Container id="websites" sx={{ pt: { xs: 4, sm: 4 }, pb: { sm: 2 } }}>
       <Grid container spacing={6}>
-        <Grid>
+        <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
               Past Websites
@@ -262,7 +262,10 @@ export default function PastWebsites() {
           </Stack>
         </Grid>
         <Grid
-          sx={{ display: { xs: 'none', sm: 'flex' }, width: '100%' }}
+          sx={{ 
+            display: { xs: 'none', sm: 'flex' }, 
+            width: { xs: '100%', md: '50%' } 
+          }}
         >
           <Card
             variant="outlined"

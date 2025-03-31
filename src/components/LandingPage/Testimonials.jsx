@@ -106,8 +106,8 @@ export default function Testimonials() {
     <Container
       id="testimonials"
       sx={{
-        pt: { xs: 4, sm: 12 },
-        pb: { xs: 8, sm: 16 },
+        pt: { xs: 4, sm: 8 },
+        pb: { xs: 8, sm: 8 },
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -128,9 +128,15 @@ export default function Testimonials() {
           See what people are saying about the Junkyard and its projects.
         </Typography>
       </Box>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} alignContent={'center'} justifyContent="center">
         {userTestimonials.map((testimonial, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
+          <Grid 
+            key={index} 
+            sx={{ 
+              display: 'flex',
+              width: { xs: '100%', sm: '50%', md: '30%' } 
+            }}
+          >
             <Card
               sx={{
                 display: 'flex',

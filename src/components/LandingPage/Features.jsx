@@ -77,8 +77,8 @@ export default function Features() {
 
   return (
     <Container id="features" sx={{ py: { xs: 4, sm: 4 } }}>
-      <Grid container spacing={6}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={6} direction={{ xs: 'column', sm: 'row' }}>
+        <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
               Featured Projects
@@ -91,7 +91,7 @@ export default function Features() {
               This is a collection of projects I have worked on. Click on each one to learn more.
             </Typography>
           </div>
-          <Grid container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
+          <Grid container gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
             {items.map(({ title }, index) => (
               <Chip
                 key={index}
@@ -306,10 +306,10 @@ export default function Features() {
           </Stack>
         </Grid>
         <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{ display: { xs: 'none', sm: 'flex' }, width: '100%' }}
+          sx={{ 
+            display: { xs: 'none', sm: 'flex' }, 
+            width: { xs: '100%', md: '50%' } 
+          }}
         >
           <Card
             variant="outlined"
