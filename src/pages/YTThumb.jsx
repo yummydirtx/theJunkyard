@@ -25,7 +25,7 @@ import Box from '@mui/material/Box';
 import DOMPurify from 'dompurify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
-import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import {
   Typography,
   FormControl,
@@ -152,7 +152,7 @@ export default function YTThumb({ setMode, mode, app }) {
           }}
         >
           <Container maxWidth="lg">
-            <Grid2
+            <Grid
               container
               spacing={3}
               sx={{
@@ -162,7 +162,7 @@ export default function YTThumb({ setMode, mode, app }) {
                 width: '100%',
               }}
             >
-              <Grid2 size={12}>
+              <Grid size={12}>
                 <Typography component="h1" variant="h3" sx={{
                   display: { xs: 'flex', sm: 'flex' },
                   flexDirection: { xs: 'column', md: 'row' },
@@ -177,8 +177,8 @@ export default function YTThumb({ setMode, mode, app }) {
                 <Typography variant="body1" color="text.secondary">
                   Input the URL of a YouTube video to get the highest quality available version of the thumbnail.
                 </Typography>
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 8 }}>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 8 }}>
                 <FormControl sx={{ width: '100%' }}>
                   <InputLabel htmlFor="url">YouTube URL</InputLabel>
                   <Input
@@ -195,8 +195,8 @@ export default function YTThumb({ setMode, mode, app }) {
                     }
                   />
                 </FormControl>
-              </Grid2>
-              <Grid2 size={{ xs: 12, sm: 4 }}>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Button
                   variant="contained"
                   color="primary"
@@ -208,10 +208,10 @@ export default function YTThumb({ setMode, mode, app }) {
                 >
                   Fetch Thumbnail
                 </Button>
-              </Grid2>
+              </Grid>
 
               {thumbnailUrl && (
-                <Grid2
+                <Grid
                   size={12}
                   sx={{
                     display: 'flex',
@@ -237,9 +237,9 @@ export default function YTThumb({ setMode, mode, app }) {
                   >
                     Download Thumbnail
                   </Button>
-                </Grid2>
+                </Grid>
               )}
-            </Grid2>
+            </Grid>
           </Container>
         </Box>
       </Box>

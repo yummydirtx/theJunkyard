@@ -29,7 +29,7 @@ import {
     DialogActions,
     TextField,
     Button,
-    Grid2,
+    Grid,
     Chip,
 } from '@mui/material';
 import { useState, useRef, useEffect } from 'react';
@@ -240,16 +240,16 @@ export default function ManualBudget({ setMode, mode, app }) {
 
                     {!loading && (user ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
-                            <Grid2 container spacing={2} sx={{ mb: 2, mt: 1 }}>
-                                <Grid2 md={12}>
+                            <Grid container spacing={2} sx={{ mb: 2, mt: 1 }}>
+                                <Grid md={12}>
                                     <CategorySelector
                                         categories={categories}
                                         selectedOption={selectedOption}
                                         onCategoryChange={handleChange}
                                         onEditCategory={handleEditCategory}
                                     />
-                                </Grid2>
-                                <Grid2 md={12} sx={{ mt: 1 }}>
+                                </Grid>
+                                <Grid md={12} sx={{ mt: 1 }}>
                                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                         <Button
                                             variant="contained"
@@ -284,8 +284,8 @@ export default function ManualBudget({ setMode, mode, app }) {
                                             View Budget Graphs
                                         </Button>
                                     </Box>
-                                </Grid2>
-                            </Grid2>
+                                </Grid>
+                            </Grid>
 
                             {/* Flex container for main content - ensures proper space distribution */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>

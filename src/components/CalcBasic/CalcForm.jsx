@@ -19,7 +19,7 @@
 
 import * as React from 'react';
 import PropTypes from 'prop-types';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import { FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 import { calcBasic } from './hooks';

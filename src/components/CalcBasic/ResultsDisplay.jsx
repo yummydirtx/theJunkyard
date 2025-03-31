@@ -18,7 +18,7 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import PropTypes from 'prop-types';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import { Typography } from '@mui/material';
 
 function ResultsDisplay({ lowest, numberOfLowest, plural }) {

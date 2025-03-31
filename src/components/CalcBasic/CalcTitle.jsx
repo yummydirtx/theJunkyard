@@ -17,11 +17,11 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { Grid2, Typography } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
 
 export default function CalcTitle() {
     return (
-        <Grid2 size={12}>
+        <Grid size={12}>
             <Typography variant='h2'
                 sx={{
                     display: { xs: 'flex', sm: 'flex' },
@@ -37,6 +37,6 @@ export default function CalcTitle() {
             <Typography variant="body1" color="text.secondary">
                 Ever wanted to win your own lottery? Using calcBasic, now you can. Enter the odds of winning, and calcBasic will automatically buy unlimited tickets until you win. It will then repeat this process a number of times you specify, and tell you the lowest number of tickets you bought to win, and how many times that happened. The prize is a sense of pride and accomplishment. Good luck!
             </Typography>
-        </Grid2>
+        </Grid>
     );
 }
