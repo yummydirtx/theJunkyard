@@ -52,7 +52,7 @@ export default function CalcBasic({ setMode, mode, app }) {
           backgroundRepeat: 'no-repeat',
         })}
       >
-        <Box useFlexGap sx={{
+        <Box sx={{
           position: 'relative',
           display: 'flex',
           width: '100%',
@@ -61,6 +61,7 @@ export default function CalcBasic({ setMode, mode, app }) {
           gap: { xs: 3, sm: 6 },
           pt: { xs: 12, sm: 15 },
           px: { xs: 2 },
+          useFlexGap: true,
         }}>
           <Container maxWidth="lg">
             <Grid container spacing={3} sx={{
