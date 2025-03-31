@@ -86,7 +86,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
 
     // Format amount for display with dollar sign
     const formatAmount = (amount) => {
-        return `$${amount.toFixed(2)}`;
+        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     if (!selectedCategory) {
