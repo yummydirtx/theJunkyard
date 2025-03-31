@@ -31,7 +31,7 @@ import {
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import EntryMenu from './EntryMenu';
 
-const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref) => {
+const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }, ref) => {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -144,6 +144,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
                                             currentMonth={currentMonth}
                                             selectedCategory={selectedCategory}
                                             onEntryUpdated={fetchEntries}
+                                            mode={mode}
                                         />
                                     </Box>
                                 </ListItem>

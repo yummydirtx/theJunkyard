@@ -298,6 +298,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         currentMonth={currentMonth}
                                         selectedCategory={selectedOption}
                                         sx={{ flexGrow: 1 }}
+                                        mode={mode}
                                     />
                                 ) : (
                                     <Welcome name={name} />

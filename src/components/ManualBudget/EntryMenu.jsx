@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   IconButton,
   Menu,
@@ -33,6 +33,7 @@ import {
   InputAdornment
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
 export default function EntryMenu({
@@ -41,7 +42,8 @@ export default function EntryMenu({
   user,
   currentMonth,
   selectedCategory,
-  onEntryUpdated
+  onEntryUpdated,
+  mode
 }) {
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -51,6 +53,7 @@ export default function EntryMenu({
   const [editAmount, setEditAmount] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const dateInputRef = useRef(null);
 
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -83,6 +86,21 @@ export default function EntryMenu({
     setEditAmount(value);
   };
 
+  const handleCalendarClick = () => {
+    if (dateInputRef.current) {
+      // Try to open the native date picker using multiple methods for cross-browser compatibility
+      dateInputRef.current.focus();
+
+      // For modern browsers that support showPicker
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        // Fallback - simulate click on the input to open the date picker
+        dateInputRef.current.click();
+      }
+    }
+  };
+
   const handleEditSubmit = async () => {
     if (!editAmount || !editDate) return;
 
@@ -90,11 +108,15 @@ export default function EntryMenu({
     const amountDifference = newAmount - entry.amount;
 
     try {
+      // Parse the date correctly to avoid timezone issues
+      const [year, month, day] = editDate.split('-').map(num => parseInt(num, 10));
+      const dateObject = new Date(year, month - 1, day); // month is 0-indexed in JavaScript Date
+
       // Update the entry
       const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
       await updateDoc(doc(db, entryPath), {
         amount: newAmount,
-        date: new Date(editDate),
+        date: dateObject,
         description: editDescription.trim()
       });
 
@@ -207,6 +229,25 @@ export default function EntryMenu({
               value={editDate}
               onChange={(e) => setEditDate(e.target.value)}
               required
+              inputRef={dateInputRef}
+              sx={{
+                '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                  display: 'none' // Hide default calendar icon
+                }
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <CalendarTodayIcon
+                      sx={{
+                        color: mode === 'light' ? 'black' : 'white',
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleCalendarClick}
+                    />
+                  </InputAdornment>
+                ),
+              }}
               InputLabelProps={{
                 shrink: true,
               }}
