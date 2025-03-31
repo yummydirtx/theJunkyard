@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import Stack from '@mui/material/Stack';
 
-export default function LoginPrompt ({ openLoginModal, openSignUpModal, loading, user }) {
+export default function LoginPrompt({ openLoginModal, openSignUpModal, loading, user }) {
     return (
         <Box sx={{
             display: 'flex',

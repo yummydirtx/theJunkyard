@@ -109,16 +109,16 @@ export default function ManualBudget({ setMode, mode, app }) {
     const handleCategoryUpdated = (newCategoryName, oldCategoryName) => {
         // Update local categories list
         if (newCategoryName !== oldCategoryName) {
-            const updatedCategories = categories.map(cat => 
+            const updatedCategories = categories.map(cat =>
                 cat === oldCategoryName ? newCategoryName : cat
             );
             updateCategories(updatedCategories);
             setSelectedOption(newCategoryName);
         }
-        
+
         // Signal that graphs should be refreshed
         setShouldRefreshGraphs(true);
-        
+
         // Refresh entry list if category is selected
         if (entryListRef.current && selectedOption === oldCategoryName) {
             entryListRef.current.refreshEntries();
@@ -170,7 +170,7 @@ export default function ManualBudget({ setMode, mode, app }) {
         // Reset selected category and other UI state on auth change
         setSelectedOption('');
         setNameInput('');
-        
+
         // Close any open modals related to user data
         closeAddCategoryModal();
         closeAddEntryModal();
@@ -220,7 +220,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                             }}>
                             Manual Budget
                         </Typography>
-                        
+
                         {!loading && user && (
                             <Chip
                                 icon={<CalendarMonthIcon />}
@@ -228,7 +228,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                 onClick={openMonthSelector}
                                 color="primary"
                                 variant="outlined"
-                                sx={{ 
+                                sx={{
                                     mt: { xs: 2, sm: 2, md: 1 },
                                     fontSize: '1rem',
                                     height: 'auto',
@@ -286,12 +286,12 @@ export default function ManualBudget({ setMode, mode, app }) {
                                     </Box>
                                 </Grid2>
                             </Grid2>
-                            
+
                             {/* Flex container for main content - ensures proper space distribution */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
                                 {/* Display entries for the selected category */}
                                 {selectedOption ? (
-                                    <EntryList 
+                                    <EntryList
                                         ref={entryListRef}
                                         db={db}
                                         user={user}

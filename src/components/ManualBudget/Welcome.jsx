@@ -26,19 +26,19 @@ import {
 } from '@mui/material';
 import Stack from '@mui/material/Stack';
 
-export default function Welcome ({ name }) {
+export default function Welcome({ name }) {
     const [visible, setVisible] = useState(true);
-    
+
     useEffect(() => {
         // Set timeout to hide the welcome message after 2 seconds
         const timer = setTimeout(() => {
             setVisible(false);
         }, 2000);
-        
+
         // Clean up the timer if component unmounts
         return () => clearTimeout(timer);
     }, []);
-    
+
     return (
         <Box sx={{
             display: 'flex',

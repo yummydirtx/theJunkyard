@@ -73,10 +73,10 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         categoryGoal: 0,
         categoriesData: []
     });
-    
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    
+
     // Function to generate random colors that are visually distinct
     const generateRandomColor = () => {
         const h = Math.floor(Math.random() * 360); // Hue (0-360)
@@ -84,7 +84,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         const l = Math.floor(40 + Math.random() * 30); // Lightness (40-70%)
         return `hsl(${h}, ${s}%, ${l}%)`;
     };
-    
+
     // Generate random colors for categories and memoize them
     const categoryColors = useMemo(() => {
         const colors = {};
@@ -95,7 +95,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         });
         return colors;
     }, [budgetData.categoriesData]);
-    
+
     // Define chart theme-specific styles
     const chartTextColor = theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined;
     const barFillPrimary = theme.palette.mode === 'dark' ? '#71b7ff' : theme.palette.primary.main;
@@ -113,13 +113,13 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
 
     const fetchBudgetData = async () => {
         setLoading(true);
-        
+
         try {
             console.log(`Fetching budget data for month: ${currentMonth}`);
-            
+
             const monthDocRef = doc(db, `manualBudget/${user.uid}/months/${currentMonth}`);
             const monthDoc = await getDoc(monthDocRef);
-            
+
             if (!monthDoc.exists()) {
                 console.log(`Month document ${currentMonth} does not exist, creating it`);
                 await setDoc(monthDocRef, {
@@ -127,41 +127,41 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                     createdAt: new Date()
                 });
             }
-            
+
             const monthData = monthDoc.data() || {};
-            
+
             const categoriesCollectionRef = collection(db, `manualBudget/${user.uid}/months/${currentMonth}/categories`);
             const categoriesSnapshot = await getDocs(categoriesCollectionRef);
-            
+
             let totalSpent = 0;
             let totalGoal = 0;
             let categorySpent = 0;
             let categoryGoal = 0;
             const categoriesData = [];
-            
+
             categoriesSnapshot.forEach(doc => {
                 const categoryData = doc.data() || {};
                 const categoryName = doc.id;
                 const categoryTotal = categoryData.total || 0;
                 const categoryBudget = categoryData.goal || 0;
-                
+
                 totalSpent += categoryTotal;
                 totalGoal += categoryBudget;
-                
+
                 if (categoryName === selectedCategory) {
                     categorySpent = categoryTotal;
                     categoryGoal = categoryBudget;
                 }
-                
+
                 categoriesData.push({
                     name: categoryName,
                     value: categoryTotal,
                     budget: categoryBudget
                 });
             });
-            
+
             console.log(`Loaded ${categoriesData.length} categories`);
-            
+
             setBudgetData({
                 totalSpent,
                 totalGoal,
@@ -169,7 +169,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                 categoryGoal,
                 categoriesData
             });
-            
+
             setLoading(false);
         } catch (error) {
             console.error('Error fetching budget data:', error);
@@ -192,9 +192,9 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <Box sx={{ 
-                    bgcolor: 'background.paper', 
-                    p: 1, 
+                <Box sx={{
+                    bgcolor: 'background.paper',
+                    p: 1,
                     border: '1px solid #ccc',
                     boxShadow: 2
                 }}>
@@ -208,13 +208,13 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         }
         return null;
     };
-    
+
     const PieTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             return (
-                <Box sx={{ 
-                    bgcolor: 'background.paper', 
-                    p: 1, 
+                <Box sx={{
+                    bgcolor: 'background.paper',
+                    p: 1,
                     border: '1px solid #ccc',
                     boxShadow: 2
                 }}>
@@ -257,13 +257,13 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                     <Typography id="budget-graphs-modal-title" variant="h5" component="h2" gutterBottom>
                         Budget Visualization
                     </Typography>
-                    
+
                     <Tabs value={tabValue} onChange={handleTabChange} centered sx={{ mb: 2 }}>
                         <Tab label="Total Budget" />
                         <Tab label="Categories Distribution" />
                         {selectedCategory && <Tab label={`${selectedCategory} Details`} />}
                     </Tabs>
-                    
+
                     {loading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                             <CircularProgress />
@@ -282,19 +282,19 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                         ]}
                                         margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                                     >
-                                        <XAxis 
-                                            dataKey="name" 
-                                            tick={{ fill: chartTextColor }} 
+                                        <XAxis
+                                            dataKey="name"
+                                            tick={{ fill: chartTextColor }}
                                         />
-                                        <YAxis 
-                                            tickFormatter={(value) => `$${value}`} 
+                                        <YAxis
+                                            tickFormatter={(value) => `$${value}`}
                                             tick={{ fill: chartTextColor }}
                                         />
                                         <Tooltip content={<CustomTooltip />} />
                                         <Legend wrapperStyle={{ color: chartTextColor }} />
-                                        <Bar 
-                                            dataKey="value" 
-                                            name="Amount" 
+                                        <Bar
+                                            dataKey="value"
+                                            name="Amount"
                                             fill={barFillPrimary}
                                         />
                                     </BarChart>
@@ -308,7 +308,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                     )}
                                 </Typography>
                             </TabPanel>
-                            
+
                             <TabPanel value={tabValue} index={1}>
                                 <Typography variant="h6" gutterBottom align="center">
                                     Spending Distribution by Category
@@ -327,8 +327,8 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                             dataKey="value"
                                         >
                                             {budgetData.categoriesData.map((entry) => (
-                                                <Cell 
-                                                    key={`cell-${entry.name}`} 
+                                                <Cell
+                                                    key={`cell-${entry.name}`}
                                                     fill={categoryColors[entry.name]}
                                                 />
                                             ))}
@@ -338,7 +338,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                     </PieChart>
                                 </ResponsiveContainer>
                             </TabPanel>
-                            
+
                             {selectedCategory && (
                                 <TabPanel value={tabValue} index={2}>
                                     <Typography variant="h6" gutterBottom align="center">
@@ -352,19 +352,19 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                             ]}
                                             margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                                         >
-                                            <XAxis 
-                                                dataKey="name" 
-                                                tick={{ fill: chartTextColor }} 
+                                            <XAxis
+                                                dataKey="name"
+                                                tick={{ fill: chartTextColor }}
                                             />
-                                            <YAxis 
-                                                tickFormatter={(value) => `$${value}`} 
+                                            <YAxis
+                                                tickFormatter={(value) => `$${value}`}
                                                 tick={{ fill: chartTextColor }}
                                             />
                                             <Tooltip content={<CustomTooltip />} />
                                             <Legend wrapperStyle={{ color: chartTextColor }} />
-                                            <Bar 
-                                                dataKey="value" 
-                                                name="Amount" 
+                                            <Bar
+                                                dataKey="value"
+                                                name="Amount"
                                                 fill={barFillSecondary}
                                             />
                                         </BarChart>
@@ -381,7 +381,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                             )}
                         </>
                     )}
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
                         <Button variant="outlined" onClick={onClose}>Close</Button>
                     </Box>

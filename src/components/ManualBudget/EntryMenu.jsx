@@ -35,23 +35,23 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
-export default function EntryMenu({ 
-  entry, 
-  db, 
-  user, 
-  currentMonth, 
-  selectedCategory, 
-  onEntryUpdated 
+export default function EntryMenu({
+  entry,
+  db,
+  user,
+  currentMonth,
+  selectedCategory,
+  onEntryUpdated
 }) {
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
-  
+
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editAmount, setEditAmount] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  
+
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -85,10 +85,10 @@ export default function EntryMenu({
 
   const handleEditSubmit = async () => {
     if (!editAmount || !editDate) return;
-    
+
     const newAmount = Math.round(parseFloat(editAmount) * 100) / 100;
     const amountDifference = newAmount - entry.amount;
-    
+
     try {
       // Update the entry
       const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
@@ -97,7 +97,7 @@ export default function EntryMenu({
         date: new Date(editDate),
         description: editDescription.trim()
       });
-      
+
       // If amount changed, update category and month totals
       if (amountDifference !== 0) {
         // Update category total
@@ -106,7 +106,7 @@ export default function EntryMenu({
         const categoryData = categoryDoc.data();
         const newCategoryTotal = (categoryData.total || 0) + amountDifference;
         await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
-        
+
         // Update month total
         const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
         const monthDoc = await getDoc(doc(db, monthPath));
@@ -114,7 +114,7 @@ export default function EntryMenu({
         const newMonthTotal = (monthData.total || 0) + amountDifference;
         await updateDoc(doc(db, monthPath), { total: newMonthTotal });
       }
-      
+
       // Notify parent component to refresh
       onEntryUpdated();
       setEditDialogOpen(false);
@@ -138,21 +138,21 @@ export default function EntryMenu({
       // Delete the entry
       const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
       await deleteDoc(doc(db, entryPath));
-      
+
       // Update category total
       const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
       const categoryDoc = await getDoc(doc(db, categoryPath));
       const categoryData = categoryDoc.data();
       const newCategoryTotal = (categoryData.total || 0) - entry.amount;
       await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
-      
+
       // Update month total
       const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
       const monthDoc = await getDoc(doc(db, monthPath));
       const monthData = monthDoc.data();
       const newMonthTotal = (monthData.total || 0) - entry.amount;
       await updateDoc(doc(db, monthPath), { total: newMonthTotal });
-      
+
       // Notify parent component to refresh
       onEntryUpdated();
       setDeleteDialogOpen(false);
@@ -163,14 +163,14 @@ export default function EntryMenu({
 
   return (
     <>
-      <IconButton 
-        edge="end" 
+      <IconButton
+        edge="end"
         aria-label="more options"
         onClick={handleMenuOpen}
       >
         <MoreVertIcon />
       </IconButton>
-      
+
       {/* Entry options menu */}
       <Menu
         anchorEl={anchorEl}
@@ -180,7 +180,7 @@ export default function EntryMenu({
         <MenuItem onClick={handleEditClick}>Edit</MenuItem>
         <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>Delete</MenuItem>
       </Menu>
-      
+
       {/* Edit entry dialog */}
       <Dialog open={editDialogOpen} onClose={handleEditDialogClose}>
         <DialogTitle>Edit Entry</DialogTitle>
@@ -227,8 +227,8 @@ export default function EntryMenu({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>Cancel</Button>
-          <Button 
-            onClick={handleEditSubmit} 
+          <Button
+            onClick={handleEditSubmit}
             variant="contained"
             disabled={!editAmount || !editDate}
           >
@@ -236,7 +236,7 @@ export default function EntryMenu({
           </Button>
         </DialogActions>
       </Dialog>
-      
+
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
         <DialogTitle>Delete Entry</DialogTitle>
@@ -247,9 +247,9 @@ export default function EntryMenu({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteDialogClose}>Cancel</Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            color="error" 
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
             variant="contained"
           >
             Delete

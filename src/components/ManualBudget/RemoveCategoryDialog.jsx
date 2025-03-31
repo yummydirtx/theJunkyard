@@ -27,14 +27,14 @@ import {
 } from '@mui/material';
 import { doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 
-export default function RemoveCategoryDialog({ 
-    open, 
-    onClose, 
-    categoryName, 
-    db, 
-    user, 
-    currentMonth, 
-    onCategoryRemoved 
+export default function RemoveCategoryDialog({
+    open,
+    onClose,
+    categoryName,
+    db,
+    user,
+    currentMonth,
+    onCategoryRemoved
 }) {
     const confirmRemoveCategory = async () => {
         if (!categoryName || !user) return;
@@ -43,30 +43,30 @@ export default function RemoveCategoryDialog({
             // Get the category data to get its goal and total
             const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${categoryName}`;
             const categoryDoc = await getDoc(doc(db, categoryPath));
-            
+
             if (categoryDoc.exists()) {
                 const categoryData = categoryDoc.data();
                 const categoryGoal = categoryData.goal || 0;
                 const categoryTotal = categoryData.total || 0;
-                
+
                 // Delete the category
                 await deleteDoc(doc(db, categoryPath));
-                
+
                 // Update the month's total goal and total spent
                 const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
                 const monthDoc = await getDoc(doc(db, monthPath));
-                
+
                 if (monthDoc.exists()) {
                     const monthData = monthDoc.data();
                     const updatedGoal = Math.max(0, (monthData.goal || 0) - categoryGoal);
                     const updatedTotal = Math.max(0, (monthData.total || 0) - categoryTotal);
-                    
+
                     await setDoc(doc(db, monthPath), {
                         goal: updatedGoal,
                         total: updatedTotal
                     }, { merge: true });
                 }
-                
+
                 // Notify parent component
                 onCategoryRemoved(categoryName);
             }
@@ -89,7 +89,7 @@ export default function RemoveCategoryDialog({
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id="alert-dialog-description">
-                    Are you sure you want to delete the "{categoryName}" category? 
+                    Are you sure you want to delete the "{categoryName}" category?
                     This will permanently remove this category, its spending goal, and all recorded expenses.
                     This action cannot be undone.
                 </DialogContentText>

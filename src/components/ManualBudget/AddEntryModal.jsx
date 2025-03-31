@@ -56,7 +56,7 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
         if (dateInputRef.current) {
             // Try to open the native date picker using multiple methods for cross-browser compatibility
             dateInputRef.current.focus();
-            
+
             // For modern browsers that support showPicker
             if (typeof dateInputRef.current.showPicker === 'function') {
                 dateInputRef.current.showPicker();
@@ -70,7 +70,7 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
     const handleAddEntry = async (event) => {
         event.preventDefault();
         if (!amount || !entryDate || !user || !selectedCategory) return;
-        
+
         // Convert amount to a number
         // Round to nearest hundredth (2 decimal places)
         const entryAmount = Math.round(parseFloat(amount) * 100) / 100;
@@ -79,7 +79,7 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
             // Parse the date correctly to avoid timezone issues
             const [year, month, day] = entryDate.split('-').map(num => parseInt(num, 10));
             const dateObject = new Date(year, month - 1, day);  // month is 0-indexed in JavaScript Date
-            
+
             // Create entry object
             const entry = {
                 amount: entryAmount,
@@ -90,7 +90,7 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
 
             // Path to entries collection for this category
             const entriesPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries`;
-            
+
             // Add the entry to Firestore
             await addDoc(collection(db, entriesPath), entry);
 
@@ -107,12 +107,12 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
             const monthData = monthDoc.data();
             const newMonthTotal = (monthData.total || 0) + entryAmount;
             await updateDoc(doc(db, monthPath), { total: newMonthTotal });
-            
+
             // Notify parent that a new entry was added
             if (onEntryAdded) {
                 onEntryAdded();
             }
-            
+
             // Reset form and close modal
             resetForm();
             onClose();
@@ -189,11 +189,11 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                                     input: {
                                         endAdornment: (
                                             <InputAdornment position="end">
-                                                <CalendarTodayIcon 
-                                                    sx={{ 
+                                                <CalendarTodayIcon
+                                                    sx={{
                                                         color: mode === 'light' ? 'black' : 'white',
-                                                        cursor: 'pointer' 
-                                                    }} 
+                                                        cursor: 'pointer'
+                                                    }}
                                                     onClick={handleCalendarClick}
                                                 />
                                             </InputAdornment>
@@ -216,9 +216,9 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                             />
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button variant="outlined" onClick={handleClose}>Cancel</Button>
-                                <Button 
-                                    type="submit" 
-                                    variant="contained" 
+                                <Button
+                                    type="submit"
+                                    variant="contained"
                                     color="primary"
                                     disabled={!amount || !entryDate}
                                 >

@@ -52,7 +52,7 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
 
     useEffect(() => {
         setCurrentCalendarMonth(getCurrentMonth());
-        
+
         if (open && user) {
             fetchMonths();
         }
@@ -61,20 +61,20 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
     const fetchMonths = async () => {
         setLoading(true);
         setError('');
-        
+
         try {
             const monthsCollection = collection(db, `manualBudget/${user.uid}/months`);
             const monthsSnapshot = await getDocs(monthsCollection);
-            
+
             // Extract month IDs and sort them in descending order (newest first)
             const monthsList = monthsSnapshot.docs.map(doc => doc.id);
-            
+
             // Custom sort function for YYYY-MM format
             monthsList.sort((a, b) => {
                 // Sort in descending order (newest first)
                 return b.localeCompare(a);
             });
-            
+
             setMonths(monthsList);
             setLoading(false);
         } catch (error) {
@@ -92,10 +92,10 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
     const handleAddCurrentMonth = async () => {
         setLoading(true);
         setError('');
-        
+
         try {
             const success = await addNewMonth(currentCalendarMonth);
-            
+
             if (success) {
                 onMonthSelect(currentCalendarMonth);
                 onClose();
@@ -130,7 +130,7 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
             aria-labelledby="month-selector-modal-title"
             BackdropProps={{
                 sx: {
-                    backgroundColor: mode === 'light' 
+                    backgroundColor: mode === 'light'
                         ? 'rgba(0, 0, 0, 0.5)'
                         : 'rgba(0, 0, 0, 0.7)'
                 }
@@ -153,22 +153,22 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                         border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
                     }}
                 >
-                    <Typography 
-                        id="month-selector-modal-title" 
-                        variant="h6" 
-                        component="h2" 
+                    <Typography
+                        id="month-selector-modal-title"
+                        variant="h6"
+                        component="h2"
                         gutterBottom
                         sx={{ color: 'text.primary' }}
                     >
                         Select Month
                     </Typography>
-                    
+
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
                             {error}
                         </Alert>
                     )}
-                    
+
                     {isCurrentMonthMissing && !loading && (
                         <Box sx={{ mb: 2 }}>
                             <Button
@@ -185,7 +185,7 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                             </Typography>
                         </Box>
                     )}
-                    
+
                     {loading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                             <CircularProgress color="primary" />
@@ -197,7 +197,7 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                                     {months.map((month, index) => (
                                         <React.Fragment key={month}>
                                             <ListItem disablePadding>
-                                                <ListItemButton 
+                                                <ListItemButton
                                                     onClick={() => handleMonthSelect(month)}
                                                     selected={month === currentMonth}
                                                     sx={{
@@ -210,15 +210,15 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                                                             },
                                                         },
                                                         '&:hover': {
-                                                            backgroundColor: mode === 'light' 
+                                                            backgroundColor: mode === 'light'
                                                                 ? 'rgba(25, 118, 210, 0.08)'
                                                                 : 'rgba(144, 202, 249, 0.08)',
                                                         },
                                                         transition: 'background-color 0.3s',
                                                     }}
                                                 >
-                                                    <ListItemText 
-                                                        primary={formatMonth(month)} 
+                                                    <ListItemText
+                                                        primary={formatMonth(month)}
                                                         primaryTypographyProps={{
                                                             fontWeight: month === currentMonth ? 'bold' : 'normal',
                                                             color: month === currentMonth ? 'inherit' : 'text.primary',
@@ -227,12 +227,12 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                                                 </ListItemButton>
                                             </ListItem>
                                             {index < months.length - 1 && (
-                                                <Divider 
-                                                    component="li" 
-                                                    sx={{ 
-                                                        borderColor: mode === 'dark' 
-                                                            ? 'rgba(255, 255, 255, 0.12)' 
-                                                            : 'rgba(0, 0, 0, 0.12)' 
+                                                <Divider
+                                                    component="li"
+                                                    sx={{
+                                                        borderColor: mode === 'dark'
+                                                            ? 'rgba(255, 255, 255, 0.12)'
+                                                            : 'rgba(0, 0, 0, 0.12)'
                                                     }}
                                                 />
                                             )}
@@ -240,10 +240,10 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                                     ))}
                                 </List>
                             ) : (
-                                <Typography 
-                                    variant="body1" 
-                                    sx={{ 
-                                        py: 2, 
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        py: 2,
                                         textAlign: 'center',
                                         color: 'text.secondary'
                                     }}
@@ -253,9 +253,9 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
                             )}
                         </>
                     )}
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                        <Button 
+                        <Button
                             onClick={onClose}
                             sx={{ color: 'primary.main' }}
                         >

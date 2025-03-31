@@ -38,7 +38,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
     const handleCategoryNameChange = (event) => {
         setNewCategoryName(event.target.value);
     };
-    
+
     const handleSpendingGoalChange = (event) => {
         // Only allow numbers and decimal points
         const value = event.target.value.replace(/[^0-9.]/g, '');
@@ -48,7 +48,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
     const handleAddCategory = async (event) => {
         event.preventDefault();
         if (!newCategoryName.trim() || !user) return;
-        
+
         // Convert spending goal to a number, default to 0 if empty
         // Round to nearest hundredth (2 decimal places)
         const goalAmount = spendingGoal ? Math.round(parseFloat(spendingGoal) * 100) / 100 : 0;
@@ -57,15 +57,15 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             // First, check if the month document exists and create it if needed
             const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
             const monthDoc = await getDoc(doc(db, monthPath));
-            
+
             // If month document doesn't exist yet, create it with initial values
             if (!monthDoc.exists()) {
-                await setDoc(doc(db, monthPath), { 
+                await setDoc(doc(db, monthPath), {
                     goal: 0,
                     total: 0
                 });
             }
-            
+
             // Add the new category to Firestore
             const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${newCategoryName}`;
             await setDoc(doc(db, categoryPath), {
@@ -81,7 +81,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
 
             // Notify parent component about the new category
             onCategoryAdded(newCategoryName);
-            
+
             // Reset form and close modal
             setNewCategoryName('');
             setSpendingGoal('');

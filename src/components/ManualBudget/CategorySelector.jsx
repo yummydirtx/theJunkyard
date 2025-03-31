@@ -56,11 +56,11 @@ export default function CategorySelector({
                     ))}
                 </Select>
             </FormControl>
-            
+
             {selectedOption && (
                 <Tooltip title="Edit category">
-                    <IconButton 
-                        color="primary" 
+                    <IconButton
+                        color="primary"
                         onClick={() => onEditCategory(selectedOption)}
                         size="small"
                     >
