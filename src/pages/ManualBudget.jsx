@@ -30,9 +30,11 @@ import {
     TextField,
     Button,
     Grid2,
+    Chip,
 } from '@mui/material';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { alpha } from '@mui/material/styles';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
 import LoginModal from '../components/Authentication/LoginModal';
@@ -46,6 +48,7 @@ import CategorySelector from '../components/ManualBudget/CategorySelector';
 import AddEntryModal from '../components/ManualBudget/AddEntryModal';
 import EntryList from '../components/ManualBudget/EntryList';
 import BudgetGraphsModal from '../components/ManualBudget/BudgetGraphsModal';
+import MonthSelectorModal from '../components/ManualBudget/MonthSelectorModal';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 
@@ -63,7 +66,9 @@ export default function ManualBudget({ setMode, mode, app }) {
         db,
         updateCategories,
         needsNamePrompt,
-        createUserDocument
+        createUserDocument,
+        setCurrentMonth,
+        addNewMonth
     } = useManualBudgetData(app);
 
     const [selectedOption, setSelectedOption] = useState('');
@@ -76,6 +81,8 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
     const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
     const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
+    const [monthSelectorOpen, openMonthSelector, closeMonthSelector] = useModal(false);
+    const [shouldRefreshGraphs, setShouldRefreshGraphs] = useState(false);
 
     const entryListRef = useRef(null);
 
@@ -108,6 +115,39 @@ export default function ManualBudget({ setMode, mode, app }) {
         if (entryListRef.current) {
             entryListRef.current.refreshEntries();
         }
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+    };
+
+    const handleMonthSelect = (month) => {
+        // Update current month and reset selected category
+        setCurrentMonth(month);
+        setSelectedOption('');
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+    };
+
+    const handleOpenGraphsModal = () => {
+        setShouldRefreshGraphs(false);
+        openBudgetGraphsModal();
+    };
+
+    // Cleanup effect to reset refresh flag when modal closes
+    useEffect(() => {
+        if (!budgetGraphsModalOpen) {
+            setShouldRefreshGraphs(false);
+        }
+    }, [budgetGraphsModalOpen]);
+
+    // Format month string for display (YYYY-MM to Month YYYY)
+    const formatMonth = (monthStr) => {
+        try {
+            const [year, month] = monthStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        } catch (e) {
+            return monthStr;
+        }
     };
 
     return (
@@ -127,31 +167,47 @@ export default function ManualBudget({ setMode, mode, app }) {
             >
                 {/* Application container, stays constant height */}
                 <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
-                    <Typography variant='h2'
-                        sx={{
-                            display: { xs: 'flex', sm: 'flex' },
-                            flexDirection: { xs: 'column', md: 'row' },
-                            alignSelf: 'left',
-                            textAlign: 'left',
-                            fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
-                            fontWeight: 'bold',
-                            pb: '0.25rem',
-                        }}>
-                        Manual Budget
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>
+                        <Typography variant='h2'
+                            sx={{
+                                display: { xs: 'flex', sm: 'flex' },
+                                flexDirection: { xs: 'column', md: 'row' },
+                                alignSelf: 'left',
+                                textAlign: 'left',
+                                fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                                fontWeight: 'bold',
+                            }}>
+                            Manual Budget
+                        </Typography>
+                        
+                        {!loading && user && (
+                            <Chip
+                                icon={<CalendarMonthIcon />}
+                                label={formatMonth(currentMonth)}
+                                onClick={openMonthSelector}
+                                color="primary"
+                                variant="outlined"
+                                sx={{ 
+                                    mt: { xs: 2, sm: 2, md: 1 },
+                                    fontSize: '1rem',
+                                    height: 'auto',
+                                    p: 0.5
+                                }}
+                            />
+                        )}
+                    </Box>
 
                     {!loading && (user ? (
                         <>
                             <Grid2 container spacing={2} sx={{ mb: 3 }}>
-                                <Grid2 item xs={12}>
+                                <Grid2 md={12}>
                                     <CategorySelector
                                         categories={categories}
                                         selectedOption={selectedOption}
                                         onCategoryChange={handleChange}
-
                                     />
                                 </Grid2>
-                                <Grid2 item xs={12} sx={{ mt: 1 }}>
+                                <Grid2 md={12} sx={{ mt: 1 }}>
                                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                         <Button
                                             variant="contained"
@@ -180,7 +236,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         <Button
                                             variant="contained"
                                             color="secondary"
-                                            onClick={openBudgetGraphsModal}
+                                            onClick={handleOpenGraphsModal}
                                             sx={{ height: 'fit-content' }}
                                         >
                                             View Budget Graphs
@@ -299,6 +355,19 @@ export default function ManualBudget({ setMode, mode, app }) {
                 currentMonth={currentMonth}
                 selectedCategory={selectedOption}
                 mode={mode}
+                forceRefresh={shouldRefreshGraphs}
+            />
+
+            {/* Month Selector Modal */}
+            <MonthSelectorModal
+                open={monthSelectorOpen}
+                onClose={closeMonthSelector}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onMonthSelect={handleMonthSelect}
+                mode={mode}
+                addNewMonth={addNewMonth}
             />
         </ThemeProvider>
     );
