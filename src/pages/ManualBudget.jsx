@@ -139,6 +139,20 @@ export default function ManualBudget({ setMode, mode, app }) {
         }
     }, [budgetGraphsModalOpen]);
 
+    // Reset state when authentication changes
+    useEffect(() => {
+        // Reset selected category and other UI state on auth change
+        setSelectedOption('');
+        setNameInput('');
+        
+        // Close any open modals related to user data
+        closeAddCategoryModal();
+        closeAddEntryModal();
+        closeConfirmDialog();
+        closeBudgetGraphsModal();
+        closeMonthSelector();
+    }, [user]);
+
     // Format month string for display (YYYY-MM to Month YYYY)
     const formatMonth = (monthStr) => {
         try {
