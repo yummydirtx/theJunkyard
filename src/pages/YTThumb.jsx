@@ -25,7 +25,7 @@ import Box from '@mui/material/Box';
 import DOMPurify from 'dompurify';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import {
   Typography,
   FormControl,
@@ -40,16 +40,7 @@ import {
   Container,
 } from '@mui/material';
 import Footer from '../components/Footer';
-
-function useTitle(title) {
-  React.useEffect(() => {
-    const prevTitle = document.title;
-    document.title = title;
-    return () => {
-      document.title = prevTitle;
-    };
-  });
-}
+import { useTitle } from '../components/useTitle';
 
 export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');
@@ -252,7 +243,6 @@ export default function YTThumb({ setMode, mode, app }) {
           </Container>
         </Box>
       </Box>
-      <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
       <Footer />
 
       <Snackbar

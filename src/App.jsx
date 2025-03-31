@@ -18,13 +18,8 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import LandingPage from './pages/LandingPage';
+import { lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import CalcBasic from './pages/CalcBasic';
-import YTThumb from './pages/YTThumb';
-import SignUp from './pages/SignUp';
-import LogIn from './pages/LogIn';
-import ManualBudget from './pages/ManualBudget';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -32,6 +27,12 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
+
+// Lazy load pages instead of direct imports
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const CalcBasic = lazy(() => import('./pages/CalcBasic'));
+const YTThumb = lazy(() => import('./pages/YTThumb'));
+const ManualBudget = lazy(() => import('./pages/ManualBudget'));
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -98,9 +99,7 @@ export default function App() {
         <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
         <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
         <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/signup' element={<SignUp setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/login' element={<LogIn setMode={toggleColorMode} mode={mode} app={app}/>} />
-        {/* <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} /> */}
+        <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} />
       </Routes>
     </BrowserRouter>
   );

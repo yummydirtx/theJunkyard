@@ -18,5 +18,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/auth'],
+          mui: ['@mui/material', '@mui/icons-material'],
+        }
+      }
+    }
   },
 });

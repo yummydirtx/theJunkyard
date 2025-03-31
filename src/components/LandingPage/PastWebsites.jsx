@@ -23,17 +23,17 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
-import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import Yummydirt from '../assets/yummydirt.png';
-import YummyLogo from '../assets/yummylogo.png';
-import YummyMe from '../assets/yummyme.png';
-import MeLogo from '../assets/MeLogo.ico';
-import Lobster from '../assets/lobster.png';
-import LobsterTeck from '../assets/lobsterteck.png';
+import Yummydirt from '../../assets/yummydirt.png';
+import YummyLogo from '../../assets/yummylogo.png';
+import YummyMe from '../../assets/yummyme.png';
+import MeLogo from '../../assets/MeLogo.ico';
+import Lobster from '../../assets/lobster.png';
+import LobsterTeck from '../../assets/lobsterteck.png';
 
 const items = [
   {
@@ -73,8 +73,8 @@ export default function PastWebsites() {
 
   return (
     <Container id="websites" sx={{ py: { xs: 2, sm: 4 } }}>
-      <Grid2 container spacing={6}>
-        <Grid2>
+      <Grid container spacing={6}>
+        <Grid>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
               Past Websites
@@ -87,7 +87,7 @@ export default function PastWebsites() {
               Here is a collection of my past personal websites, of varying levels of quality and completion.
             </Typography>
           </div>
-          <Grid2 container gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
+          <Grid container gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
             {items.map(({ title }, index) => (
               <Chip
                 key={index}
@@ -113,7 +113,7 @@ export default function PastWebsites() {
                 }}
               />
             ))}
-          </Grid2>
+          </Grid>
           <Box
             component={Card}
             variant="outlined"
@@ -260,8 +260,8 @@ export default function PastWebsites() {
               </Card>
             ))}
           </Stack>
-        </Grid2>
-        <Grid2
+        </Grid>
+        <Grid
           sx={{ display: { xs: 'none', sm: 'flex' }, width: '100%' }}
         >
           <Card
@@ -285,8 +285,8 @@ export default function PastWebsites() {
               }}
             />
           </Card>
-        </Grid2>
-      </Grid2>
+        </Grid>
+      </Grid>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>*We did not actually patent nor release world peace.</Typography>
     </Container>
   );

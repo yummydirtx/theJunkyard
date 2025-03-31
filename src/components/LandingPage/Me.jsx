@@ -22,7 +22,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ProfilePic from '../assets/profilepic.jpeg';
+import ProfilePic from '../../assets/profilepic.jpeg';
 import Divider from '@mui/material/Divider';
 
 export default function Me() {

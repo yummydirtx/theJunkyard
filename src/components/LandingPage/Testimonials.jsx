@@ -27,8 +27,8 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/system';
-import DiscordIcon from '../assets/discord-mark-blue.svg';
-import logo from '../assets/websitelogo.png';
+import DiscordIcon from '../../assets/discord-mark-blue.svg';
+import logo from '../../assets/websitelogo.png';
 
 const userTestimonials = [
   {

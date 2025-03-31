@@ -17,99 +17,178 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
-import { useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
     Box,
-    Button,
     CssBaseline,
-    TextField,
     Typography,
     Container,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Fade
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    Grid,
+    Chip,
 } from '@mui/material';
-import Stack from '@mui/material/Stack';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { alpha } from '@mui/material/styles';
-import { getFirestore, doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AppAppBar from '../components/AppAppBar';
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
-import Divider from '@mui/material/Divider';
 import Footer from '../components/Footer';
-import LoginModal from '../components/LoginModal';
-import SignUpModal from '../components/SignUpModal';
-
-function useTitle(title) {
-    React.useEffect(() => {
-        const prevTitle = document.title
-        document.title = title
-        return () => {
-            document.title = prevTitle
-        }
-    })
-}
+import LoginModal from '../components/Authentication/LoginModal';
+import SignUpModal from '../components/Authentication/SignUpModal';
+import LoginPrompt from '../components/ManualBudget/LoginPrompt';
+import { useTitle } from '../components/useTitle';
+import Welcome from '../components/ManualBudget/Welcome';
+import AddCategoryModal from '../components/ManualBudget/AddCategoryModal';
+import EditCategoryModal from '../components/ManualBudget/EditCategoryModal';
+import RemoveCategoryDialog from '../components/ManualBudget/RemoveCategoryDialog';
+import CategorySelector from '../components/ManualBudget/CategorySelector';
+import AddEntryModal from '../components/ManualBudget/AddEntryModal';
+import EntryList from '../components/ManualBudget/EntryList';
+import BudgetGraphsModal from '../components/ManualBudget/BudgetGraphsModal';
+import MonthSelectorModal from '../components/ManualBudget/MonthSelectorModal';
+import useModal from '../hooks/useModal';
+import useManualBudgetData from '../hooks/useManualBudgetData';
 
 export default function ManualBudget({ setMode, mode, app }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const [user, setUser] = useState(auth.currentUser);
+
+    // Use custom hook for data fetching and authentication
+    const {
+        user,
+        loading,
+        name,
+        categories,
+        currentMonth,
+        db,
+        updateCategories,
+        needsNamePrompt,
+        createUserDocument,
+        setCurrentMonth,
+        addNewMonth
+    } = useManualBudgetData(app);
+
     const [selectedOption, setSelectedOption] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [name, setName] = useState('');
-    const [categories, setCategories] = useState([]);
-    const [loginModalOpen, setLoginModalOpen] = useState(false);
-    const [signUpModalOpen, setSignUpModalOpen] = useState(false);
+    const [nameInput, setNameInput] = useState('');
 
-    useEffect(() => {
-        const authChange = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                // User is signed in, get their name from Firestore
-                try {
-                    var userDoc = await getDoc(doc(db, 'manualBudget', currentUser.uid));
-                    if (userDoc.exists()) {
-                        setName(userDoc.data().name);
-                    }
+    // Use custom hook for modal state management
+    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
+    const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
+    const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
+    const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
+    const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
+    const [monthSelectorOpen, openMonthSelector, closeMonthSelector] = useModal(false);
+    const [editCategoryModalOpen, openEditCategoryModal, closeEditCategoryModal] = useModal(false);
+    const [shouldRefreshGraphs, setShouldRefreshGraphs] = useState(false);
 
-                    // Fetch categories from the specified path
-                    const categoriesPath = `manualBudget/${currentUser.uid}/months/2025-03/categories`;
-                    const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
-                    const categoriesList = categoriesSnapshot.docs.map(doc => doc.id);
-                    setCategories(categoriesList);
-                } catch (error) {
-                    console.error('Error getting user data:', error);
-                }
-            }
-            setLoading(false);
-        });
-        return authChange;
-    }, [auth, db]);
+    const entryListRef = useRef(null);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
     };
 
-    const openLoginModal = () => {
-        setLoginModalOpen(true);
+    const handleCategoryAdded = (newCategory) => {
+        updateCategories([...categories, newCategory]);
     };
 
-    const closeLoginModal = () => {
-        setLoginModalOpen(false);
+    const handleRemoveCategory = () => {
+        if (!selectedOption) return;
+        openConfirmDialog();
     };
 
-    const openSignUpModal = () => {
-        setSignUpModalOpen(true);
+    const handleEditCategory = () => {
+        if (!selectedOption) return;
+        openEditCategoryModal();
     };
 
-    const closeSignUpModal = () => {
-        setSignUpModalOpen(false);
+    const handleCategoryUpdated = (newCategoryName, oldCategoryName) => {
+        // Update local categories list
+        if (newCategoryName !== oldCategoryName) {
+            const updatedCategories = categories.map(cat =>
+                cat === oldCategoryName ? newCategoryName : cat
+            );
+            updateCategories(updatedCategories);
+            setSelectedOption(newCategoryName);
+        }
+
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+
+        // Refresh entry list if category is selected
+        if (entryListRef.current && selectedOption === oldCategoryName) {
+            entryListRef.current.refreshEntries();
+        }
+    };
+
+    const handleCategoryRemoved = (categoryName) => {
+        updateCategories(categories.filter(cat => cat !== categoryName));
+        setSelectedOption('');
+    };
+
+    const handleNameSubmit = () => {
+        if (nameInput.trim()) {
+            createUserDocument(nameInput.trim());
+        }
+    };
+
+    const handleEntryAdded = () => {
+        // Refresh entries list after adding a new entry
+        if (entryListRef.current) {
+            entryListRef.current.refreshEntries();
+        }
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+    };
+
+    const handleMonthSelect = (month) => {
+        // Update current month and reset selected category
+        setCurrentMonth(month);
+        setSelectedOption('');
+        // Signal that graphs should be refreshed
+        setShouldRefreshGraphs(true);
+    };
+
+    const handleOpenGraphsModal = () => {
+        setShouldRefreshGraphs(false);
+        openBudgetGraphsModal();
+    };
+
+    // Cleanup effect to reset refresh flag when modal closes
+    useEffect(() => {
+        if (!budgetGraphsModalOpen) {
+            setShouldRefreshGraphs(false);
+        }
+    }, [budgetGraphsModalOpen]);
+
+    // Reset state when authentication changes
+    useEffect(() => {
+        // Reset selected category and other UI state on auth change
+        setSelectedOption('');
+        setNameInput('');
+
+        // Close any open modals related to user data
+        closeAddCategoryModal();
+        closeAddEntryModal();
+        closeConfirmDialog();
+        closeEditCategoryModal();
+        closeBudgetGraphsModal();
+        closeMonthSelector();
+    }, [user]);
+
+    // Format month string for display (YYYY-MM to Month YYYY)
+    const formatMonth = (monthStr) => {
+        try {
+            const [year, month] = monthStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        } catch (e) {
+            return monthStr;
+        }
     };
 
     return (
@@ -127,72 +206,149 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
-                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
-                    <Typography variant='h2'
-                        sx={{
-                            display: { xs: 'flex', sm: 'flex' },
-                            flexDirection: { xs: 'column', md: 'row' },
-                            alignSelf: 'left',
-                            textAlign: 'left',
-                            fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
-                            fontWeight: 'bold',
-                            pb: '0.25rem',
-                        }}>
-                        Manual Budget
-                    </Typography>
+                {/* Application container, fixed height */}
+                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>
+                        <Typography variant='h2'
+                            sx={{
+                                display: { xs: 'flex', sm: 'flex' },
+                                flexDirection: { xs: 'column', md: 'row' },
+                                alignSelf: 'left',
+                                textAlign: 'left',
+                                fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                                fontWeight: 'bold',
+                            }}>
+                            Manual Budget
+                        </Typography>
+
+                        {!loading && user && (
+                            <Chip
+                                icon={<CalendarMonthIcon />}
+                                label={formatMonth(currentMonth)}
+                                onClick={openMonthSelector}
+                                color="primary"
+                                variant="outlined"
+                                sx={{
+                                    mt: { xs: 2, sm: 2, md: 1 },
+                                    fontSize: '1rem',
+                                    height: 'auto',
+                                    p: 0.5
+                                }}
+                            />
+                        )}
+                    </Box>
 
                     {!loading && (user ? (
-                        <>
-                            <FormControl sx={{ minWidth: 200 }}>
-                                <InputLabel id="budget-select-label">Budget Options</InputLabel>
-                                <Select
-                                    labelId="budget-select-label"
-                                    id="budget-select"
-                                    value={selectedOption}
-                                    label="Budget Options"
-                                    onChange={handleChange}
-                                >
-                                    {categories.map((category) => (
-                                        <MenuItem key={category} value={category}>{category}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                            <Typography>Hello {name}, welcome to Manual Budget</Typography>
-                        </>
-                    ) : (
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '50vh'
-                        }}>
-                            <Fade in={!loading && !user} timeout={1000}>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="h5" sx={{ mb: 2 }}>Please log in to use Manual Budget</Typography>
-                                    <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+                            <Grid container spacing={2} sx={{ mb: 2, mt: 1 }}>
+                                <Grid md={12}>
+                                    <CategorySelector
+                                        categories={categories}
+                                        selectedOption={selectedOption}
+                                        onCategoryChange={handleChange}
+                                        onEditCategory={handleEditCategory}
+                                    />
+                                </Grid>
+                                <Grid md={12} sx={{ mt: 1 }}>
+                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                         <Button
                                             variant="contained"
-                                            color="primary"
-                                            onClick={openSignUpModal}
+                                            onClick={openAddCategoryModal}
+                                            sx={{ height: 'fit-content' }}
                                         >
-                                            Sign Up
+                                            Add Category
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            onClick={handleRemoveCategory}
+                                            disabled={!selectedOption}
+                                            sx={{ height: 'fit-content' }}
+                                        >
+                                            Remove Category
                                         </Button>
                                         <Button
                                             variant="contained"
                                             color="primary"
-                                            onClick={openLoginModal}
+                                            disabled={!selectedOption}
+                                            onClick={openAddEntryModal}
                                         >
-                                            Log In
+                                            Add Entry
                                         </Button>
-                                    </Stack>
-                                </Box>
-                            </Fade>
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={handleOpenGraphsModal}
+                                            sx={{ height: 'fit-content' }}
+                                        >
+                                            View Budget Graphs
+                                        </Button>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+
+                            {/* Flex container for main content - ensures proper space distribution */}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
+                                {/* Display entries for the selected category */}
+                                {selectedOption ? (
+                                    <EntryList
+                                        ref={entryListRef}
+                                        db={db}
+                                        user={user}
+                                        currentMonth={currentMonth}
+                                        selectedCategory={selectedOption}
+                                        sx={{ flexGrow: 1 }}
+                                    />
+                                ) : (
+                                    <Welcome name={name} />
+                                )}
+                            </Box>
                         </Box>
+                    ) : (
+                        [<LoginPrompt
+                            openLoginModal={openLoginModal}
+                            openSignUpModal={openSignUpModal}
+                            loading={loading}
+                            user={user}
+                            key="login-prompt"
+                        />]
                     ))}
                 </Container>
-                <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
                 <Footer />
             </Box>
+
+            {/* Name Prompt Dialog */}
+            <Dialog open={needsNamePrompt && !loading && user} onClose={() => { }}>
+                <DialogTitle>Welcome to Manual Budget</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>
+                        Please enter your name to get started:
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        id="name"
+                        label="Your Name"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={handleNameSubmit}
+                        variant="contained"
+                        color="primary"
+                        disabled={!nameInput.trim()}
+                    >
+                        Start Budgeting
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Authentication Modals */}
             <LoginModal
                 open={loginModalOpen}
                 onClose={closeLoginModal}
@@ -202,6 +358,74 @@ export default function ManualBudget({ setMode, mode, app }) {
                 open={signUpModalOpen}
                 onClose={closeSignUpModal}
                 app={app}
+            />
+
+            {/* Add Category Modal */}
+            <AddCategoryModal
+                open={addCategoryModalOpen}
+                onClose={closeAddCategoryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onCategoryAdded={handleCategoryAdded}
+            />
+
+            {/* Remove Category Dialog */}
+            <RemoveCategoryDialog
+                open={confirmDialogOpen}
+                onClose={closeConfirmDialog}
+                categoryName={selectedOption}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onCategoryRemoved={handleCategoryRemoved}
+            />
+
+            {/* Add Entry Modal */}
+            <AddEntryModal
+                open={addEntryModalOpen}
+                onClose={closeAddEntryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
+                onEntryAdded={handleEntryAdded}
+                mode={mode}
+            />
+
+            {/* Budget Graphs Modal */}
+            <BudgetGraphsModal
+                open={budgetGraphsModalOpen}
+                onClose={closeBudgetGraphsModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
+                mode={mode}
+                forceRefresh={shouldRefreshGraphs}
+            />
+
+            {/* Month Selector Modal */}
+            <MonthSelectorModal
+                open={monthSelectorOpen}
+                onClose={closeMonthSelector}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                onMonthSelect={handleMonthSelect}
+                mode={mode}
+                addNewMonth={addNewMonth}
+            />
+
+            {/* Edit Category Modal */}
+            <EditCategoryModal
+                open={editCategoryModalOpen}
+                onClose={closeEditCategoryModal}
+                db={db}
+                user={user}
+                currentMonth={currentMonth}
+                selectedCategory={selectedOption}
+                onCategoryUpdated={handleCategoryUpdated}
             />
         </ThemeProvider>
     );

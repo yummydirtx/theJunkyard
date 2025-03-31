@@ -3,20 +3,21 @@
   "version": "5.0.0",
   "private": true,
   "scripts": {
-  "start": "vite",
-  "build": "vite build",
-  "serve": "vite preview"
-},
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
   "dependencies": {
     "@emotion/react": "latest",
     "@emotion/styled": "latest",
     "@mui/icons-material": "latest",
-    "@mui/material": "latest",
+    "@mui/material": "^7.0.1",
     "dompurify": "^3.2.3",
     "firebase": "^11.2.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-router-dom": "^6.26.1"
+    "react-router-dom": "^6.26.1",
+    "recharts": "^2.15.1"
   },
   "browserslist": {
     "production": [
