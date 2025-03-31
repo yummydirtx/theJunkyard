@@ -241,7 +241,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                     {!loading && (user ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
                             <Grid container spacing={2} sx={{ mb: 2, mt: 1 }}>
-                                <Grid md={12}>
+                                <Grid>
                                     <CategorySelector
                                         categories={categories}
                                         selectedOption={selectedOption}
@@ -249,7 +249,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         onEditCategory={handleEditCategory}
                                     />
                                 </Grid>
-                                <Grid md={12} sx={{ mt: 1 }}>
+                                <Grid sx={{ mt: 1 }}>
                                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                         <Button
                                             variant="contained"
