@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Modal,
     Fade,
@@ -77,11 +77,25 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
-    // Define different color sets for light and dark modes
-    const COLORS = theme.palette.mode === 'dark' 
-        ? ['#4dabf5', '#649fff', '#9595ff', '#bb86fc', '#cf94d8', '#b39ddb', '#9fa8da', '#90caf9'] // More muted colors for dark mode
-        : ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#F39C12', '#1ABC9C', '#3498DB']; // Original bright colors
-
+    // Function to generate random colors that are visually distinct
+    const generateRandomColor = () => {
+        const h = Math.floor(Math.random() * 360); // Hue (0-360)
+        const s = Math.floor(60 + Math.random() * 40); // Saturation (60-100%)
+        const l = Math.floor(40 + Math.random() * 30); // Lightness (40-70%)
+        return `hsl(${h}, ${s}%, ${l}%)`;
+    };
+    
+    // Generate random colors for categories and memoize them
+    const categoryColors = useMemo(() => {
+        const colors = {};
+        budgetData.categoriesData.forEach(category => {
+            if (!colors[category.name]) {
+                colors[category.name] = generateRandomColor();
+            }
+        });
+        return colors;
+    }, [budgetData.categoriesData]);
+    
     // Define chart theme-specific styles
     const chartTextColor = theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined;
     const barFillPrimary = theme.palette.mode === 'dark' ? '#71b7ff' : theme.palette.primary.main;
@@ -312,8 +326,11 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                             fill="#8884d8"
                                             dataKey="value"
                                         >
-                                            {budgetData.categoriesData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            {budgetData.categoriesData.map((entry) => (
+                                                <Cell 
+                                                    key={`cell-${entry.name}`} 
+                                                    fill={categoryColors[entry.name]}
+                                                />
                                             ))}
                                         </Pie>
                                         <Tooltip content={<PieTooltip />} />
