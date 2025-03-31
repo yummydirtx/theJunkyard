@@ -99,10 +99,11 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory }, ref)
                 mt: 3,
                 p: 2,
                 borderRadius: 2,
-                maxHeight: 400,
-                overflow: 'hidden',
+                flexGrow: 1,
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                height: '100%',
+                overflow: 'hidden'
             }}
             elevation={2}
         >

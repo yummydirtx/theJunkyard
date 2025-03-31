@@ -206,8 +206,8 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
-                {/* Application container, stays constant height */}
-                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, minHeight: '90vh' }}>
+                {/* Application container, fixed height */}
+                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>
                         <Typography variant='h2'
                             sx={{
@@ -239,8 +239,8 @@ export default function ManualBudget({ setMode, mode, app }) {
                     </Box>
 
                     {!loading && (user ? (
-                        <>
-                            <Grid2 container spacing={2} sx={{ mb: 3 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+                            <Grid2 container spacing={2} sx={{ mb: 2, mt: 1 }}>
                                 <Grid2 md={12}>
                                     <CategorySelector
                                         categories={categories}
@@ -287,19 +287,23 @@ export default function ManualBudget({ setMode, mode, app }) {
                                 </Grid2>
                             </Grid2>
                             
-                            {/* Display entries for the selected category */}
-                            {selectedOption && (
-                                <EntryList 
-                                    ref={entryListRef}
-                                    db={db}
-                                    user={user}
-                                    currentMonth={currentMonth}
-                                    selectedCategory={selectedOption}
-                                />
-                            )}
-                            
-                            <Welcome name={name} />
-                        </>
+                            {/* Flex container for main content - ensures proper space distribution */}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
+                                {/* Display entries for the selected category */}
+                                {selectedOption ? (
+                                    <EntryList 
+                                        ref={entryListRef}
+                                        db={db}
+                                        user={user}
+                                        currentMonth={currentMonth}
+                                        selectedCategory={selectedOption}
+                                        sx={{ flexGrow: 1 }}
+                                    />
+                                ) : (
+                                    <Welcome name={name} />
+                                )}
+                            </Box>
+                        </Box>
                     ) : (
                         [<LoginPrompt
                             openLoginModal={openLoginModal}
