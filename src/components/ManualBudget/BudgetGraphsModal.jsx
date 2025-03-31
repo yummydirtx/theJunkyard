@@ -77,7 +77,15 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#F39C12', '#1ABC9C', '#3498DB'];
+    // Define different color sets for light and dark modes
+    const COLORS = theme.palette.mode === 'dark' 
+        ? ['#4dabf5', '#649fff', '#9595ff', '#bb86fc', '#cf94d8', '#b39ddb', '#9fa8da', '#90caf9'] // More muted colors for dark mode
+        : ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#F39C12', '#1ABC9C', '#3498DB']; // Original bright colors
+
+    // Define chart theme-specific styles
+    const chartTextColor = theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined;
+    const barFillPrimary = theme.palette.mode === 'dark' ? '#71b7ff' : theme.palette.primary.main;
+    const barFillSecondary = theme.palette.mode === 'dark' ? '#bb86fc' : theme.palette.secondary.main;
 
     const isValidMonth = (month) => {
         return month && /^\d{4}-\d{2}$/.test(month);
@@ -260,11 +268,21 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                         ]}
                                         margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                                     >
-                                        <XAxis dataKey="name" />
-                                        <YAxis tickFormatter={(value) => `$${value}`} />
+                                        <XAxis 
+                                            dataKey="name" 
+                                            tick={{ fill: chartTextColor }} 
+                                        />
+                                        <YAxis 
+                                            tickFormatter={(value) => `$${value}`} 
+                                            tick={{ fill: chartTextColor }}
+                                        />
                                         <Tooltip content={<CustomTooltip />} />
-                                        <Legend />
-                                        <Bar dataKey="value" name="Amount" fill={theme.palette.primary.main} />
+                                        <Legend wrapperStyle={{ color: chartTextColor }} />
+                                        <Bar 
+                                            dataKey="value" 
+                                            name="Amount" 
+                                            fill={barFillPrimary}
+                                        />
                                     </BarChart>
                                 </ResponsiveContainer>
                                 <Typography variant="body1" align="center" sx={{ mt: 2 }}>
@@ -289,6 +307,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                             cy="50%"
                                             labelLine={true}
                                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                            labelStyle={{ fill: chartTextColor }}
                                             outerRadius={isMobile ? 100 : 150}
                                             fill="#8884d8"
                                             dataKey="value"
@@ -316,11 +335,21 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                                             ]}
                                             margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
                                         >
-                                            <XAxis dataKey="name" />
-                                            <YAxis tickFormatter={(value) => `$${value}`} />
+                                            <XAxis 
+                                                dataKey="name" 
+                                                tick={{ fill: chartTextColor }} 
+                                            />
+                                            <YAxis 
+                                                tickFormatter={(value) => `$${value}`} 
+                                                tick={{ fill: chartTextColor }}
+                                            />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Legend />
-                                            <Bar dataKey="value" name="Amount" fill={theme.palette.secondary.main} />
+                                            <Legend wrapperStyle={{ color: chartTextColor }} />
+                                            <Bar 
+                                                dataKey="value" 
+                                                name="Amount" 
+                                                fill={barFillSecondary}
+                                            />
                                         </BarChart>
                                     </ResponsiveContainer>
                                     <Typography variant="body1" align="center" sx={{ mt: 2 }}>
