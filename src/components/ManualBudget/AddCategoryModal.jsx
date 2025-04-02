@@ -26,57 +26,23 @@ import {
     TextField,
     Button,
     Box,
-    Stack,
-    InputAdornment,
-    Grid,
-    Tooltip,
-    Popover
+    Stack
 } from '@mui/material';
-import { HexColorPicker } from 'react-colorful';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-
-// Predefined colors for categories
-const categoryColors = [
-    { name: 'Blue', value: '#1976d2' },
-    { name: 'Green', value: '#2e7d32' },
-    { name: 'Red', value: '#d32f2f' },
-    { name: 'Purple', value: '#7b1fa2' },
-    { name: 'Orange', value: '#ed6c02' },
-    { name: 'Teal', value: '#0d7377' },
-    { name: 'Pink', value: '#c2185b' },
-    { name: 'Gray', value: '#757575' },
-    { name: 'Amber', value: '#ff8f00' },
-];
+import ColorPicker, { categoryColors } from './shared/ColorPicker';
+import MoneyInput from './shared/MoneyInput';
+import { parseAmount } from './utils/budgetUtils';
 
 export default function AddCategoryModal({ open, onClose, db, user, currentMonth, onCategoryAdded }) {
     const [newCategoryName, setNewCategoryName] = useState('');
     const [spendingGoal, setSpendingGoal] = useState('');
     const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
-    const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
 
     const handleCategoryNameChange = (event) => {
         setNewCategoryName(event.target.value);
     };
 
-    const handleSpendingGoalChange = (event) => {
-        // Only allow numbers and decimal points
-        const value = event.target.value.replace(/[^0-9.]/g, '');
-        setSpendingGoal(value);
-    };
-
-    const handleColorSelect = (color) => {
-        setSelectedColor(color);
-    };
-
-    const handleOpenColorPicker = (event) => {
-        setColorPickerAnchor(event.currentTarget);
-    };
-
-    const handleCloseColorPicker = () => {
-        setColorPickerAnchor(null);
-    };
-
-    const handleCustomColorSelect = (color) => {
+    const handleColorChange = (color) => {
         setSelectedColor(color);
     };
 
@@ -84,9 +50,8 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
         event.preventDefault();
         if (!newCategoryName.trim() || !user) return;
 
-        // Convert spending goal to a number, default to 0 if empty
-        // Round to nearest hundredth (2 decimal places)
-        const goalAmount = spendingGoal ? Math.round(parseFloat(spendingGoal) * 100) / 100 : 0;
+        // Convert spending goal to a number with 2 decimal places
+        const goalAmount = parseAmount(spendingGoal);
 
         try {
             // First, check if the month document exists and create it if needed
@@ -106,7 +71,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             await setDoc(doc(db, categoryPath), {
                 goal: goalAmount,
                 total: 0,
-                color: selectedColor // Add the selected color
+                color: selectedColor
             });
 
             // Update the current month total goal
@@ -119,10 +84,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             onCategoryAdded(newCategoryName);
 
             // Reset form and close modal
-            setNewCategoryName('');
-            setSpendingGoal('');
-            setSelectedColor(categoryColors[0].value);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error adding category:', error);
         }
@@ -168,109 +130,18 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
                                 onChange={handleCategoryNameChange}
                                 required
                             />
-                            <TextField
-                                fullWidth
-                                label="Spending Goal"
-                                variant="outlined"
+                            
+                            <MoneyInput
                                 value={spendingGoal}
-                                onChange={handleSpendingGoalChange}
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                }}
-                                placeholder="0.00"
+                                onChange={setSpendingGoal}
+                                label="Spending Goal"
                                 helperText="Set a monthly spending target for this category"
                             />
                             
-                            <Box>
-                                <Typography variant="body2" sx={{ mb: 1 }}>
-                                    Category Color
-                                </Typography>
-                                <Grid container spacing={1}>
-                                    {categoryColors.map((color) => (
-                                        <Grid item key={color.value}>
-                                            <Tooltip title={color.name}>
-                                                <Button
-                                                    sx={{
-                                                        bgcolor: color.value,
-                                                        minWidth: '36px',
-                                                        height: '36px',
-                                                        p: 0,
-                                                        borderRadius: '50%',
-                                                        border: selectedColor === color.value ? '3px solid #000' : 'none',
-                                                        '&:hover': {
-                                                            bgcolor: color.value,
-                                                            opacity: 0.8,
-                                                        }
-                                                    }}
-                                                    onClick={() => handleColorSelect(color.value)}
-                                                    aria-label={`Select ${color.name} color`}
-                                                />
-                                            </Tooltip>
-                                        </Grid>
-                                    ))}
-                                    <Grid item>
-                                        <Tooltip title="Custom Color">
-                                            <Button
-                                                sx={{
-                                                    minWidth: '36px',
-                                                    height: '36px',
-                                                    p: 0,
-                                                    borderRadius: '50%',
-                                                    border: !categoryColors.some(c => c.value === selectedColor) ? '3px solid #000' : 'none',
-                                                    background: 'linear-gradient(135deg, #ff5722 0%, #2196f3 50%, #4caf50 100%)',
-                                                    '&:hover': {
-                                                        opacity: 0.8,
-                                                    }
-                                                }}
-                                                onClick={handleOpenColorPicker}
-                                                aria-label="Select custom color"
-                                            />
-                                        </Tooltip>
-                                    </Grid>
-                                </Grid>
-                                
-                                <Popover
-                                    open={Boolean(colorPickerAnchor)}
-                                    anchorEl={colorPickerAnchor}
-                                    onClose={handleCloseColorPicker}
-                                    anchorOrigin={{
-                                        vertical: 'bottom',
-                                        horizontal: 'center',
-                                    }}
-                                    transformOrigin={{
-                                        vertical: 'top',
-                                        horizontal: 'center',
-                                    }}
-                                >
-                                    <Box sx={{ p: 2 }}>
-                                        <HexColorPicker 
-                                            color={selectedColor} 
-                                            onChange={handleCustomColorSelect} 
-                                        />
-                                        <Box 
-                                            sx={{ 
-                                                mt: 2, 
-                                                display: 'flex',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <Button 
-                                                variant="contained" 
-                                                onClick={handleCloseColorPicker}
-                                                sx={{ 
-                                                    bgcolor: selectedColor,
-                                                    '&:hover': {
-                                                        bgcolor: selectedColor,
-                                                        opacity: 0.8,
-                                                    }
-                                                }}
-                                            >
-                                                Select
-                                            </Button>
-                                        </Box>
-                                    </Box>
-                                </Popover>
-                            </Box>
+                            <ColorPicker 
+                                selectedColor={selectedColor} 
+                                onChange={handleColorChange} 
+                            />
                             
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button variant="outlined" onClick={handleClose}>Cancel</Button>

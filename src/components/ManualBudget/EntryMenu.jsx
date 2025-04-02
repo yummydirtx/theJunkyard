@@ -29,12 +29,13 @@ import {
   Button,
   TextField,
   Box,
-  Typography,
-  InputAdornment
+  Typography
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import MoneyInput from './shared/MoneyInput';
+import DateInput from './shared/DateInput';
+import { parseAmount } from './utils/budgetUtils';
 
 export default function EntryMenu({
   entry,
@@ -80,31 +81,10 @@ export default function EntryMenu({
     setEditDialogOpen(false);
   };
 
-  const handleAmountChange = (event) => {
-    // Only allow numbers and decimal points
-    const value = event.target.value.replace(/[^0-9.]/g, '');
-    setEditAmount(value);
-  };
-
-  const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      // Try to open the native date picker using multiple methods for cross-browser compatibility
-      dateInputRef.current.focus();
-
-      // For modern browsers that support showPicker
-      if (typeof dateInputRef.current.showPicker === 'function') {
-        dateInputRef.current.showPicker();
-      } else {
-        // Fallback - simulate click on the input to open the date picker
-        dateInputRef.current.click();
-      }
-    }
-  };
-
   const handleEditSubmit = async () => {
     if (!editAmount || !editDate) return;
 
-    const newAmount = Math.round(parseFloat(editAmount) * 100) / 100;
+    const newAmount = parseAmount(editAmount);
     const amountDifference = newAmount - entry.amount;
 
     try {
@@ -207,52 +187,26 @@ export default function EntryMenu({
       <Dialog open={editDialogOpen} onClose={handleEditDialogClose}>
         <DialogTitle>Edit Entry</DialogTitle>
         <DialogContent>
-          <Box component="form">
-            <TextField
-              fullWidth
-              label="Amount"
-              variant="outlined"
+          <Box component="form" sx={{ mt: 1 }}>
+            <MoneyInput
               value={editAmount}
-              onChange={handleAmountChange}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-              placeholder="0.00"
+              onChange={setEditAmount}
+              label="Amount"
               required
               margin="normal"
-            />
-            <TextField
               fullWidth
-              label="Date"
-              type="date"
-              variant="outlined"
+            />
+            
+            <DateInput
               value={editDate}
               onChange={(e) => setEditDate(e.target.value)}
+              ref={dateInputRef}
               required
-              inputRef={dateInputRef}
-              sx={{
-                '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                  display: 'none' // Hide default calendar icon
-                }
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <CalendarTodayIcon
-                      sx={{
-                        color: mode === 'light' ? 'black' : 'white',
-                        cursor: 'pointer'
-                      }}
-                      onClick={handleCalendarClick}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              InputLabelProps={{
-                shrink: true,
-              }}
+              mode={mode}
               margin="normal"
+              fullWidth
             />
+            
             <TextField
               fullWidth
               label="Description (optional)"
