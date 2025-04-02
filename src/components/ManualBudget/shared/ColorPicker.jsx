@@ -116,18 +116,35 @@ export default function ColorPicker({ selectedColor, onChange, disabled = false 
                 anchorEl={colorPickerAnchor}
                 onClose={handleCloseColorPicker}
                 anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                }}
-                transformOrigin={{
                     vertical: 'top',
                     horizontal: 'center',
                 }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                marginThreshold={16}
+                disablePortal={false}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            maxHeight: '80vh',
+                            overflowY: 'auto'
+                        }
+                    }
+                }}
             >
-                <Box sx={{ p: 2 }}>
+                <Box sx={{ 
+                    p: { xs: 1, sm: 2 },
+                    width: { xs: '240px', sm: '316px' }
+                }}>
                     <HexColorPicker 
                         color={selectedColor} 
-                        onChange={handleCustomColorSelect} 
+                        onChange={handleCustomColorSelect}
+                        style={{ 
+                            width: '100%', 
+                            height: '200px' // Set explicit height instead of auto
+                        }} 
                     />
                     <Box 
                         sx={{ 
