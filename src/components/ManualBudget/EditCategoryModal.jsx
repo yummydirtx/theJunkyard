@@ -28,9 +28,24 @@ import {
     Box,
     Stack,
     InputAdornment,
-    Alert
+    Alert,
+    Grid,
+    Tooltip
 } from '@mui/material';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+
+// Predefined colors for categories
+const categoryColors = [
+    { name: 'Blue', value: '#1976d2' },
+    { name: 'Green', value: '#2e7d32' },
+    { name: 'Red', value: '#d32f2f' },
+    { name: 'Purple', value: '#7b1fa2' },
+    { name: 'Orange', value: '#ed6c02' },
+    { name: 'Teal', value: '#0d7377' },
+    { name: 'Pink', value: '#c2185b' },
+    { name: 'Gray', value: '#757575' },
+    { name: 'Amber', value: '#ff8f00' },
+];
 
 export default function EditCategoryModal({
     open,
@@ -44,6 +59,7 @@ export default function EditCategoryModal({
     const [categoryName, setCategoryName] = useState('');
     const [spendingGoal, setSpendingGoal] = useState('');
     const [originalGoal, setOriginalGoal] = useState(0);
+    const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -63,6 +79,7 @@ export default function EditCategoryModal({
                         setCategoryName(selectedCategory);
                         setSpendingGoal(data.goal ? data.goal.toString() : '0');
                         setOriginalGoal(data.goal || 0);
+                        setSelectedColor(data.color || categoryColors[0].value);
                     } else {
                         setError('Category data not found');
                     }
@@ -86,6 +103,10 @@ export default function EditCategoryModal({
         // Only allow numbers and decimal points
         const value = event.target.value.replace(/[^0-9.]/g, '');
         setSpendingGoal(value);
+    };
+
+    const handleColorSelect = (color) => {
+        setSelectedColor(color);
     };
 
     const handleUpdateCategory = async (event) => {
@@ -115,7 +136,8 @@ export default function EditCategoryModal({
             // If category name is unchanged, just update the goal
             if (categoryName === selectedCategory) {
                 await updateDoc(doc(db, oldCategoryPath), {
-                    goal: goalAmount
+                    goal: goalAmount,
+                    color: selectedColor
                 });
 
                 // Update month total goal
@@ -139,7 +161,8 @@ export default function EditCategoryModal({
                 // Create new category with updated data
                 await setDoc(doc(db, newCategoryPath), {
                     goal: goalAmount,
-                    total: categoryData.total || 0
+                    total: categoryData.total || 0,
+                    color: selectedColor
                 });
 
                 // Transfer all entries from old category to new category
@@ -186,6 +209,7 @@ export default function EditCategoryModal({
         setCategoryName('');
         setSpendingGoal('');
         setOriginalGoal(0);
+        setSelectedColor(categoryColors[0].value);
         setError('');
         onClose();
     };
@@ -240,6 +264,38 @@ export default function EditCategoryModal({
                                 helperText="Set a monthly spending target for this category"
                                 disabled={loading}
                             />
+                            
+                            <Box>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                    Category Color
+                                </Typography>
+                                <Grid container spacing={1}>
+                                    {categoryColors.map((color) => (
+                                        <Grid item key={color.value}>
+                                            <Tooltip title={color.name}>
+                                                <Button
+                                                    sx={{
+                                                        bgcolor: color.value,
+                                                        minWidth: '36px',
+                                                        height: '36px',
+                                                        p: 0,
+                                                        borderRadius: '50%',
+                                                        border: selectedColor === color.value ? '3px solid #000' : 'none',
+                                                        '&:hover': {
+                                                            bgcolor: color.value,
+                                                            opacity: 0.8,
+                                                        }
+                                                    }}
+                                                    onClick={() => handleColorSelect(color.value)}
+                                                    disabled={loading}
+                                                    aria-label={`Select ${color.name} color`}
+                                                />
+                                            </Tooltip>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </Box>
+                            
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button onClick={handleClose} disabled={loading}>Cancel</Button>
                                 <Button

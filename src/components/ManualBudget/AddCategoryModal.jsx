@@ -27,13 +27,29 @@ import {
     Button,
     Box,
     Stack,
-    InputAdornment
+    InputAdornment,
+    Grid,
+    Tooltip
 } from '@mui/material';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+
+// Predefined colors for categories
+const categoryColors = [
+    { name: 'Blue', value: '#1976d2' },
+    { name: 'Green', value: '#2e7d32' },
+    { name: 'Red', value: '#d32f2f' },
+    { name: 'Purple', value: '#7b1fa2' },
+    { name: 'Orange', value: '#ed6c02' },
+    { name: 'Teal', value: '#0d7377' },
+    { name: 'Pink', value: '#c2185b' },
+    { name: 'Gray', value: '#757575' },
+    { name: 'Amber', value: '#ff8f00' },
+];
 
 export default function AddCategoryModal({ open, onClose, db, user, currentMonth, onCategoryAdded }) {
     const [newCategoryName, setNewCategoryName] = useState('');
     const [spendingGoal, setSpendingGoal] = useState('');
+    const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
 
     const handleCategoryNameChange = (event) => {
         setNewCategoryName(event.target.value);
@@ -43,6 +59,10 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
         // Only allow numbers and decimal points
         const value = event.target.value.replace(/[^0-9.]/g, '');
         setSpendingGoal(value);
+    };
+
+    const handleColorSelect = (color) => {
+        setSelectedColor(color);
     };
 
     const handleAddCategory = async (event) => {
@@ -70,7 +90,8 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${newCategoryName}`;
             await setDoc(doc(db, categoryPath), {
                 goal: goalAmount,
-                total: 0
+                total: 0,
+                color: selectedColor // Add the selected color
             });
 
             // Update the current month total goal
@@ -85,6 +106,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             // Reset form and close modal
             setNewCategoryName('');
             setSpendingGoal('');
+            setSelectedColor(categoryColors[0].value);
             onClose();
         } catch (error) {
             console.error('Error adding category:', error);
@@ -94,6 +116,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
     const handleClose = () => {
         setNewCategoryName('');
         setSpendingGoal('');
+        setSelectedColor(categoryColors[0].value);
         onClose();
     };
 
@@ -142,6 +165,37 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
                                 placeholder="0.00"
                                 helperText="Set a monthly spending target for this category"
                             />
+                            
+                            <Box>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                    Category Color
+                                </Typography>
+                                <Grid container spacing={1}>
+                                    {categoryColors.map((color) => (
+                                        <Grid item key={color.value}>
+                                            <Tooltip title={color.name}>
+                                                <Button
+                                                    sx={{
+                                                        bgcolor: color.value,
+                                                        minWidth: '36px',
+                                                        height: '36px',
+                                                        p: 0,
+                                                        borderRadius: '50%',
+                                                        border: selectedColor === color.value ? '3px solid #000' : 'none',
+                                                        '&:hover': {
+                                                            bgcolor: color.value,
+                                                            opacity: 0.8,
+                                                        }
+                                                    }}
+                                                    onClick={() => handleColorSelect(color.value)}
+                                                    aria-label={`Select ${color.name} color`}
+                                                />
+                                            </Tooltip>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </Box>
+                            
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button variant="outlined" onClick={handleClose}>Cancel</Button>
                                 <Button type="submit" variant="contained" color="primary">Add</Button>

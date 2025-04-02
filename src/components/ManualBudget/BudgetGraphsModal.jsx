@@ -97,7 +97,8 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         const colors = {};
         budgetData.categoriesData.forEach(category => {
             if (!colors[category.name]) {
-                colors[category.name] = generateRandomColor();
+                // Use the stored color if available, otherwise generate a random color
+                colors[category.name] = category.color || generateRandomColor();
             }
         });
         return colors;
@@ -186,6 +187,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                 const categoryName = doc.id;
                 const categoryTotal = categoryData.total || 0;
                 const categoryBudget = categoryData.goal || 0;
+                const categoryColor = categoryData.color || null;
 
                 totalSpent += categoryTotal;
                 totalGoal += categoryBudget;
@@ -198,7 +200,8 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                 categoriesData.push({
                     name: categoryName,
                     value: categoryTotal,
-                    budget: categoryBudget
+                    budget: categoryBudget,
+                    color: categoryColor // Store the user-specified color
                 });
             });
 
