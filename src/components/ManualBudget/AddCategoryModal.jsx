@@ -26,32 +26,32 @@ import {
     TextField,
     Button,
     Box,
-    Stack,
-    InputAdornment
+    Stack
 } from '@mui/material';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import ColorPicker, { categoryColors } from './shared/ColorPicker';
+import MoneyInput from './shared/MoneyInput';
+import { parseAmount } from './utils/budgetUtils';
 
 export default function AddCategoryModal({ open, onClose, db, user, currentMonth, onCategoryAdded }) {
     const [newCategoryName, setNewCategoryName] = useState('');
     const [spendingGoal, setSpendingGoal] = useState('');
+    const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
 
     const handleCategoryNameChange = (event) => {
         setNewCategoryName(event.target.value);
     };
 
-    const handleSpendingGoalChange = (event) => {
-        // Only allow numbers and decimal points
-        const value = event.target.value.replace(/[^0-9.]/g, '');
-        setSpendingGoal(value);
+    const handleColorChange = (color) => {
+        setSelectedColor(color);
     };
 
     const handleAddCategory = async (event) => {
         event.preventDefault();
         if (!newCategoryName.trim() || !user) return;
 
-        // Convert spending goal to a number, default to 0 if empty
-        // Round to nearest hundredth (2 decimal places)
-        const goalAmount = spendingGoal ? Math.round(parseFloat(spendingGoal) * 100) / 100 : 0;
+        // Convert spending goal to a number with 2 decimal places
+        const goalAmount = parseAmount(spendingGoal);
 
         try {
             // First, check if the month document exists and create it if needed
@@ -70,7 +70,8 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${newCategoryName}`;
             await setDoc(doc(db, categoryPath), {
                 goal: goalAmount,
-                total: 0
+                total: 0,
+                color: selectedColor
             });
 
             // Update the current month total goal
@@ -83,9 +84,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
             onCategoryAdded(newCategoryName);
 
             // Reset form and close modal
-            setNewCategoryName('');
-            setSpendingGoal('');
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error adding category:', error);
         }
@@ -94,6 +93,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
     const handleClose = () => {
         setNewCategoryName('');
         setSpendingGoal('');
+        setSelectedColor(categoryColors[0].value);
         onClose();
     };
 
@@ -130,18 +130,19 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
                                 onChange={handleCategoryNameChange}
                                 required
                             />
-                            <TextField
-                                fullWidth
-                                label="Spending Goal"
-                                variant="outlined"
+                            
+                            <MoneyInput
                                 value={spendingGoal}
-                                onChange={handleSpendingGoalChange}
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                }}
-                                placeholder="0.00"
+                                onChange={setSpendingGoal}
+                                label="Spending Goal"
                                 helperText="Set a monthly spending target for this category"
                             />
+                            
+                            <ColorPicker 
+                                selectedColor={selectedColor} 
+                                onChange={handleColorChange} 
+                            />
+                            
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button variant="outlined" onClick={handleClose}>Cancel</Button>
                                 <Button type="submit" variant="contained" color="primary">Add</Button>

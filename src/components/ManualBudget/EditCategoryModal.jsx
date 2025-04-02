@@ -27,10 +27,12 @@ import {
     Button,
     Box,
     Stack,
-    InputAdornment,
     Alert
 } from '@mui/material';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import ColorPicker, { categoryColors } from './shared/ColorPicker';
+import MoneyInput from './shared/MoneyInput';
+import { parseAmount, getCategoryData } from './utils/budgetUtils';
 
 export default function EditCategoryModal({
     open,
@@ -44,6 +46,7 @@ export default function EditCategoryModal({
     const [categoryName, setCategoryName] = useState('');
     const [spendingGoal, setSpendingGoal] = useState('');
     const [originalGoal, setOriginalGoal] = useState(0);
+    const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -63,6 +66,7 @@ export default function EditCategoryModal({
                         setCategoryName(selectedCategory);
                         setSpendingGoal(data.goal ? data.goal.toString() : '0');
                         setOriginalGoal(data.goal || 0);
+                        setSelectedColor(data.color || categoryColors[0].value);
                     } else {
                         setError('Category data not found');
                     }
@@ -82,10 +86,8 @@ export default function EditCategoryModal({
         setCategoryName(event.target.value);
     };
 
-    const handleSpendingGoalChange = (event) => {
-        // Only allow numbers and decimal points
-        const value = event.target.value.replace(/[^0-9.]/g, '');
-        setSpendingGoal(value);
+    const handleColorChange = (color) => {
+        setSelectedColor(color);
     };
 
     const handleUpdateCategory = async (event) => {
@@ -96,9 +98,8 @@ export default function EditCategoryModal({
         setError('');
 
         try {
-            // Convert spending goal to a number, default to 0 if empty
-            // Round to nearest hundredth (2 decimal places)
-            const goalAmount = spendingGoal ? Math.round(parseFloat(spendingGoal) * 100) / 100 : 0;
+            // Convert spending goal to a number with 2 decimal places
+            const goalAmount = parseAmount(spendingGoal);
 
             // Path references
             const oldCategoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
@@ -115,7 +116,8 @@ export default function EditCategoryModal({
             // If category name is unchanged, just update the goal
             if (categoryName === selectedCategory) {
                 await updateDoc(doc(db, oldCategoryPath), {
-                    goal: goalAmount
+                    goal: goalAmount,
+                    color: selectedColor
                 });
 
                 // Update month total goal
@@ -139,7 +141,8 @@ export default function EditCategoryModal({
                 // Create new category with updated data
                 await setDoc(doc(db, newCategoryPath), {
                     goal: goalAmount,
-                    total: categoryData.total || 0
+                    total: categoryData.total || 0,
+                    color: selectedColor
                 });
 
                 // Transfer all entries from old category to new category
@@ -186,6 +189,7 @@ export default function EditCategoryModal({
         setCategoryName('');
         setSpendingGoal('');
         setOriginalGoal(0);
+        setSelectedColor(categoryColors[0].value);
         setError('');
         onClose();
     };
@@ -227,19 +231,21 @@ export default function EditCategoryModal({
                                 required
                                 disabled={loading}
                             />
-                            <TextField
-                                fullWidth
-                                label="Spending Goal"
-                                variant="outlined"
+                            
+                            <MoneyInput
                                 value={spendingGoal}
-                                onChange={handleSpendingGoalChange}
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                }}
-                                placeholder="0.00"
+                                onChange={setSpendingGoal}
+                                label="Spending Goal"
                                 helperText="Set a monthly spending target for this category"
                                 disabled={loading}
                             />
+                            
+                            <ColorPicker 
+                                selectedColor={selectedColor} 
+                                onChange={handleColorChange}
+                                disabled={loading}
+                            />
+                            
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
                                 <Button onClick={handleClose} disabled={loading}>Cancel</Button>
                                 <Button

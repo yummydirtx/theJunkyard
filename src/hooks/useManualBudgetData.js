@@ -104,10 +104,11 @@ export default function useManualBudgetData(app) {
                 await setDoc(doc(db, `manualBudget/${user.uid}/months/${newMonth}/categories/${categoryName}`), {
                     goal: goalValue,
                     total: 0, // Start with zero total
-                    createdAt: new Date()
+                    createdAt: new Date(),
+                    color: categoryData.color || '#1976d2' // Copy color or use default blue
                 });
                 
-                console.log(`Copied category ${categoryName} with goal ${goalValue}`);
+                console.log(`Copied category ${categoryName} with goal ${goalValue} and color ${categoryData.color || '#1976d2'}`);
             }
             
             console.log(`Created ${copiedCategories.length} categories in new month ${newMonth}`);
@@ -317,7 +318,8 @@ export default function useManualBudgetData(app) {
                                 await setDoc(doc(db, `manualBudget/${user.uid}/months/${currentMonth}/categories/${categoryName}`), {
                                     goal: goalValue,
                                     total: 0,
-                                    createdAt: new Date()
+                                    createdAt: new Date(),
+                                    color: categoryData.color || '#1976d2' // Copy color or use default blue
                                 });
 
                                 console.log(`Fixed: Copied category ${categoryName} to current month`);

@@ -26,23 +26,18 @@ import {
     TextField,
     Button,
     Box,
-    Stack,
-    InputAdornment
+    Stack
 } from '@mui/material';
 import { doc, setDoc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import MoneyInput from './shared/MoneyInput';
+import DateInput from './shared/DateInput';
+import { parseAmount } from './utils/budgetUtils';
 
 export default function AddEntryModal({ open, onClose, db, user, currentMonth, selectedCategory, onEntryAdded, mode }) {
     const [amount, setAmount] = useState('');
     const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
     const [description, setDescription] = useState('');
     const dateInputRef = useRef(null);
-
-    const handleAmountChange = (event) => {
-        // Only allow numbers and decimal points
-        const value = event.target.value.replace(/[^0-9.]/g, '');
-        setAmount(value);
-    };
 
     const handleDateChange = (event) => {
         setEntryDate(event.target.value);
@@ -52,28 +47,12 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
         setDescription(event.target.value);
     };
 
-    const handleCalendarClick = () => {
-        if (dateInputRef.current) {
-            // Try to open the native date picker using multiple methods for cross-browser compatibility
-            dateInputRef.current.focus();
-
-            // For modern browsers that support showPicker
-            if (typeof dateInputRef.current.showPicker === 'function') {
-                dateInputRef.current.showPicker();
-            } else {
-                // Fallback - simulate click on the input to open the date picker
-                dateInputRef.current.click();
-            }
-        }
-    };
-
     const handleAddEntry = async (event) => {
         event.preventDefault();
         if (!amount || !entryDate || !user || !selectedCategory) return;
 
-        // Convert amount to a number
-        // Round to nearest hundredth (2 decimal places)
-        const entryAmount = Math.round(parseFloat(amount) * 100) / 100;
+        // Convert amount to a number with 2 decimal places
+        const entryAmount = parseAmount(amount);
 
         try {
             // Parse the date correctly to avoid timezone issues
@@ -108,7 +87,7 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
             const newMonthTotal = (monthData.total || 0) + entryAmount;
             await updateDoc(doc(db, monthPath), { total: newMonthTotal });
 
-            // Notify parent that a new entry was added
+            // Notify parent component and close modal
             if (onEntryAdded) {
                 onEntryAdded();
             }
@@ -157,53 +136,21 @@ export default function AddEntryModal({ open, onClose, db, user, currentMonth, s
                     </Typography>
                     <form onSubmit={handleAddEntry}>
                         <Stack spacing={3}>
-                            <TextField
-                                fullWidth
-                                label="Amount"
-                                variant="outlined"
+                            <MoneyInput
                                 value={amount}
-                                onChange={handleAmountChange}
-                                slotProps={{
-                                    input: {
-                                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                                    },
-                                }}
-                                placeholder="0.00"
+                                onChange={setAmount}
+                                label="Amount"
                                 required
                             />
-                            <TextField
-                                fullWidth
-                                label="Date"
-                                type="date"
-                                variant="outlined"
+                            
+                            <DateInput
                                 value={entryDate}
                                 onChange={handleDateChange}
+                                ref={dateInputRef}
                                 required
-                                inputRef={dateInputRef}
-                                sx={{
-                                    '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                                        display: 'none' // Hide default calendar icon
-                                    }
-                                }}
-                                slotProps={{
-                                    input: {
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <CalendarTodayIcon
-                                                    sx={{
-                                                        color: mode === 'light' ? 'black' : 'white',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                    onClick={handleCalendarClick}
-                                                />
-                                            </InputAdornment>
-                                        ),
-                                    },
-                                    inputLabel: {
-                                        shrink: true,
-                                    },
-                                }}
+                                mode={mode}
                             />
+                            
                             <TextField
                                 fullWidth
                                 label="Description (optional)"
