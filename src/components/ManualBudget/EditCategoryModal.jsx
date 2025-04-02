@@ -30,8 +30,10 @@ import {
     InputAdornment,
     Alert,
     Grid,
-    Tooltip
+    Tooltip,
+    Popover
 } from '@mui/material';
+import { HexColorPicker } from 'react-colorful';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 
 // Predefined colors for categories
@@ -62,6 +64,7 @@ export default function EditCategoryModal({
     const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
 
     // Fetch current category data when modal opens
     useEffect(() => {
@@ -106,6 +109,18 @@ export default function EditCategoryModal({
     };
 
     const handleColorSelect = (color) => {
+        setSelectedColor(color);
+    };
+
+    const handleOpenColorPicker = (event) => {
+        setColorPickerAnchor(event.currentTarget);
+    };
+
+    const handleCloseColorPicker = () => {
+        setColorPickerAnchor(null);
+    };
+
+    const handleCustomColorSelect = (color) => {
         setSelectedColor(color);
     };
 
@@ -293,7 +308,69 @@ export default function EditCategoryModal({
                                             </Tooltip>
                                         </Grid>
                                     ))}
+                                    <Grid item>
+                                        <Tooltip title="Custom Color">
+                                            <Button
+                                                sx={{
+                                                    minWidth: '36px',
+                                                    height: '36px',
+                                                    p: 0,
+                                                    borderRadius: '50%',
+                                                    border: !categoryColors.some(c => c.value === selectedColor) ? '3px solid #000' : 'none',
+                                                    background: 'linear-gradient(135deg, #ff5722 0%, #2196f3 50%, #4caf50 100%)',
+                                                    '&:hover': {
+                                                        opacity: 0.8,
+                                                    }
+                                                }}
+                                                onClick={handleOpenColorPicker}
+                                                disabled={loading}
+                                                aria-label="Select custom color"
+                                            />
+                                        </Tooltip>
+                                    </Grid>
                                 </Grid>
+                                
+                                <Popover
+                                    open={Boolean(colorPickerAnchor)}
+                                    anchorEl={colorPickerAnchor}
+                                    onClose={handleCloseColorPicker}
+                                    anchorOrigin={{
+                                        vertical: 'bottom',
+                                        horizontal: 'center',
+                                    }}
+                                    transformOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'center',
+                                    }}
+                                >
+                                    <Box sx={{ p: 2 }}>
+                                        <HexColorPicker 
+                                            color={selectedColor} 
+                                            onChange={handleCustomColorSelect} 
+                                        />
+                                        <Box 
+                                            sx={{ 
+                                                mt: 2, 
+                                                display: 'flex',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            <Button 
+                                                variant="contained" 
+                                                onClick={handleCloseColorPicker}
+                                                sx={{ 
+                                                    bgcolor: selectedColor,
+                                                    '&:hover': {
+                                                        bgcolor: selectedColor,
+                                                        opacity: 0.8,
+                                                    }
+                                                }}
+                                            >
+                                                Select
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                </Popover>
                             </Box>
                             
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
