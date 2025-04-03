@@ -28,15 +28,23 @@ import Stack from '@mui/material/Stack';
 
 export default function Welcome({ name }) {
     const [visible, setVisible] = useState(true);
+    const [showCategoryText, setShowCategoryText] = useState(false);
 
     useEffect(() => {
         // Set timeout to hide the welcome message after 2 seconds
-        const timer = setTimeout(() => {
+        const welcomeTimer = setTimeout(() => {
             setVisible(false);
+            
+            // Add 500ms delay before showing the category selection text
+            const categoryTimer = setTimeout(() => {
+                setShowCategoryText(true);
+            }, 1000);
+            
+            return () => clearTimeout(categoryTimer);
         }, 2000);
 
         // Clean up the timer if component unmounts
-        return () => clearTimeout(timer);
+        return () => clearTimeout(welcomeTimer);
     }, []);
 
     return (
@@ -46,11 +54,20 @@ export default function Welcome({ name }) {
             alignItems: 'center',
             height: '50vh'
         }}>
-            <Fade in={visible && Boolean(name)} timeout={1000}>
-                <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Hello {name}, welcome to Manual Budget.</Typography>
-                </Box>
-            </Fade>
+            <Box sx={{ width: '100%', position: 'relative', textAlign: 'center' }}>
+                <Fade in={visible && Boolean(name)} timeout={1000}>
+                    <Box sx={{ position: 'absolute', width: '100%' }}>
+                        <Typography variant="h5" sx={{ mb: 2 }}>Hello {name}, welcome to Manual Budget.</Typography>
+                    </Box>
+                </Fade>
+                <Fade in={showCategoryText} timeout={1000}>
+                    <Box sx={{ position: 'absolute', width: '100%' }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                            Please select or create a category to begin.
+                        </Typography>
+                    </Box>
+                </Fade>
+            </Box>
         </Box>
     );
 };
