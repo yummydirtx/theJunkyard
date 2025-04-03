@@ -62,7 +62,7 @@ export default function Welcome({ name }) {
                 </Fade>
                 <Fade in={showCategoryText} timeout={1000}>
                     <Box sx={{ position: 'absolute', width: '100%' }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>
+                        <Typography variant="h5" sx={{ mb: 2 }}>
                             Please select or create a category to begin.
                         </Typography>
                     </Box>
