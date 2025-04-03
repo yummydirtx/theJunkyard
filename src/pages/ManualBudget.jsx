@@ -35,6 +35,10 @@ import {
 import { useState, useRef, useEffect } from 'react';
 import { alpha } from '@mui/material/styles';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AddIcon from '@mui/icons-material/Add';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
 import LoginModal from '../components/Authentication/LoginModal';
@@ -254,6 +258,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         <Button
                                             variant="contained"
                                             onClick={openAddCategoryModal}
+                                            startIcon={<AddCircleOutlineIcon />}
                                             sx={{ height: 'fit-content' }}
                                         >
                                             Add Category
@@ -262,6 +267,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                             variant="outlined"
                                             color="error"
                                             onClick={handleRemoveCategory}
+                                            startIcon={<DeleteOutlineIcon />}
                                             disabled={!selectedOption}
                                             sx={{ height: 'fit-content' }}
                                         >
@@ -270,6 +276,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         <Button
                                             variant="contained"
                                             color="primary"
+                                            startIcon={<AddIcon />}
                                             disabled={!selectedOption}
                                             onClick={openAddEntryModal}
                                         >
@@ -278,6 +285,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                                         <Button
                                             variant="contained"
                                             color="secondary"
+                                            startIcon={<BarChartIcon />}
                                             onClick={handleOpenGraphsModal}
                                             sx={{ height: 'fit-content' }}
                                         >

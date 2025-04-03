@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect, useRef } from 'react';
 import { TextField, InputAdornment } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
@@ -32,18 +32,42 @@ const DateInput = forwardRef(({
     fullWidth = true,
     ...props 
 }, ref) => {
+    // Create our own reference if none is provided
+    const innerRef = useRef(null);
+    const actualRef = ref || innerRef;
+    
+    // Create a formatted display value from the date value
+    const [displayValue, setDisplayValue] = useState('');
+    
+    // Update display value when the actual value changes
+    useEffect(() => {
+        if (value) {
+            // Format the date value for display (YYYY-MM-DD → MM/DD/YYYY or your preferred format)
+            const dateObj = new Date(value);
+            if (!isNaN(dateObj.getTime())) {
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                const year = dateObj.getFullYear();
+                setDisplayValue(`${month}/${day}/${year}`);
+            } else {
+                setDisplayValue(value); // Fallback to original value if parsing fails
+            }
+        } else {
+            setDisplayValue('');
+        }
+    }, [value]);
     
     const handleCalendarClick = () => {
-        if (ref && ref.current) {
-            // Try to open the native date picker using multiple methods
-            ref.current.focus();
-
+        if (actualRef && actualRef.current) {
+            // Focus and attempt to open the native date picker
+            actualRef.current.focus();
+            
             // For modern browsers that support showPicker
-            if (typeof ref.current.showPicker === 'function') {
-                ref.current.showPicker();
+            if (typeof actualRef.current.showPicker === 'function') {
+                actualRef.current.showPicker();
             } else {
                 // Fallback - simulate click on the input
-                ref.current.click();
+                actualRef.current.click();
             }
         }
         
@@ -53,40 +77,66 @@ const DateInput = forwardRef(({
         }
     };
 
+    // Handle changes from the hidden date input
+    const handleDateChange = (e) => {
+        if (onChange) {
+            onChange(e);
+        }
+    };
+
     return (
-        <TextField
-            fullWidth={fullWidth}
-            label={label}
-            type="date"
-            variant="outlined"
-            value={value}
-            onChange={onChange}
-            required={required}
-            disabled={disabled}
-            inputRef={ref}
-            sx={{
-                '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                    display: 'none' // Hide default calendar icon
-                }
-            }}
-            InputProps={{
-                endAdornment: (
-                    <InputAdornment position="end">
-                        <CalendarTodayIcon
-                            sx={{
-                                color: mode === 'light' ? 'black' : 'white',
-                                cursor: 'pointer'
-                            }}
-                            onClick={handleCalendarClick}
-                        />
-                    </InputAdornment>
-                ),
-            }}
-            InputLabelProps={{
-                shrink: true,
-            }}
-            {...props}
-        />
+        <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto' }}>
+            {/* Visible styled text input */}
+            <TextField
+                fullWidth={fullWidth}
+                label={label}
+                variant="outlined"
+                value={displayValue}
+                required={required}
+                disabled={disabled}
+                onClick={handleCalendarClick} // Open calendar when clicking anywhere in the field
+                slotProps={{
+                    input: {
+                        readOnly: true, // Make the visible input read-only
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <CalendarTodayIcon
+                                    sx={{
+                                        color: mode === 'light' ? 'black' : 'white',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={handleCalendarClick}
+                                />
+                            </InputAdornment>
+                        ),
+                    },
+                    inputLabel: {
+                        shrink: true,
+                    }
+                }}
+                {...props}
+            />
+            
+            {/* Hidden actual date input for functionality */}
+            <input
+                type="date"
+                ref={actualRef}
+                value={value || ''}
+                onChange={handleDateChange}
+                required={required}
+                disabled={disabled}
+                style={{
+                    opacity: 0,
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    cursor: 'pointer'
+                }}
+                {...props}
+            />
+        </div>
     );
 });
 
