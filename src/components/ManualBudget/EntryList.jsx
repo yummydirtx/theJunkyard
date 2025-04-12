@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -31,60 +31,46 @@ import {
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import EntryMenu from './EntryMenu';
 
-const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }, ref) => {
+const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, sx = {}, mode }, ref) => {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const fetchEntries = async () => {
-        if (!selectedCategory || !user || !db) return;
-
+    const fetchEntries = useCallback(async () => {
+        if (!user || !db || !currentMonth || !selectedCategory) {
+            setEntries([]);
+            return;
+        }
         setLoading(true);
+        setError(null);
         try {
-            const entriesPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries`;
-            const entriesQuery = query(
-                collection(db, entriesPath),
-                orderBy('date', 'desc'),
-                orderBy('createdAt', 'desc')
-            );
-
-            const entriesSnapshot = await getDocs(entriesQuery);
-            const entriesList = entriesSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                // Convert Firestore timestamps to JavaScript Dates
-                date: doc.data().date?.toDate() || new Date(),
-                createdAt: doc.data().createdAt?.toDate() || new Date()
-            }));
-
-            setEntries(entriesList);
-        } catch (error) {
-            console.error('Error fetching entries:', error);
+            const entriesPath = `users/${user.uid}/budgets/${currentMonth}/categories/${selectedCategory}/entries`;
+            const entriesCollection = collection(db, entriesPath);
+            const q = query(entriesCollection, orderBy('date', 'desc'));
+            const querySnapshot = await getDocs(q);
+            const fetchedEntries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setEntries(fetchedEntries);
+        } catch (err) {
+            console.error("Error fetching entries:", err);
+            setError("Failed to load entries.");
+            setEntries([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, [db, user, currentMonth, selectedCategory]);
 
-    // Expose the refresh function via ref
+    useEffect(() => {
+        fetchEntries();
+    }, [fetchEntries]);
+
     useImperativeHandle(ref, () => ({
         refreshEntries: fetchEntries
     }));
 
-    useEffect(() => {
-        // Reset entries when category changes
-        setEntries([]);
-
-        // Only fetch if we have a selected category
-        if (!selectedCategory || !user || !db) return;
-
-        fetchEntries();
-    }, [db, user, currentMonth, selectedCategory]);
-
-    // Format date for display
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString();
     };
 
-    // Format amount for display with dollar sign
     const formatAmount = (amount) => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
@@ -111,51 +97,59 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
                 Entries for {selectedCategory}
             </Typography>
 
-            <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <Box sx={{ ...sx, overflow: 'auto', flexGrow: 1 }}>
+                {loading && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 3 }}>
                         <CircularProgress />
                     </Box>
-                ) : entries.length > 0 ? (
-                    <List>
-                        {entries.map((entry, index) => (
-                            <Box key={entry.id}>
-                                <ListItem alignItems="flex-start">
-                                    <ListItemText
-                                        primary={
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <Typography component="span" variant="subtitle1">
-                                                    {formatDate(entry.date)}
-                                                </Typography>
-                                                <Typography component="span" variant="subtitle1" fontWeight="bold">
-                                                    {formatAmount(entry.amount)}
-                                                </Typography>
-                                            </Box>
-                                        }
-                                        secondary={
-                                            entry.description || 'No description'
-                                        }
-                                    />
-                                    <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
-                                        <EntryMenu
-                                            entry={entry}
-                                            db={db}
-                                            user={user}
-                                            currentMonth={currentMonth}
-                                            selectedCategory={selectedCategory}
-                                            onEntryUpdated={fetchEntries}
-                                            mode={mode}
-                                        />
-                                    </Box>
-                                </ListItem>
-                                {index < entries.length - 1 && <Divider component="li" />}
-                            </Box>
-                        ))}
-                    </List>
-                ) : (
-                    <Typography variant="body1" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                        No entries yet. Add your first expense using the "Add Entry" button.
+                )}
+                {error && (
+                    <Typography color="error" sx={{ textAlign: 'center', p: 3 }}>
+                        {error}
                     </Typography>
+                )}
+                {!loading && !error && (
+                    entries.length > 0 ? (
+                        <List sx={{ bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
+                            {entries.map((entry, index) => (
+                                <Box key={entry.id}>
+                                    <ListItem alignItems="flex-start">
+                                        <ListItemText
+                                            primary={
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography component="span" variant="subtitle1">
+                                                        {formatDate(entry.date)}
+                                                    </Typography>
+                                                    <Typography component="span" variant="subtitle1" fontWeight="bold">
+                                                        {formatAmount(entry.amount)}
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                            secondary={
+                                                entry.description || 'No description'
+                                            }
+                                        />
+                                        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+                                            <EntryMenu
+                                                entry={entry}
+                                                db={db}
+                                                user={user}
+                                                currentMonth={currentMonth}
+                                                selectedCategory={selectedCategory}
+                                                onEntryUpdated={fetchEntries}
+                                                mode={mode}
+                                            />
+                                        </Box>
+                                    </ListItem>
+                                    {index < entries.length - 1 && <Divider component="li" />}
+                                </Box>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography sx={{ textAlign: 'center', p: 3, color: 'text.secondary' }}>
+                            No entries found for this category this month. Add one!
+                        </Typography>
+                    )
                 )}
             </Box>
         </Paper>

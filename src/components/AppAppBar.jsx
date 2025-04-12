@@ -17,9 +17,9 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext } from 'react'; // Import useContext
 import PropTypes from 'prop-types';
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+// Remove Firebase auth imports handled by context
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -31,15 +31,15 @@ import Typography from '@mui/material/Typography';
 import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
-import Avatar from '@mui/material/Avatar';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
+import LoginIcon from '@mui/icons-material/Login';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
 import ToggleColorMode from './ToggleColorMode';
 import LoginModal from './Authentication/LoginModal';
 import SignUpModal from './Authentication/SignUpModal';
 import logo from '../assets/websitelogo.png';
 import useModal from '../hooks/useModal';
-import ProfileMenu from './ProfileMenu';
+import ProfileMenu from './ProfileMenu'; // Use the updated ProfileMenu
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 
 const logoStyle = {
   width: '150px',
@@ -47,49 +47,43 @@ const logoStyle = {
   cursor: 'pointer',
 };
 
-function AppAppBar({ mode, toggleColorMode, app }) {
+function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed directly anymore
   const [open, setOpen] = useState(false);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const [user, setUser] = useState(auth.currentUser);
-  const [loading, setLoading] = useState(true);
+  const { activeUser, loading, db } = useAuth(); // Get user and loading state from context
+  // const db = getFirestore(app); // Get db from context if needed, or directly
 
   const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
   const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false); // Set loading to false once we have the initial auth state
-    });
-    return unsubscribe;
-  }, [auth]);
+  // Remove useEffect for onAuthStateChanged - context handles this
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
   };
 
-  const handleSignOut = () => {
-    signOut(auth)
-      .catch((error) => {
-        console.error("Sign out error:", error);
-      });
-  };
+  // Remove handleSignOut - context handles this via ProfileMenu
 
   const handleThemeChange = async () => {
     toggleColorMode();
-    if (user) {
+    // Use activeUser from context
+    if (activeUser) {
       try {
         const newMode = mode === 'light' ? 'dark' : 'light';
-        await setDoc(doc(db, 'userPreferences', user.uid), {
-          theme: newMode
-        }, { merge: true });
+        // Ensure db is available from context or props
+        if (db) {
+            await setDoc(doc(db, 'userPreferences', activeUser.uid), {
+              theme: newMode
+            }, { merge: true });
+        } else {
+            console.warn("Firestore instance (db) not available in AppAppBar for theme saving.");
+        }
       } catch (error) {
         console.error("Error saving theme preference:", error);
       }
     }
   };
 
+  // Keep modal openers, ProfileMenu will use context actions
   const handleOpenLoginModal = () => {
     openLoginModal();
     if (open) setOpen(false); // Close drawer if open
@@ -173,37 +167,39 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                 </MenuItem>
               </Box>
             </Box>
-            {/* Desktop: Show auth buttons when not logged in, otherwise show ProfileMenu */}
+            {/* Desktop: Show auth buttons or ProfileMenu based on context */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-              {(!loading && !user) ? (
+              {(!loading && !activeUser) ? ( // Check activeUser from context
                 <>
                   <MenuItem onClick={handleOpenSignUpModal} sx={{ py: '6px', px: '12px' }}>
+                    <HowToRegIcon sx={{ mr: 0.5, color: 'text.primary' }} />
                     <Typography variant="body2" color="text.primary">Sign Up</Typography>
                   </MenuItem>
                   <MenuItem onClick={handleOpenLoginModal} sx={{ py: '6px', px: '12px' }}>
+                    <LoginIcon sx={{ mr: 0.5, color: 'text.primary' }} />
                     <Typography variant="body2" color="text.primary">Log In</Typography>
                   </MenuItem>
                 </>
-              ) : (
+              ) : !loading ? ( // Render ProfileMenu if not loading and user exists
                 <ProfileMenu
-                  user={user}
+                  // Pass modal openers for the "Add Account" functionality
                   openLoginModal={handleOpenLoginModal}
                   openSignUpModal={handleOpenSignUpModal}
-                  handleSignOut={handleSignOut}
+                  // No need to pass user or signOut, ProfileMenu uses context
                   sx={{ p: 0 }}
                 />
-              )}
+              ) : null /* Optionally show a loader */}
               <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
             </Box>
             <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
               {/* Mobile: ProfileMenu placed left of hamburger */}
-              <ProfileMenu
-                user={user}
-                openLoginModal={handleOpenLoginModal}
-                openSignUpModal={handleOpenSignUpModal}
-                handleSignOut={handleSignOut}
-                sx={{ p: 0 }}
-              />
+              {!loading && activeUser && ( // Only show ProfileMenu if logged in
+                 <ProfileMenu
+                    openLoginModal={handleOpenLoginModal}
+                    openSignUpModal={handleOpenSignUpModal}
+                    sx={{ p: 0}}
+                 />
+              )}
               <Button
                 variant="text"
                 color="primary"
@@ -217,7 +213,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
           </Toolbar>
         </Container>
       </AppBar>
-      {/* Mobile Drawer: Remove redundant auth options */}
+      {/* Mobile Drawer */}
       <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
         <Box
           sx={{
@@ -237,6 +233,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
           >
             <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
           </Box>
+          {/* Navigation MenuItems remain the same */}
           <MenuItem onClick={() => window.open("/", "_self")}>
             Home
           </MenuItem>
@@ -250,19 +247,36 @@ function AppAppBar({ mode, toggleColorMode, app }) {
             Manual Budget
           </MenuItem>
           <Divider />
-          {/* Removed redundant mobile auth options */}
+          {/* Mobile Auth Options - Render based on context */}
+          {(!loading && !activeUser) ? (
+            <>
+              <MenuItem onClick={() => { handleOpenSignUpModal(); toggleDrawer(false)(); }}>
+                 <HowToRegIcon sx={{ mr: 1 }} /> Sign Up
+              </MenuItem>
+              <MenuItem onClick={() => { handleOpenLoginModal(); toggleDrawer(false)(); }}>
+                 <LoginIcon sx={{ mr: 1 }} /> Log In
+              </MenuItem>
+            </>
+          ) : (
+            // Optionally add mobile-specific account management items here if needed,
+            // or rely on the ProfileMenu component being accessible.
+            // For simplicity, we assume ProfileMenu handles mobile needs too.
+            // If not, add items like "Switch Account", "Sign Out", etc. here, using context functions.
+            null
+          )}
         </Box>
       </Drawer>
-      
+
+      {/* Modals remain the same, but their internal logic will change */}
       <LoginModal
         open={loginModalOpen}
         onClose={closeLoginModal}
-        app={app}
+        // Pass app if needed by modal internals, or let modal use context
       />
       <SignUpModal
         open={signUpModalOpen}
         onClose={closeSignUpModal}
-        app={app}
+        // Pass app if needed by modal internals, or let modal use context
       />
     </div>
   );
@@ -271,6 +285,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
 AppAppBar.propTypes = {
   mode: PropTypes.oneOf(['dark', 'light']).isRequired,
   toggleColorMode: PropTypes.func.isRequired,
+  // app: PropTypes.object.isRequired, // app might become optional if context provides it
 };
 
 export default AppAppBar;
