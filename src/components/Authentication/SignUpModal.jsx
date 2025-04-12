@@ -29,57 +29,57 @@ import {
   IconButton,
   Alert
 } from '@mui/material';
+import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import GoogleIcon from '@mui/icons-material/Google';
 import CloseIcon from '@mui/icons-material/Close';
-import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
-export default function SignUpModal({ open, onClose }) { // Remove app prop
-  const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
+export default function SignUpModal({ open, onClose, app }) {
+  const auth = getAuth(app);
+
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [error, setError] = useState('');
-  const { handleEmailPasswordSignUp, handleGoogleSignIn } = useAuth(); // Get auth functions
 
-  const handleChange = (event) => {
-    setFormData({ ...formData, [event.target.name]: event.target.value });
-    setError(''); // Clear error on change
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      onClose();
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
+      event.preventDefault();
       handleSubmit(event);
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (formData.password.length < 6) {
-        setError("Password must be at least 6 characters long.");
-        return;
-    }
-
-    try {
-      await handleEmailPasswordSignUp(formData.email, formData.password);
-      onClose(); // Close modal on success
-    } catch (err) {
-      setError(err.message || 'Failed to sign up. Please try again.');
-      console.error("Sign up error:", err);
-    }
+  const handleChange = (event) => {
+    setFormData({
+      ...formData,
+      [event.target.name]: event.target.value
+    });
   };
 
-  const googleSignUp = async () => {
-    setError('');
-    try {
-      // Google Sign-In often handles both login and signup seamlessly
-      await handleGoogleSignIn();
-      onClose(); // Close modal on success
-    } catch (err) {
-      setError(err.message || 'Failed to sign up with Google.');
-      console.error("Google Sign Up error:", err);
-    }
+  const handleGoogleSignUp = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .then(() => {
+        onClose();
+      })
+      .catch((error) => {
+        setError(error.message);
+      });
   };
 
   return (
@@ -163,7 +163,7 @@ export default function SignUpModal({ open, onClose }) { // Remove app prop
             fullWidth
             variant="outlined"
             startIcon={<GoogleIcon />}
-            onClick={googleSignUp} // Use updated Google handler
+            onClick={handleGoogleSignUp}
           >
             Sign up with Google
           </Button>
