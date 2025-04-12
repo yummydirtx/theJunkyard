@@ -31,11 +31,15 @@ import Typography from '@mui/material/Typography';
 import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
+import Avatar from '@mui/material/Avatar';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
 import ToggleColorMode from './ToggleColorMode';
 import LoginModal from './Authentication/LoginModal';
 import SignUpModal from './Authentication/SignUpModal';
 import logo from '../assets/websitelogo.png';
 import useModal from '../hooks/useModal';
+import ProfileMenu from './ProfileMenu';
 
 const logoStyle = {
   width: '150px',
@@ -169,38 +173,37 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                 </MenuItem>
               </Box>
             </Box>
-            <Box
-              sx={{
-                display: { xs: 'none', md: 'flex' },
-                gap: 0.5,
-                alignItems: 'center',
-              }}
-            >
-              {!loading && ( // Only show auth UI after loading
-                user ? (
-                  <MenuItem onClick={handleSignOut} sx={{ py: '6px', px: '12px' }}>
-                    <Typography variant="body2" color="text.primary">
-                      Sign Out
-                    </Typography>
+            {/* Desktop: Show auth buttons when not logged in, otherwise show ProfileMenu */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+              {(!loading && !user) ? (
+                <>
+                  <MenuItem onClick={handleOpenSignUpModal} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">Sign Up</Typography>
                   </MenuItem>
-                ) : (
-                  <>
-                    <MenuItem onClick={handleOpenSignUpModal} sx={{ py: '6px', px: '12px' }}>
-                      <Typography variant="body2" color="text.primary">
-                        Sign Up
-                      </Typography>
-                    </MenuItem>
-                    <MenuItem onClick={handleOpenLoginModal} sx={{ py: '6px', px: '12px' }}>
-                      <Typography variant="body2" color="text.primary">
-                        Log In
-                      </Typography>
-                    </MenuItem>
-                  </>
-                )
+                  <MenuItem onClick={handleOpenLoginModal} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">Log In</Typography>
+                  </MenuItem>
+                </>
+              ) : (
+                <ProfileMenu
+                  user={user}
+                  openLoginModal={handleOpenLoginModal}
+                  openSignUpModal={handleOpenSignUpModal}
+                  handleSignOut={handleSignOut}
+                  sx={{ p: 0 }}
+                />
               )}
               <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
             </Box>
-            <Box sx={{ display: { sm: '', md: 'none' } }}>
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
+              {/* Mobile: ProfileMenu placed left of hamburger */}
+              <ProfileMenu
+                user={user}
+                openLoginModal={handleOpenLoginModal}
+                openSignUpModal={handleOpenSignUpModal}
+                handleSignOut={handleSignOut}
+                sx={{ p: 0 }}
+              />
               <Button
                 variant="text"
                 color="primary"
@@ -210,60 +213,47 @@ function AppAppBar({ mode, toggleColorMode, app }) {
               >
                 <MenuIcon />
               </Button>
-              <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
-                <Box
-                  sx={{
-                    minWidth: '60dvw',
-                    p: 2,
-                    backgroundColor: 'background.paper',
-                    flexGrow: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'end',
-                      flexGrow: 1,
-                    }}
-                  >
-                    <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
-                  </Box>
-                  <MenuItem onClick={() => window.open("/", "_self")}>
-                    Home
-                  </MenuItem>
-                  <MenuItem onClick={() => window.open("/calcbasic-web", "_self")}>
-                    calcBasic
-                  </MenuItem>
-                  <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
-                    YTThumb
-                  </MenuItem>
-                  <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
-                    Manual Budget
-                  </MenuItem>
-                  <Divider />
-                  {!loading && ( // Only show auth UI after loading
-                    user ? (
-                      <MenuItem onClick={handleSignOut}>
-                        Sign Out
-                      </MenuItem>
-                    ) : (
-                      <>
-                        <MenuItem onClick={handleOpenSignUpModal}>
-                          Sign Up
-                        </MenuItem>
-                        <MenuItem onClick={handleOpenLoginModal}>
-                          Log In
-                        </MenuItem>
-                      </>
-                    )
-                  )}
-                </Box>
-              </Drawer>
             </Box>
           </Toolbar>
         </Container>
       </AppBar>
+      {/* Mobile Drawer: Remove redundant auth options */}
+      <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
+        <Box
+          sx={{
+            minWidth: '60dvw',
+            p: 2,
+            backgroundColor: 'background.paper',
+            flexGrow: 1,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'end',
+              flexGrow: 1,
+            }}
+          >
+            <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
+          </Box>
+          <MenuItem onClick={() => window.open("/", "_self")}>
+            Home
+          </MenuItem>
+          <MenuItem onClick={() => window.open("/calcbasic-web", "_self")}>
+            calcBasic
+          </MenuItem>
+          <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
+            YTThumb
+          </MenuItem>
+          <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
+            Manual Budget
+          </MenuItem>
+          <Divider />
+          {/* Removed redundant mobile auth options */}
+        </Box>
+      </Drawer>
+      
       <LoginModal
         open={loginModalOpen}
         onClose={closeLoginModal}
