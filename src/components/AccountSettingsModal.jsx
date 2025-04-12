@@ -30,9 +30,14 @@ import {
   Stack,
   CircularProgress,
   Typography,
-  Box
+  Box,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useAuth } from '../contexts/AuthContext';
 import { sendPasswordResetEmail, updateProfile, deleteUser } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
@@ -150,10 +155,9 @@ export default function AccountSettingsModal({ open, onClose }) {
   const [loading, setLoading] = useState({
     resetPassword: false,
     deleteAccount: false,
-    uploadPic: false, // Now used for the final upload step
+    uploadPic: false,
+    updateName: false, // Add loading state for name update
   });
-  // Remove profilePicPreview state, use imageSrc for cropper
-  // const [profilePicPreview, setProfilePicPreview] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // --- Cropping State ---
@@ -165,6 +169,11 @@ export default function AccountSettingsModal({ open, onClose }) {
   const [originalFile, setOriginalFile] = useState(null); // Store the original file object
   // --- End Cropping State ---
 
+  // --- Display Name State ---
+  const [displayName, setDisplayName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  // --- End Display Name State ---
+
 
   useEffect(() => {
     setMessage({ type: '', text: '' });
@@ -173,7 +182,17 @@ export default function AccountSettingsModal({ open, onClose }) {
     setCrop(undefined);
     setCompletedCrop(undefined);
     setOriginalFile(null);
+    // Reset name editing state and value
+    setIsEditingName(false);
+    setDisplayName(activeUser?.displayName || ''); // Initialize with current name
   }, [open, activeUser]);
+
+  // Initialize displayName when activeUser loads/changes if modal is already open
+  useEffect(() => {
+    if (activeUser) {
+        setDisplayName(activeUser.displayName || '');
+    }
+  }, [activeUser]);
 
   const handleResetPassword = async () => {
     // Check if email exists on activeUser (already done)
@@ -227,6 +246,46 @@ export default function AccountSettingsModal({ open, onClose }) {
     }
     // setLoading state is handled by auth state change on success
   };
+
+  // --- Name Editing Handlers ---
+  const handleEditName = () => {
+    setIsEditingName(true);
+    setMessage({ type: '', text: '' }); // Clear messages
+  };
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false);
+    setDisplayName(activeUser?.displayName || ''); // Reset to original name
+    setMessage({ type: '', text: '' }); // Clear messages
+  };
+
+  const handleSaveName = async () => {
+    if (!auth?.currentUser) {
+        setMessage({ type: 'error', text: 'Cannot update name: User not properly authenticated.' });
+        return;
+    }
+    if (displayName.trim() === (activeUser?.displayName || '')) {
+        // No change, just exit editing mode
+        setIsEditingName(false);
+        return;
+    }
+
+    setLoading(prev => ({ ...prev, updateName: true }));
+    setMessage({ type: '', text: '' });
+
+    try {
+        await updateProfile(auth.currentUser, { displayName: displayName.trim() });
+        updateActiveUser({ displayName: displayName.trim() }); // Update context state
+        setMessage({ type: 'success', text: 'Display name updated.' });
+        setIsEditingName(false); // Exit editing mode on success
+    } catch (error) {
+        console.error("Update Name Error:", error);
+        setMessage({ type: 'error', text: `Failed to update display name: ${error.message}` });
+    } finally {
+        setLoading(prev => ({ ...prev, updateName: false }));
+    }
+  };
+  // --- End Name Editing Handlers ---
 
   // Renamed original function - now just handles file selection and initiates cropping
   const onSelectFile = (e) => {
@@ -351,9 +410,9 @@ export default function AccountSettingsModal({ open, onClose }) {
       setMessage({ type: '', text: '' }); // Clear any messages
   }
 
-  // Use activeUser.photoURL directly, no need for profilePicPreview state
   const currentPhotoURL = activeUser?.photoURL;
-  const isActionDisabled = !activeUser || !auth?.currentUser || loading.deleteAccount || loading.resetPassword || loading.uploadPic;
+  // Update isActionDisabled to include updateName loading state
+  const isActionDisabled = !activeUser || !auth?.currentUser || loading.deleteAccount || loading.resetPassword || loading.uploadPic || loading.updateName;
 
   return (
     <>
@@ -400,6 +459,52 @@ export default function AccountSettingsModal({ open, onClose }) {
           ) : (
             // --- Standard View ---
             <Stack spacing={3} sx={{ mt: 1 }}>
+              {/* Display Name Field */}
+              <TextField
+                label="Display Name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={!isEditingName || loading.updateName}
+                fullWidth
+                variant="outlined"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {isEditingName ? (
+                        <>
+                          <IconButton
+                            aria-label="cancel name edit"
+                            onClick={handleCancelEditName}
+                            edge="end"
+                            disabled={loading.updateName}
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                          <IconButton
+                            aria-label="save display name"
+                            onClick={handleSaveName}
+                            edge="end"
+                            disabled={loading.updateName || !displayName.trim()} // Disable save if name is empty/whitespace
+                            color="primary"
+                          >
+                            {loading.updateName ? <CircularProgress size={24} /> : <SaveIcon />}
+                          </IconButton>
+                        </>
+                      ) : (
+                        <IconButton
+                          aria-label="edit display name"
+                          onClick={handleEditName}
+                          edge="end"
+                          disabled={isActionDisabled} // Disable if other actions are loading
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      )}
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
               <TextField
                 label="Email"
                 value={activeUser?.email || ''}
@@ -463,8 +568,8 @@ export default function AccountSettingsModal({ open, onClose }) {
 
         </DialogContent>
         <DialogActions>
-          {/* Disable close button while cropping/uploading */}
-          <Button onClick={onClose} disabled={loading.deleteAccount || loading.uploadPic || !!imageSrc}>Close</Button>
+          {/* Disable close button while cropping/uploading/saving name */}
+          <Button onClick={onClose} disabled={loading.deleteAccount || loading.uploadPic || !!imageSrc || loading.updateName}>Close</Button>
         </DialogActions>
       </Dialog>
 
