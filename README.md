@@ -1,9 +1,8 @@
 <div id="top">
 
 <!-- HEADER STYLE: COMPACT -->
-<img src="./src/assets/websitelogo.png" width="30%" align="left" style="margin-right: 15px">
+<img src="./src/assets/websitelogo.png" width="50%" style="margin-right: 15px" alt="theJunkyard Logo">
 
-# theJunkyard
 <em></em>
 
 <!-- BADGES -->
