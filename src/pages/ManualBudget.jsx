@@ -31,6 +31,7 @@ import {
     Button,
     Grid,
     Chip,
+    CircularProgress,
 } from '@mui/material';
 import { useState, useRef, useEffect } from 'react';
 import { alpha } from '@mui/material/styles';
@@ -56,30 +57,30 @@ import BudgetGraphsModal from '../components/ManualBudget/BudgetGraphsModal';
 import MonthSelectorModal from '../components/ManualBudget/MonthSelectorModal';
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
+import { useAuth } from '../contexts/AuthContext';
 
-export default function ManualBudget({ setMode, mode, app }) {
+export default function ManualBudget({ setMode, mode }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
+    const { activeUser, loading: authLoading, db } = useAuth();
 
-    // Use custom hook for data fetching and authentication
     const {
-        user,
-        loading,
+        loading: dataLoading,
         name,
         categories,
         currentMonth,
-        db,
         updateCategories,
         needsNamePrompt,
         createUserDocument,
         setCurrentMonth,
         addNewMonth
-    } = useManualBudgetData(app);
+    } = useManualBudgetData();
+
+    const loading = authLoading || dataLoading;
 
     const [selectedOption, setSelectedOption] = useState('');
     const [nameInput, setNameInput] = useState('');
 
-    // Use custom hook for modal state management
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
@@ -91,6 +92,17 @@ export default function ManualBudget({ setMode, mode, app }) {
     const [shouldRefreshGraphs, setShouldRefreshGraphs] = useState(false);
 
     const entryListRef = useRef(null);
+
+    useEffect(() => {
+        if (!activeUser && !authLoading) {
+            closeAddCategoryModal();
+            closeAddEntryModal();
+            closeConfirmDialog();
+            closeEditCategoryModal();
+            closeBudgetGraphsModal();
+            closeMonthSelector();
+        }
+    }, [activeUser, authLoading]);
 
     const handleChange = (event) => {
         setSelectedOption(event.target.value);
@@ -110,50 +122,39 @@ export default function ManualBudget({ setMode, mode, app }) {
         openEditCategoryModal();
     };
 
-    const handleCategoryUpdated = (newCategoryName, oldCategoryName) => {
-        // Update local categories list
-        if (newCategoryName !== oldCategoryName) {
-            const updatedCategories = categories.map(cat =>
-                cat === oldCategoryName ? newCategoryName : cat
-            );
-            updateCategories(updatedCategories);
-            setSelectedOption(newCategoryName);
-        }
-
-        // Signal that graphs should be refreshed
-        setShouldRefreshGraphs(true);
-
-        // Refresh entry list if category is selected
-        if (entryListRef.current && selectedOption === oldCategoryName) {
-            entryListRef.current.refreshEntries();
-        }
-    };
-
     const handleCategoryRemoved = (categoryName) => {
         updateCategories(categories.filter(cat => cat !== categoryName));
         setSelectedOption('');
     };
 
-    const handleNameSubmit = () => {
-        if (nameInput.trim()) {
-            createUserDocument(nameInput.trim());
+    const handleCategoryUpdated = (newCategoryName, oldCategoryName) => {
+        updateCategories(categories.map(cat => cat === oldCategoryName ? newCategoryName : cat));
+        if (selectedOption === oldCategoryName) {
+            setSelectedOption(newCategoryName);
+        }
+        setShouldRefreshGraphs(true);
+        closeEditCategoryModal();
+    };
+
+    const handleNameSubmit = async () => {
+        if (!nameInput.trim() || !activeUser) return;
+        try {
+            await createUserDocument(activeUser.uid, nameInput.trim());
+        } catch (error) {
+            console.error("Error setting user name:", error);
         }
     };
 
     const handleEntryAdded = () => {
-        // Refresh entries list after adding a new entry
         if (entryListRef.current) {
             entryListRef.current.refreshEntries();
         }
-        // Signal that graphs should be refreshed
         setShouldRefreshGraphs(true);
     };
 
     const handleMonthSelect = (month) => {
-        // Update current month and reset selected category
         setCurrentMonth(month);
         setSelectedOption('');
-        // Signal that graphs should be refreshed
         setShouldRefreshGraphs(true);
     };
 
@@ -162,29 +163,23 @@ export default function ManualBudget({ setMode, mode, app }) {
         openBudgetGraphsModal();
     };
 
-    // Cleanup effect to reset refresh flag when modal closes
     useEffect(() => {
         if (!budgetGraphsModalOpen) {
             setShouldRefreshGraphs(false);
         }
     }, [budgetGraphsModalOpen]);
 
-    // Reset state when authentication changes
     useEffect(() => {
-        // Reset selected category and other UI state on auth change
         setSelectedOption('');
         setNameInput('');
-
-        // Close any open modals related to user data
         closeAddCategoryModal();
         closeAddEntryModal();
         closeConfirmDialog();
         closeEditCategoryModal();
         closeBudgetGraphsModal();
         closeMonthSelector();
-    }, [user]);
+    }, [activeUser]);
 
-    // Format month string for display (YYYY-MM to Month YYYY)
     const formatMonth = (monthStr) => {
         try {
             const [year, month] = monthStr.split('-');
@@ -198,7 +193,7 @@ export default function ManualBudget({ setMode, mode, app }) {
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
-            <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
+            <AppAppBar mode={mode} toggleColorMode={setMode} />
             <Box
                 sx={(theme) => ({
                     width: '100%',
@@ -210,7 +205,6 @@ export default function ManualBudget({ setMode, mode, app }) {
                     backgroundRepeat: 'no-repeat',
                 })}
             >
-                {/* Application container, fixed height */}
                 <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>
                         <Typography variant='h2'
@@ -225,7 +219,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                             Manual Budget
                         </Typography>
 
-                        {!loading && user && (
+                        {!loading && activeUser && (
                             <Chip
                                 icon={<CalendarMonthIcon />}
                                 label={formatMonth(currentMonth)}
@@ -242,7 +236,7 @@ export default function ManualBudget({ setMode, mode, app }) {
                         )}
                     </Box>
 
-                    {!loading && (user ? (
+                    {!loading && (activeUser ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
                             <Grid container spacing={2} sx={{ mb: 2, mt: 1 }}>
                                 <Grid>
@@ -295,14 +289,12 @@ export default function ManualBudget({ setMode, mode, app }) {
                                 </Grid>
                             </Grid>
 
-                            {/* Flex container for main content - ensures proper space distribution */}
                             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
-                                {/* Display entries for the selected category */}
                                 {selectedOption ? (
                                     <EntryList
                                         ref={entryListRef}
                                         db={db}
-                                        user={user}
+                                        user={activeUser}
                                         currentMonth={currentMonth}
                                         selectedCategory={selectedOption}
                                         sx={{ flexGrow: 1 }}
@@ -318,16 +310,20 @@ export default function ManualBudget({ setMode, mode, app }) {
                             openLoginModal={openLoginModal}
                             openSignUpModal={openSignUpModal}
                             loading={loading}
-                            user={user}
+                            user={activeUser}
                             key="login-prompt"
                         />]
                     ))}
+                    {loading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                            <CircularProgress />
+                        </Box>
+                    )}
                 </Container>
                 <Footer />
             </Box>
 
-            {/* Name Prompt Dialog */}
-            <Dialog open={needsNamePrompt && !loading && user} onClose={() => { }}>
+            <Dialog open={needsNamePrompt && !loading && activeUser} onClose={() => { }}>
                 <DialogTitle>Welcome to Manual Budget</DialogTitle>
                 <DialogContent>
                     <Typography gutterBottom>
@@ -357,85 +353,75 @@ export default function ManualBudget({ setMode, mode, app }) {
                 </DialogActions>
             </Dialog>
 
-            {/* Authentication Modals */}
             <LoginModal
                 open={loginModalOpen}
                 onClose={closeLoginModal}
-                app={app}
             />
             <SignUpModal
                 open={signUpModalOpen}
                 onClose={closeSignUpModal}
-                app={app}
             />
 
-            {/* Add Category Modal */}
-            <AddCategoryModal
-                open={addCategoryModalOpen}
-                onClose={closeAddCategoryModal}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                onCategoryAdded={handleCategoryAdded}
-            />
-
-            {/* Remove Category Dialog */}
-            <RemoveCategoryDialog
-                open={confirmDialogOpen}
-                onClose={closeConfirmDialog}
-                categoryName={selectedOption}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                onCategoryRemoved={handleCategoryRemoved}
-            />
-
-            {/* Add Entry Modal */}
-            <AddEntryModal
-                open={addEntryModalOpen}
-                onClose={closeAddEntryModal}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                selectedCategory={selectedOption}
-                onEntryAdded={handleEntryAdded}
-                mode={mode}
-            />
-
-            {/* Budget Graphs Modal */}
-            <BudgetGraphsModal
-                open={budgetGraphsModalOpen}
-                onClose={closeBudgetGraphsModal}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                selectedCategory={selectedOption}
-                mode={mode}
-                forceRefresh={shouldRefreshGraphs}
-            />
-
-            {/* Month Selector Modal */}
-            <MonthSelectorModal
-                open={monthSelectorOpen}
-                onClose={closeMonthSelector}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                onMonthSelect={handleMonthSelect}
-                mode={mode}
-                addNewMonth={addNewMonth}
-            />
-
-            {/* Edit Category Modal */}
-            <EditCategoryModal
-                open={editCategoryModalOpen}
-                onClose={closeEditCategoryModal}
-                db={db}
-                user={user}
-                currentMonth={currentMonth}
-                selectedCategory={selectedOption}
-                onCategoryUpdated={handleCategoryUpdated}
-            />
+            {activeUser && db && (
+                <>
+                    <AddCategoryModal
+                        open={addCategoryModalOpen}
+                        onClose={closeAddCategoryModal}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        onCategoryAdded={handleCategoryAdded}
+                    />
+                    <RemoveCategoryDialog
+                        open={confirmDialogOpen}
+                        onClose={closeConfirmDialog}
+                        categoryName={selectedOption}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        onCategoryRemoved={handleCategoryRemoved}
+                    />
+                    <AddEntryModal
+                        open={addEntryModalOpen}
+                        onClose={closeAddEntryModal}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        selectedCategory={selectedOption}
+                        onEntryAdded={handleEntryAdded}
+                        mode={mode}
+                    />
+                    <BudgetGraphsModal
+                        open={budgetGraphsModalOpen}
+                        onClose={closeBudgetGraphsModal}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        selectedCategory={selectedOption}
+                        mode={mode}
+                        forceRefresh={shouldRefreshGraphs}
+                    />
+                    <MonthSelectorModal
+                        open={monthSelectorOpen}
+                        onClose={closeMonthSelector}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        onMonthSelect={handleMonthSelect}
+                        mode={mode}
+                        addNewMonth={addNewMonth}
+                    />
+                    <EditCategoryModal
+                        open={editCategoryModalOpen}
+                        onClose={closeEditCategoryModal}
+                        db={db}
+                        user={activeUser}
+                        currentMonth={currentMonth}
+                        selectedCategory={selectedOption}
+                        onCategoryUpdated={handleCategoryUpdated}
+                    />
+                </>
+            )}
         </ThemeProvider>
     );
 }

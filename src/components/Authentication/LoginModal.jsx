@@ -30,58 +30,52 @@ import {
   Alert,
   Link
 } from '@mui/material';
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 import GoogleIcon from '@mui/icons-material/Google';
 import CloseIcon from '@mui/icons-material/Close';
 import ForgotPasswordModal from './ForgotPasswordModal';
 
-export default function LoginModal({ open, onClose, app }) {
-  const auth = getAuth(app);
-
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+export default function LoginModal({ open, onClose }) { // Remove app prop if context provides auth
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      onClose();
-    } catch (error) {
-      setError(error.message);
-    }
-  };
+  const { handleEmailPasswordLogin, handleGoogleSignIn } = useAuth(); // Get auth functions
 
   const handleChange = (event) => {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value
-    });
+    setFormData({ ...formData, [event.target.name]: event.target.value });
+    setError(''); // Clear error on change
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      event.preventDefault();
       handleSubmit(event);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-      .then(() => {
-        onClose();
-      })
-      .catch((error) => {
-        setError(error.message);
-      });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    try {
+      await handleEmailPasswordLogin(formData.email, formData.password);
+      onClose(); // Close modal on success
+    } catch (err) {
+      setError(err.message || 'Failed to log in. Please check your credentials.');
+      console.error("Login error:", err);
+    }
+  };
+
+  const googleSignIn = async () => {
+    setError('');
+    try {
+      await handleGoogleSignIn();
+      onClose(); // Close modal on success
+    } catch (err) {
+      setError(err.message || 'Failed to sign in with Google.');
+      console.error("Google Sign In error:", err);
+    }
   };
 
   const openForgotPassword = (event) => {
-    // Prevent default to avoid form validation
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -175,7 +169,7 @@ export default function LoginModal({ open, onClose, app }) {
               fullWidth
               variant="outlined"
               startIcon={<GoogleIcon />}
-              onClick={handleGoogleSignIn}
+              onClick={googleSignIn} // Use updated Google sign-in handler
             >
               Sign in with Google
             </Button>
@@ -186,8 +180,6 @@ export default function LoginModal({ open, onClose, app }) {
       <ForgotPasswordModal 
         open={forgotPasswordOpen}
         onClose={closeForgotPassword}
-        app={app}
-        initialEmail={formData.email} // Pass current email value
       />
     </>
   );

@@ -17,14 +17,27 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography
+} from '@mui/material';
 
-export function useTitle(title) {
-  useEffect(() => {
-    const prevTitle = document.title
-    document.title = title
-    return () => {
-      document.title = prevTitle
-    }
-  })
+// Simple Confirmation Dialog Component
+export default function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
+  return (
+    <Dialog open={open} onClose={() => onClose(false)}>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>
+        <Typography>{message}</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => onClose(false)}>Cancel</Button>
+        <Button onClick={() => { onConfirm(); onClose(false); }} color="error">Confirm</Button>
+      </DialogActions>
+    </Dialog>
+  );
 }

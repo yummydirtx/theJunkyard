@@ -18,21 +18,17 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react'; // Import Suspense
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Lazy load pages instead of direct imports
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const CalcBasic = lazy(() => import('./pages/CalcBasic'));
-const YTThumb = lazy(() => import('./pages/YTThumb'));
-const ManualBudget = lazy(() => import('./pages/ManualBudget'));
+// Remove auth imports handled by context
+// import { getAuth, onAuthStateChanged } from "firebase/auth";
+// import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { AuthProvider } from './contexts/AuthContext'; // Import AuthProvider
+import CircularProgress from '@mui/material/CircularProgress'; // For Suspense fallback
+import Box from '@mui/material/Box'; // For Suspense fallback styling
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -50,62 +46,60 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// Lazy load pages instead of direct imports
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const CalcBasic = lazy(() => import('./pages/CalcBasic'));
+const YTThumb = lazy(() => import('./pages/YTThumb'));
+const ManualBudget = lazy(() => import('./pages/ManualBudget'));
+
 export default function App() {
   const [mode, setMode] = React.useState(() => {
-    // Default to system preference initially
+    // Check localStorage first
+    const localMode = localStorage.getItem('mode');
+    if (localMode) return localMode;
+    // Default to system preference if no localStorage value
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
 
-  React.useEffect(() => {
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // User is signed in, get their preference from Firestore
-        try {
-          const userPrefs = await getDoc(doc(db, 'userPreferences', user.uid));
-          if (userPrefs.exists() && userPrefs.data().theme) {
-            setMode(userPrefs.data().theme);
-          } else {
-            // If no Firestore preference, use localStorage
-            const localMode = localStorage.getItem('mode');
-            if (localMode) setMode(localMode);
-          }
-        } catch (error) {
-          console.error("Error fetching theme preference:", error);
-        }
-      } else {
-        // User is signed out, use localStorage
-        const localMode = localStorage.getItem('mode');
-        if (localMode) setMode(localMode);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Remove useEffect for onAuthStateChanged - AuthContext and AppAppBar handle user state and theme updates
+  // React.useEffect(() => { ... });
 
   const toggleColorMode = () => {
     setMode((prev) => {
       const newMode = prev === 'dark' ? 'light' : 'dark';
       localStorage.setItem('mode', newMode); // Save the new mode to localStorage
+      // Theme saving to Firestore is now handled in AppAppBar based on activeUser
       return newMode;
     });
   };
 
+  // Suspense fallback component
+  const LoadingFallback = () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <CircularProgress />
+    </Box>
+  );
+
   return (
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true
-      }}
-    >
-      <Routes>
-        <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} app={app} />} />
-        <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} app={app}/>} />
-        <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} app={app}/>} />
-      </Routes>
-    </BrowserRouter>
+    // Wrap the entire routing structure with AuthProvider
+    <AuthProvider app={app}>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
+        {/* Use Suspense to handle lazy loading */}
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Pass mode, toggleColorMode, but remove app prop where context is used */}
+            <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
+            <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} />} />
+            <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} />} />
+            <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
