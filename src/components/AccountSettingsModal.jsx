@@ -458,7 +458,7 @@ export default function AccountSettingsModal({ open, onClose }) {
             </Stack>
           ) : (
             // --- Standard View ---
-            <Stack spacing={3} sx={{ mt: 1 }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
               {/* Display Name Field */}
               <TextField
                 label="Display Name"
