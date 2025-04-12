@@ -45,6 +45,14 @@ export const AuthProvider = ({ children, app }) => {
         }
     }, [auth, db]); // Add db dependency for fetching user prefs
 
+    // Function to manually update parts of the activeUser state
+    const updateActiveUser = useCallback((updates) => {
+        setActiveUser(prevUser => {
+            if (!prevUser) return null; // Should not happen if called correctly, but safe check
+            return { ...prevUser, ...updates };
+        });
+    }, []);
+
     // --- Authentication Methods ---
     // These now just perform the Firebase action. onAuthStateChanged handles state updates.
 
@@ -112,10 +120,12 @@ export const AuthProvider = ({ children, app }) => {
         handleEmailPasswordSignUp,
         handleEmailPasswordLogin,
         signOut, // Provide the single sign out function
+        // Manual update function
+        updateActiveUser, // Add the new function here
         // Pass db and auth if needed by consumers
         db,
         auth,
-        app
+        app // Ensure app is exported
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
