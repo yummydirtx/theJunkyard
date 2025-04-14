@@ -96,11 +96,14 @@ export default function ProfileMenu({ sx = {} }) {
                 slotProps={{
                     paper: {
                         elevation: 0,
-                        sx: {
+                        sx: (theme) => ({ // Use theme function for access to palette
                             overflow: 'visible',
                             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                             mt: 1.5,
                             minWidth: 180, // Adjusted width
+                            borderRadius: '8px', // Keep border radius
+                            border: '1px solid', // Add border
+                            borderColor: theme.palette.divider, // Use theme divider color
                             // ... other PaperProps sx ...
                             '& .MuiAvatar-root': {
                                 width: 32,
@@ -120,8 +123,11 @@ export default function ProfileMenu({ sx = {} }) {
                                 bgcolor: 'background.paper',
                                 transform: 'translateY(-50%) rotate(45deg)',
                                 zIndex: 0,
+                                // Add border to the arrow as well to match
+                                borderLeft: `1px solid ${theme.palette.divider}`,
+                                borderTop: `1px solid ${theme.palette.divider}`,
                             },
-                        },
+                        }),
                     },
                 }}
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
