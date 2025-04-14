@@ -164,7 +164,7 @@ export default function Footer() {
           >
             <IconButton
               color="inherit"
-              href="https://github.com/yummydirtx"
+              href="https://github.com/yummydirtx/theJunkyard"
               aria-label="GitHub"
               sx={{ alignSelf: 'center' }}
             >
