@@ -21,7 +21,6 @@ import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from '../components/AppAppBar';
