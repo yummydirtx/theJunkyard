@@ -602,7 +602,7 @@ export default function AccountSettingsModal({ open, onClose }) {
           {imageSrc ? (
             // --- Cropper View ---
             <Stack spacing={2} alignItems="center">
-               <Typography variant="body2" color="textSecondary" sx={{mb: 1}}>Crop your image (must be square)</Typography>
+               <Typography variant="body2" color="textSecondary" sx={{mb: 1}}>Crop your image</Typography>
               <ReactCrop
                 crop={crop}
                 onChange={(_, percentCrop) => setCrop(percentCrop)}
