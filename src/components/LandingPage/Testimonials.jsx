@@ -64,7 +64,7 @@ const userTestimonials = [
     name: 'Mika Schreiman',
     occupation: 'Aquatics Coordinator',
     testimonial:
-      "calcBasic is awesome and I have literally used the YouTube Thumbnail Downloader like 35 times!",
+      "Manual Budget is awesome and I have literally used the YouTube Thumbnail Downloader like 35 times!",
   },
   {
     avatar: <Avatar alt="Alex Frutkin" src="/static/images/avatar/6.jpg" />,
