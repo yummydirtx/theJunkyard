@@ -37,6 +37,14 @@ import MoneyInput from './shared/MoneyInput';
 import DateInput from './shared/DateInput';
 import { parseAmount } from './utils/budgetUtils';
 
+// Helper function to get YYYY-MM-DD from a Date object using local timezone
+const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth is 0-indexed
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export default function EntryMenu({
   entry,
   db,
@@ -46,20 +54,20 @@ export default function EntryMenu({
   onEntryUpdated,
   mode
 }) {
-  // Menu state
+  // State for the anchor element of the options menu
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // Edit dialog state
+  // State for the edit entry dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editAmount, setEditAmount] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const dateInputRef = useRef(null);
+  const dateInputRef = useRef(null); // Ref for the date input in the edit dialog
 
-  // Delete confirmation dialog state
+  // State for the delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Menu handlers
+  // --- Menu Handlers ---
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -68,31 +76,35 @@ export default function EntryMenu({
     setAnchorEl(null);
   };
 
-  // Edit handlers
+  // --- Edit Handlers ---
+  // Opens the edit dialog and pre-populates fields with current entry data
   const handleEditClick = () => {
     handleMenuClose();
     setEditAmount(entry.amount.toString());
-    setEditDate(new Date(entry.date).toISOString().split('T')[0]);
+    const entryDateObject = entry.date instanceof Date ? entry.date : new Date(entry.date);
+    setEditDate(getLocalDateString(entryDateObject)); // Format date for input
     setEditDescription(entry.description || '');
     setEditDialogOpen(true);
   };
 
+  // Closes the edit dialog
   const handleEditDialogClose = () => {
     setEditDialogOpen(false);
   };
 
+  // Handles the submission of the edited entry
   const handleEditSubmit = async () => {
-    if (!editAmount || !editDate) return;
+    if (!editAmount || !editDate) return; // Basic validation
 
     const newAmount = parseAmount(editAmount);
-    const amountDifference = newAmount - entry.amount;
+    const amountDifference = newAmount - entry.amount; // Calculate difference for total updates
 
     try {
-      // Parse the date correctly to avoid timezone issues
+      // Parse the date string back into a Date object for Firestore
       const [year, month, day] = editDate.split('-').map(num => parseInt(num, 10));
-      const dateObject = new Date(year, month - 1, day); // month is 0-indexed in JavaScript Date
+      const dateObject = new Date(year, month - 1, day);
 
-      // Update the entry
+      // Update the entry document in Firestore
       const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
       await updateDoc(doc(db, entryPath), {
         amount: newAmount,
@@ -100,7 +112,7 @@ export default function EntryMenu({
         description: editDescription.trim()
       });
 
-      // If amount changed, update category and month totals
+      // If the amount changed, update the category and month totals accordingly
       if (amountDifference !== 0) {
         // Update category total
         const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
@@ -109,7 +121,7 @@ export default function EntryMenu({
         const newCategoryTotal = (categoryData.total || 0) + amountDifference;
         await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
 
-        // Update month total
+        // Update overall month total
         const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
         const monthDoc = await getDoc(doc(db, monthPath));
         const monthData = monthDoc.data();
@@ -117,47 +129,50 @@ export default function EntryMenu({
         await updateDoc(doc(db, monthPath), { total: newMonthTotal });
       }
 
-      // Notify parent component to refresh
+      // Notify the parent component to refresh the entry list
       onEntryUpdated();
-      setEditDialogOpen(false);
+      setEditDialogOpen(false); // Close the dialog on success
     } catch (error) {
       console.error('Error updating entry:', error);
     }
   };
 
-  // Delete handlers
+  // --- Delete Handlers ---
+  // Opens the delete confirmation dialog
   const handleDeleteClick = () => {
     handleMenuClose();
     setDeleteDialogOpen(true);
   };
 
+  // Closes the delete confirmation dialog
   const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
   };
 
+  // Handles the confirmation of entry deletion
   const handleDeleteConfirm = async () => {
     try {
-      // Delete the entry
+      // Delete the entry document from Firestore
       const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
       await deleteDoc(doc(db, entryPath));
 
-      // Update category total
+      // Update the category total by subtracting the deleted entry's amount
       const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
       const categoryDoc = await getDoc(doc(db, categoryPath));
       const categoryData = categoryDoc.data();
       const newCategoryTotal = (categoryData.total || 0) - entry.amount;
       await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
 
-      // Update month total
+      // Update the overall month total by subtracting the deleted entry's amount
       const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
       const monthDoc = await getDoc(doc(db, monthPath));
       const monthData = monthDoc.data();
       const newMonthTotal = (monthData.total || 0) - entry.amount;
       await updateDoc(doc(db, monthPath), { total: newMonthTotal });
 
-      // Notify parent component to refresh
+      // Notify the parent component to refresh the entry list
       onEntryUpdated();
-      setDeleteDialogOpen(false);
+      setDeleteDialogOpen(false); // Close the dialog on success
     } catch (error) {
       console.error('Error deleting entry:', error);
     }
@@ -165,6 +180,7 @@ export default function EntryMenu({
 
   return (
     <>
+      {/* Icon button to open the options menu */}
       <IconButton
         edge="end"
         aria-label="more options"
@@ -173,7 +189,7 @@ export default function EntryMenu({
         <MoreVertIcon />
       </IconButton>
 
-      {/* Entry options menu */}
+      {/* Entry options menu (Edit, Delete) */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -184,10 +200,16 @@ export default function EntryMenu({
       </Menu>
 
       {/* Edit entry dialog */}
-      <Dialog open={editDialogOpen} onClose={handleEditDialogClose}>
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={handleEditDialogClose} 
+        fullWidth 
+        maxWidth="xs" 
+      >
         <DialogTitle>Edit Entry</DialogTitle>
         <DialogContent>
-          <Box component="form" sx={{ mt: 1 }}>
+          {/* Form container */}
+          <Box component="form" sx={{ mt: 1 }}> 
             <MoneyInput
               value={editAmount}
               onChange={setEditAmount}
@@ -233,7 +255,12 @@ export default function EntryMenu({
       </Dialog>
 
       {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleDeleteDialogClose} 
+        fullWidth 
+        maxWidth="xs"
+      >
         <DialogTitle>Delete Entry</DialogTitle>
         <DialogContent>
           <Typography>

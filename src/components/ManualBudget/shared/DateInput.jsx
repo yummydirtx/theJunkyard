@@ -21,63 +21,84 @@ import { forwardRef, useState, useEffect, useRef } from 'react';
 import { TextField, InputAdornment } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
+// A custom date input component that overlays a native date picker over a styled TextField.
 const DateInput = forwardRef(({ 
-    value, 
-    onChange, 
+    value,          // The date value in 'YYYY-MM-DD' format
+    onChange,       // Callback function when the date changes
     label = "Date", 
     required = false,
     disabled = false,
-    mode = 'light',
-    onCalendarClick,
+    mode = 'light', // Theme mode for icon color
+    onCalendarClick,// Optional callback for calendar icon click
     fullWidth = true,
-    ...props 
+    ...props        // Other TextField props
 }, ref) => {
-    // Create our own reference if none is provided
+    // Use internal ref if no external ref is provided
     const innerRef = useRef(null);
-    const actualRef = ref || innerRef;
+    const actualRef = ref || innerRef; // This ref points to the hidden native input
     
-    // Create a formatted display value from the date value
+    // State to hold the formatted date string for display (e.g., MM/DD/YYYY)
     const [displayValue, setDisplayValue] = useState('');
     
-    // Update display value when the actual value changes
+    // Update the display value whenever the 'YYYY-MM-DD' value prop changes
     useEffect(() => {
         if (value) {
-            // Format the date value for display (YYYY-MM-DD → MM/DD/YYYY or your preferred format)
-            const dateObj = new Date(value);
-            if (!isNaN(dateObj.getTime())) {
-                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                const day = dateObj.getDate().toString().padStart(2, '0');
-                const year = dateObj.getFullYear();
-                setDisplayValue(`${month}/${day}/${year}`);
+            // Attempt to parse 'YYYY-MM-DD' and format as 'MM/DD/YYYY'
+            const parts = value.split('-');
+            if (parts.length === 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10); // 1-based month from value
+                const day = parseInt(parts[2], 10);
+
+                // Create Date object using UTC to avoid timezone shifts during construction
+                // Then format using local date parts for display
+                const dateObj = new Date(Date.UTC(year, month - 1, day)); // Use UTC constructor
+
+                if (!isNaN(dateObj.getTime())) {
+                    // Format using local date parts (getMonth, getDate, getFullYear)
+                    const displayMonth = (dateObj.getUTCMonth() + 1).toString().padStart(2, '0'); // Use UTC methods
+                    const displayDay = dateObj.getUTCDate().toString().padStart(2, '0'); // Use UTC methods
+                    const displayYear = dateObj.getUTCFullYear(); // Use UTC methods
+                    setDisplayValue(`${displayMonth}/${displayDay}/${displayYear}`);
+                } else {
+                    setDisplayValue(value); // Fallback if parsing fails
+                }
             } else {
-                setDisplayValue(value); // Fallback to original value if parsing fails
+                 setDisplayValue(value); // Fallback if format is unexpected
             }
         } else {
-            setDisplayValue('');
+            setDisplayValue(''); // Clear display value if input value is empty
         }
     }, [value]);
     
-    const handleCalendarClick = () => {
+    // Handles clicks on the calendar icon/adornment to trigger the native date picker
+    const handleCalendarClick = (e) => {
+        if (e) {
+            e.stopPropagation(); // Prevent event bubbling
+        }
         if (actualRef && actualRef.current) {
-            // Focus and attempt to open the native date picker
+            // Focus the hidden native input
             actualRef.current.focus();
-            
-            // For modern browsers that support showPicker
-            if (typeof actualRef.current.showPicker === 'function') {
-                actualRef.current.showPicker();
-            } else {
-                // Fallback - simulate click on the input
-                actualRef.current.click();
+            // Attempt to programmatically open the date picker
+            try {
+                 if (typeof actualRef.current.showPicker === 'function') {
+                    actualRef.current.showPicker();
+                 }
+                 // If showPicker isn't supported, focusing is the best fallback
+            } catch (error) {
+                console.error("Could not call showPicker():", error);
             }
+        } else {
+            console.error("DateInput ref is not set correctly");
         }
         
-        // Call the onCalendarClick prop if provided
+        // Call the optional external click handler
         if (onCalendarClick) {
-            onCalendarClick();
+            onCalendarClick(e);
         }
     };
 
-    // Handle changes from the hidden date input
+    // Passes the change event from the hidden native input to the parent component
     const handleDateChange = (e) => {
         if (onChange) {
             onChange(e);
@@ -85,56 +106,59 @@ const DateInput = forwardRef(({
     };
 
     return (
+        // Relative container for positioning the hidden input over the TextField
         <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto' }}>
-            {/* Visible styled text input */}
+            {/* The visible TextField showing the formatted date */}
             <TextField
                 fullWidth={fullWidth}
                 label={label}
                 variant="outlined"
-                value={displayValue}
+                value={displayValue} // Show the formatted date
                 required={required}
                 disabled={disabled}
-                onClick={handleCalendarClick} // Open calendar when clicking anywhere in the field
                 slotProps={{
                     input: {
-                        readOnly: true, // Make the visible input read-only
+                        readOnly: true, // Prevent manual typing in the visible field
+                        style: { cursor: 'pointer' }, // Indicate it's clickable
+                        // End adornment with the calendar icon
                         endAdornment: (
-                            <InputAdornment position="end">
+                            <InputAdornment 
+                                position="end" 
+                                onClick={handleCalendarClick} // Trigger picker on adornment click
+                                sx={{ cursor: 'pointer' }} 
+                            >
                                 <CalendarTodayIcon
-                                    sx={{
-                                        color: mode === 'light' ? 'black' : 'white',
-                                        cursor: 'pointer'
-                                    }}
-                                    onClick={handleCalendarClick}
+                                    sx={{ color: mode === 'light' ? 'black' : 'white' }}
                                 />
                             </InputAdornment>
                         ),
                     },
                     inputLabel: {
-                        shrink: true,
+                        shrink: true, // Keep the label shrunk
                     }
                 }}
-                {...props}
+                {...props} // Pass down other TextField props
             />
             
-            {/* Hidden actual date input for functionality */}
+            {/* The hidden native date input that provides the actual functionality */}
             <input
                 type="date"
-                ref={actualRef}
-                value={value || ''}
-                onChange={handleDateChange}
+                ref={actualRef} // Attach the ref here
+                value={value || ''} // Bind to the 'YYYY-MM-DD' value
+                onChange={handleDateChange} // Handle native input changes
                 required={required}
                 disabled={disabled}
                 style={{
-                    opacity: 0,
-                    position: 'absolute',
+                    opacity: 0, // Make it invisible
+                    position: 'absolute', // Position over the TextField
                     top: 0,
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    cursor: 'pointer'
+                    cursor: 'pointer', // Use pointer cursor
+                    pointerEvents: 'none' // Allow clicks to pass through to the adornment below
                 }}
-                {...props}
+                // Do NOT pass {...props} here, as TextField props might conflict
             />
         </div>
     );
