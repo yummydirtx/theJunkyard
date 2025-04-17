@@ -51,6 +51,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const CalcBasic = lazy(() => import('./pages/CalcBasic'));
 const YTThumb = lazy(() => import('./pages/YTThumb'));
 const ManualBudget = lazy(() => import('./pages/ManualBudget'));
+const ExpenseReport = lazy(() => import('./pages/ExpenseReport')); // Add import for the new page
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
@@ -97,6 +98,7 @@ export default function App() {
             <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} />} />
             <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} />} />
             <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} />} />
+            <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode} mode={mode} />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

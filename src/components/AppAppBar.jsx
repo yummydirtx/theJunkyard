@@ -165,6 +165,11 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
                     Manual Budget
                   </Typography>
                 </MenuItem>
+                <MenuItem onClick={() => window.open("/expensereport", "_self")} sx={{ py: '6px', px: '12px' }}> {/* Add Expense Report Link */}
+                  <Typography variant="body2" color="text.primary">
+                    Expense Report
+                  </Typography>
+                </MenuItem>
               </Box>
             </Box>
             {/* Desktop: Show auth buttons or ProfileMenu based on context */}
@@ -245,6 +250,9 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
           </MenuItem>
           <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
             Manual Budget
+          </MenuItem>
+          <MenuItem onClick={() => window.open("/expensereport", "_self")}> {/* Add Expense Report Link */}
+            Expense Report
           </MenuItem>
           <Divider />
           {/* Mobile Auth Options - Render based on context */}
