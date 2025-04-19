@@ -161,7 +161,7 @@ export default function AddEntryModal({
                         borderRadius: 2,
                     }}
                 >
-                    <Typography id="add-entry-modal-title" variant="h6" component="h2" gutterBottom>
+                    <Typography id="add-entry-modal-title" variant="h6" component="h2" gutterBottom sx={{ mb: 2 }}>
                         Add Spending Entry to "{selectedCategory}"
                     </Typography>
                     {/* Form Element */}

@@ -29,7 +29,11 @@ import {
   Button,
   TextField,
   Box,
-  Typography
+  Typography,
+  Modal,
+  Fade,
+  Paper,
+  Stack
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
@@ -57,12 +61,12 @@ export default function EntryMenu({
   // State for the anchor element of the options menu
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // State for the edit entry dialog
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // State for the edit entry modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAmount, setEditAmount] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const dateInputRef = useRef(null); // Ref for the date input in the edit dialog
+  const dateInputRef = useRef(null); // Ref for the date input in the edit modal
 
   // State for the delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -77,23 +81,24 @@ export default function EntryMenu({
   };
 
   // --- Edit Handlers ---
-  // Opens the edit dialog and pre-populates fields with current entry data
+  // Opens the edit modal and pre-populates fields with current entry data
   const handleEditClick = () => {
     handleMenuClose();
     setEditAmount(entry.amount.toString());
     const entryDateObject = entry.date instanceof Date ? entry.date : new Date(entry.date);
     setEditDate(getLocalDateString(entryDateObject)); // Format date for input
     setEditDescription(entry.description || '');
-    setEditDialogOpen(true);
+    setEditModalOpen(true);
   };
 
-  // Closes the edit dialog
-  const handleEditDialogClose = () => {
-    setEditDialogOpen(false);
+  // Closes the edit modal
+  const handleEditModalClose = () => {
+    setEditModalOpen(false);
   };
 
   // Handles the submission of the edited entry
-  const handleEditSubmit = async () => {
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
     if (!editAmount || !editDate) return; // Basic validation
 
     const newAmount = parseAmount(editAmount);
@@ -131,7 +136,7 @@ export default function EntryMenu({
 
       // Notify the parent component to refresh the entry list
       onEntryUpdated();
-      setEditDialogOpen(false); // Close the dialog on success
+      setEditModalOpen(false); // Close the modal on success
     } catch (error) {
       console.error('Error updating entry:', error);
     }
@@ -199,60 +204,78 @@ export default function EntryMenu({
         <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>Delete</MenuItem>
       </Menu>
 
-      {/* Edit entry dialog */}
-      <Dialog 
-        open={editDialogOpen} 
-        onClose={handleEditDialogClose} 
-        fullWidth 
-        maxWidth="xs" 
+      {/* Edit entry modal */}
+      <Modal
+        open={editModalOpen}
+        onClose={handleEditModalClose}
+        aria-labelledby="edit-entry-modal-title"
       >
-        <DialogTitle>Edit Entry</DialogTitle>
-        <DialogContent>
-          {/* Form container */}
-          <Box component="form" sx={{ mt: 1 }}> 
-            <MoneyInput
-              value={editAmount}
-              onChange={setEditAmount}
-              label="Amount"
-              required
-              margin="normal"
-              fullWidth
-            />
-            
-            <DateInput
-              value={editDate}
-              onChange={(e) => setEditDate(e.target.value)}
-              ref={dateInputRef}
-              required
-              mode={mode}
-              margin="normal"
-              fullWidth
-            />
-            
-            <TextField
-              fullWidth
-              label="Description (optional)"
-              variant="outlined"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Coffee with friends"
-              multiline
-              rows={2}
-              margin="normal"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleEditDialogClose}>Cancel</Button>
-          <Button
-            onClick={handleEditSubmit}
-            variant="contained"
-            disabled={!editAmount || !editDate}
+        <Fade in={editModalOpen}>
+          <Paper
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: { xs: '90%', sm: 400 },
+              bgcolor: 'background.paper',
+              boxShadow: 24,
+              p: 4,
+              borderRadius: 2,
+            }}
           >
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Typography id="edit-entry-modal-title" variant="h6" component="h2" gutterBottom sx={{ mb: 2 }}>
+              Edit Entry
+            </Typography>
+            {/* Form Element */}
+            <form onSubmit={handleEditSubmit}>
+              <Stack spacing={3}>
+                <MoneyInput
+                  value={editAmount}
+                  onChange={setEditAmount}
+                  label="Amount"
+                  required
+                  fullWidth
+                />
+
+                <DateInput
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  ref={dateInputRef}
+                  required
+                  mode={mode}
+                  fullWidth
+                />
+
+                <TextField
+                  fullWidth
+                  label="Description (optional)"
+                  variant="outlined"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Coffee with friends"
+                  multiline
+                  rows={2}
+                  slotProps={{
+                      inputLabel: { shrink: true }
+                  }}
+                />
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 1 }}>
+                  <Button variant="outlined" onClick={handleEditModalClose}>Cancel</Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={!editAmount || !editDate}
+                  >
+                    Save Changes
+                  </Button>
+                </Box>
+              </Stack>
+            </form>
+          </Paper>
+        </Fade>
+      </Modal>
 
       {/* Delete confirmation dialog */}
       <Dialog 

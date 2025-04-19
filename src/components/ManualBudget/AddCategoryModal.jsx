@@ -117,7 +117,7 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
                         borderRadius: 2,
                     }}
                 >
-                    <Typography id="add-category-modal-title" variant="h6" component="h2" gutterBottom>
+                    <Typography id="add-category-modal-title" variant="h6" component="h2" gutterBottom sx={{ mb: 2 }}>
                         Add New Category
                     </Typography>
                     <form onSubmit={handleAddCategory}>
