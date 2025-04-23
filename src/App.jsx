@@ -22,6 +22,7 @@ import { lazy, Suspense } from 'react'; // Import Suspense
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAnalytics } from "firebase/analytics";
 // Remove auth imports handled by context
 // import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -34,7 +35,7 @@ import Box from '@mui/material/Box'; // For Suspense fallback styling
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
-  authDomain: "thejunkyard.dev",
+  authDomain: "thejunkyard-b1858.firebaseapp.com",
   projectId: "thejunkyard-b1858",
   storageBucket: "thejunkyard-b1858.firebasestorage.app",
   messagingSenderId: "66694016123",
@@ -44,6 +45,10 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider( import.meta.env.VITE_RECAPTCHA_API_KEY ),
+  isTokenAutoRefreshEnabled: true // Set to true to automatically refresh the token
+});
 const analytics = getAnalytics(app);
 
 // Lazy load pages instead of direct imports
@@ -61,9 +66,6 @@ export default function App() {
     // Default to system preference if no localStorage value
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
-
-  // Remove useEffect for onAuthStateChanged - AuthContext and AppAppBar handle user state and theme updates
-  // React.useEffect(() => { ... });
 
   const toggleColorMode = () => {
     setMode((prev) => {

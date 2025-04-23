@@ -27,7 +27,8 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Alert
+  Alert,
+  Collapse // Import Collapse
 } from '@mui/material';
 import { getAuth, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import GoogleIcon from '@mui/icons-material/Google';
@@ -45,8 +46,12 @@ export default function SignUpModal({ open, onClose, app }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+    if (!formData.password) {
+      setError('Password cannot be empty');
       return;
     }
     try {
@@ -139,18 +144,20 @@ export default function SignUpModal({ open, onClose, app }) {
             onChange={handleChange}
             sx={{ mt: 1 }}
           />
-          <TextField
-            margin="dense"
-            required
-            fullWidth
-            name="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            id="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            sx={{ mt: 1 }}
-          />
+          <Collapse in={!!formData.password} timeout="auto" unmountOnExit>
+            <TextField
+              margin="dense"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              sx={{ mt: 1 }}
+            />
+          </Collapse>
           <Button
             type="submit"
             fullWidth
