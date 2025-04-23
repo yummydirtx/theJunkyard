@@ -13,9 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - env:
+      - name: Install dependencies and build
+        run: npm install && npm run build
+        env:
           VITE_RECAPTCHA_API_KEY: ${{ secrets.VITE_RECAPTCHA_API_KEY }}
-      - run: npm install && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
