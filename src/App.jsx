@@ -66,8 +66,19 @@ export default function App() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
 
-  // Remove useEffect for onAuthStateChanged - AuthContext and AppAppBar handle user state and theme updates
-  // React.useEffect(() => { ... });
+  // Add useEffect to check for grecaptcha object
+  React.useEffect(() => {
+    // Check after a short delay to allow scripts to load
+    const timer = setTimeout(() => {
+      if (window.grecaptcha && window.grecaptcha.execute) {
+        console.log("reCAPTCHA script (window.grecaptcha) loaded successfully.");
+      } else {
+        console.error("reCAPTCHA script (window.grecaptcha) FAILED to load or initialize.");
+      }
+    }, 2000); // Check after 2 seconds
+
+    return () => clearTimeout(timer); // Cleanup timer
+  }, []); // Run only once on mount
 
   const toggleColorMode = () => {
     setMode((prev) => {
