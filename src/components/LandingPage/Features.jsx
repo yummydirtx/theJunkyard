@@ -63,7 +63,7 @@ const items = [
     demoLink: './expensereport', // Link to the Expense Report page
     githubLink: 'https://github.com/yummydirtx/theJunkyard',
     description:
-      'Expense Report leverages React, Firebase (Firestore, Functions), and Google Cloud Vertex AI to streamline expense tracking. Users can manually input expenses or upload receipt images, which are processed by a Cloud Function utilizing Vertex AI\'s generative models to automatically parse details and create itemized lists.', // Updated description
+      'Expense Report leverages React, Firebase (Firestore, Storage), and Google Cloud Vertex AI to streamline expense tracking. Users can manually input expenses or upload receipt images, which are processed by utilizing Vertex AI\'s generative models to automatically parse details and create itemized lists.', // Updated description
     imageLight: 'url(' + ExpenseReportLogo + ')', // Use Expense Report image
   },
 ];
