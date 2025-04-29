@@ -27,11 +27,13 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import CasinoIcon from '@mui/icons-material/Casino';
-import TerminalIcon from '@mui/icons-material/Terminal';
+// Import icons for the new features
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'; // Added icon for Expense Report
 import AnteaterFindLogo from '../../assets/anteaterfind.png';
-import CalcBasic from '../../assets/calcbasic.png';
-import LicenserH from '../../assets/licenser-h.png';
+// Assume logos exist for Manual Budget & Expense Report, or replace with generic icons/images
+import ManualBudgetLogo from '../../assets/manualbudget.png'; // Placeholder: Make sure this image exists
+import ExpenseReportLogo from '../../assets/expensereport.png'; // Placeholder: Make sure this image exists
 import SearchIcon from '@mui/icons-material/Search';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -47,22 +49,22 @@ const items = [
     imageLight: ('url(' + AnteaterFindLogo + ')'),
   },
   {
-    icon: <CasinoIcon />,
-    title: 'calcBasic-web',
-    demoLink: './calcbasic-web',
+    icon: <AccountBalanceWalletIcon />,
+    title: 'Manual Budget',
+    demoLink: './manualbudget', // Link to the Manual Budget page
     githubLink: 'https://github.com/yummydirtx/theJunkyard',
     description:
-      'A random number generator that lets you win your own private lottery. It is a fun little program, initially created in BASIC for the TI-84, but now available on the web.',
-    imageLight: ('url(' + CalcBasic + ')'),
+      'Manual Budget is a personal finance tracking tool built with React and Firebase (Firestore). It allows users to meticulously manage monthly budgets by category, record individual spending entries, and visualize financial data through interactive charts powered by Recharts.', // Updated description
+    imageLight: 'url(' + ManualBudgetLogo + ')', // Use Manual Budget image
   },
   {
-    icon: <TerminalIcon />,
-    title: 'licenser-h',
-    demoLink: null,
-    githubLink: 'https://github.com/yummydirtx/licenser-h',
+    icon: <ReceiptLongIcon />, // Use ReceiptLongIcon
+    title: 'Expense Report',
+    demoLink: './expensereport', // Link to the Expense Report page
+    githubLink: 'https://github.com/yummydirtx/theJunkyard',
     description:
-      'An easy-to-use and robust license generator for your projects. It is a command-line tool that generates a license file and license headers for your project.',
-    imageLight: 'url(' + LicenserH + ')',
+      'Expense Report leverages React, Firebase (Firestore, Functions), and Google Cloud Vertex AI to streamline expense tracking. Users can manually input expenses or upload receipt images, which are processed by a Cloud Function utilizing Vertex AI\'s generative models to automatically parse details and create itemized lists.', // Updated description
+    imageLight: 'url(' + ExpenseReportLogo + ')', // Use Expense Report image
   },
 ];
 
@@ -73,7 +75,8 @@ export default function Features() {
     setSelectedItemIndex(index);
   };
 
-  const selectedFeature = items[selectedItemIndex];
+  // Ensure selectedFeature exists before accessing its properties
+  const selectedFeature = items[selectedItemIndex] || items[0]; // Fallback to first item
 
   return (
     <Container id="features" sx={{ py: { xs: 4, sm: 4 } }}>
@@ -128,9 +131,10 @@ export default function Features() {
           >
             <Box
               sx={{
-                backgroundImage: items[selectedItemIndex].imageLight,
-                backgroundSize: 'cover',
+                backgroundImage: selectedFeature.imageLight,
+                backgroundSize: 'contain', // Changed to contain
                 backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat', // Ensure no repeat
                 minHeight: 280,
               }}
             />
@@ -174,7 +178,8 @@ export default function Features() {
                       '&:hover > svg': { transform: 'translateX(2px)' },
                     }}
                     onClick={(event) => {
-                      window.open(selectedFeature.demoLink, '_blank');
+                      // Use relative path for internal links
+                      window.open(selectedFeature.demoLink, '_self');
                       event.stopPropagation();
                     }}
                   >
@@ -193,7 +198,7 @@ export default function Features() {
             useFlexGap
             sx={{ width: '100%', display: { xs: 'none', sm: 'flex' } }}
           >
-            {items.map(({ icon, title, description, link }, index) => (
+            {items.map(({ icon, title, description, githubLink, demoLink }, index) => ( // Destructure links
               <Card
                 key={index}
                 variant="outlined"
@@ -258,7 +263,7 @@ export default function Features() {
                       {description}
                     </Typography>
                     <Stack direction="row" spacing={2}>
-                      {items[index].githubLink && (
+                      {githubLink && ( // Use destructured variable
                         <Link
                           color="primary"
                           variant="body2"
@@ -270,7 +275,7 @@ export default function Features() {
                             '&:hover > svg': { transform: 'translateX(2px)' },
                           }}
                           onClick={(event) => {
-                            window.open(items[index].githubLink, '_blank');
+                            window.open(githubLink, '_blank'); // Use destructured variable
                             event.stopPropagation();
                           }}
                         >
@@ -278,7 +283,7 @@ export default function Features() {
                           <span>View Source on GitHub</span>
                         </Link>
                       )}
-                      {items[index].demoLink && (
+                      {demoLink && ( // Use destructured variable
                         <Link
                           color="primary"
                           variant="body2"
@@ -290,7 +295,8 @@ export default function Features() {
                             '&:hover > svg': { transform: 'translateX(2px)' },
                           }}
                           onClick={(event) => {
-                            window.open(items[index].demoLink, '_blank');
+                             // Use relative path for internal links
+                            window.open(demoLink, '_self');
                             event.stopPropagation();
                           }}
                         >
@@ -305,12 +311,7 @@ export default function Features() {
             ))}
           </Stack>
         </Grid>
-        <Grid
-          sx={{ 
-            display: { xs: 'none', sm: 'flex' }, 
-            width: { xs: '100%', md: '50%' } 
-          }}
-        >
+        <Grid item sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' } }}> {/* Use item prop */}
           <Card
             variant="outlined"
             sx={{
@@ -323,11 +324,11 @@ export default function Features() {
             <Box
               sx={{
                 m: 'auto',
-                width: 420,
+                width: '100%', // Allow image to scale within bounds
                 height: 500,
-                backgroundSize: 'contain',
-                backgroundImage: items[selectedItemIndex].imageLight,
-                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'contain', // Changed to contain
+                backgroundImage: selectedFeature.imageLight,
+                backgroundRepeat: 'no-repeat', // Ensure no repeat
                 backgroundPosition: 'center',
               }}
             />
