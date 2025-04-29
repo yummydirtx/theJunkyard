@@ -167,7 +167,7 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
                 </MenuItem>
                 <MenuItem onClick={() => window.open("/expensereport", "_self")} sx={{ py: '6px', px: '12px' }}> {/* Add Expense Report Link */}
                   <Typography variant="body2" color="text.primary">
-                    Expense Report
+                    Expense Report (beta)
                   </Typography>
                 </MenuItem>
               </Box>
@@ -252,7 +252,7 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
             Manual Budget
           </MenuItem>
           <MenuItem onClick={() => window.open("/expensereport", "_self")}> {/* Add Expense Report Link */}
-            Expense Report
+            Expense Report (beta)
           </MenuItem>
           <Divider />
           {/* Mobile Auth Options - Render based on context */}
