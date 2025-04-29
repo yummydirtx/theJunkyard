@@ -34,7 +34,7 @@ import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import CircularProgress from '@mui/material/CircularProgress';
 // Import Firestore functions
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, deleteDoc } from "firebase/firestore"; // Added query, where, onSnapshot, orderBy, doc, deleteDoc
 // Import new placeholder components
 import ExpenseForm from '../components/ExpenseReport/ExpenseForm';
 import ExpenseList from '../components/ExpenseReport/ExpenseList';
@@ -50,56 +50,94 @@ export default function ExpenseReport({ setMode, mode }) {
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const db = getFirestore(app); // Initialize Firestore
 
-    // Placeholder state - This might move or be managed differently with Firestore
-    const [expenses, setExpenses] = React.useState([
-        // Example data
-        // { id: '1', description: 'Lunch Meeting', amount: 25.50, receiptFile: null },
-        // { id: '2', description: 'Office Supplies', amount: 15.75, receiptFile: { name: 'receipt.jpg' } },
-    ]);
+    // State for expenses, fetched from Firestore
+    const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
     const [totalAmount, setTotalAmount] = React.useState(0);
+    const [loadingExpenses, setLoadingExpenses] = React.useState(false); // State for loading expenses
 
-    // TODO: Fetch expenses from Firestore based on activeUser
-    // TODO: Implement functions to add/delete expenses (passed to components)
+    // Effect to fetch expenses from Firestore when user is logged in
+    React.useEffect(() => {
+        if (activeUser && db) {
+            setLoadingExpenses(true); // Start loading
+            const expensesColRef = collection(db, "users", activeUser.uid, "expenses");
+            // Query expenses ordered by creation time
+            const q = query(expensesColRef, orderBy("createdAt", "desc"));
+
+            // Use onSnapshot for real-time updates
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const fetchedExpenses = [];
+                querySnapshot.forEach((doc) => {
+                    fetchedExpenses.push({ ...doc.data(), id: doc.id }); // Add document ID to the data
+                });
+                setExpenses(fetchedExpenses); // Update state with fetched expenses
+                setLoadingExpenses(false); // Stop loading
+                console.log("Fetched/Updated Expenses:", fetchedExpenses);
+            }, (error) => {
+                console.error("Error fetching expenses: ", error);
+                // TODO: Show error to user
+                setLoadingExpenses(false); // Stop loading on error
+            });
+
+            // Cleanup function to unsubscribe from the listener when component unmounts or user changes
+            return () => unsubscribe();
+        } else {
+            // Clear expenses if user logs out or db is not available
+            setExpenses([]);
+        }
+    }, [activeUser, db]); // Dependencies: run effect when user or db instance changes
+
+    // Function to add a new expense to Firestore
     const handleAddExpense = async (newExpense) => {
+        if (!activeUser || !db) {
+            console.error("User not logged in or Firestore not initialized.");
+            // TODO: Show error to user in the form component itself
+            throw new Error("User not authenticated or database unavailable."); // Throw error to be caught in ExpenseForm
+        }
+        console.log("Adding expense to Firestore:", newExpense);
+        // No need to handle receiptFile upload here, as ExpenseForm passes receiptUri
+        const expenseData = {
+            userId: activeUser.uid,
+            description: newExpense.description,
+            amount: newExpense.amount, // Ensure this is a number (already parsed in ExpenseForm)
+            receiptUri: newExpense.receiptUri || null, // Store the gs:// URI directly
+            createdAt: serverTimestamp(),
+        };
+        try {
+            const docRef = await addDoc(collection(db, "users", activeUser.uid, "expenses"), expenseData);
+            console.log("Document written with ID: ", docRef.id);
+            // No need to manually update state here, onSnapshot will handle it
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            // TODO: Show error to user in the form component itself
+            throw e; // Re-throw error to be caught in ExpenseForm
+        }
+    };
+
+    // Function to delete an expense from Firestore
+    const handleDeleteExpense = async (expenseId) => {
         if (!activeUser || !db) {
             console.error("User not logged in or Firestore not initialized.");
             // TODO: Show error to user
             return;
         }
-        console.log("Adding expense to Firestore:", newExpense);
+        console.log("Deleting expense from Firestore:", expenseId);
         try {
-            // TODO: Handle receiptFile upload to Storage first, then get URL
-            const expenseData = {
-                userId: activeUser.uid,
-                description: newExpense.description,
-                amount: newExpense.amount, // Ensure this is a number
-                receiptFileName: newExpense.receiptFile ? newExpense.receiptFile.name : null, // Store filename for now
-                receiptUrl: null, // Placeholder for Storage URL
-                createdAt: serverTimestamp(),
-            };
-            const docRef = await addDoc(collection(db, "users", activeUser.uid, "expenses"), expenseData);
-            console.log("Document written with ID: ", docRef.id);
-            // TODO: Clear form state (handled in ExpenseForm)
-            // TODO: Update local state OR rely on Firestore listener to update the list
-            // setExpenses(prev => [...prev, { ...expenseData, id: docRef.id }]); // Example if not using listener
+            const expenseDocRef = doc(db, "users", activeUser.uid, "expenses", expenseId);
+            await deleteDoc(expenseDocRef);
+            console.log("Document successfully deleted!");
+            // No need to manually update state here, onSnapshot will handle it
         } catch (e) {
-            console.error("Error adding document: ", e);
+            console.error("Error deleting document: ", e);
             // TODO: Show error to user
         }
     };
 
-    const handleDeleteExpense = (expenseId) => {
-        console.log("Deleting expense in parent:", expenseId);
-        // Placeholder: Update state (in real app, update Firestore)
-        // setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
-    };
-
-
+    // Effect to calculate total amount whenever expenses state changes
     React.useEffect(() => {
         // Calculate total amount when expenses change
         const total = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
         setTotalAmount(total);
-    }, [expenses]);
+    }, [expenses]); // Dependency: run effect when expenses array changes
 
     return (
         <ThemeProvider theme={defaultTheme}>
@@ -136,13 +174,20 @@ export default function ExpenseReport({ setMode, mode }) {
                         </Box>
                     ) : activeUser ? (
                         <Box sx={{ flexGrow: 1 }}>
-                            {/* Use ExpenseForm component */}
+                            {/* Pass the handleAddExpense function */}
                             <ExpenseForm onAddExpense={handleAddExpense} />
 
-                            {/* Use ExpenseList component */}
-                            <ExpenseList expenses={expenses} onDeleteExpense={handleDeleteExpense} />
+                            {/* Display loading indicator or the list */}
+                            {loadingExpenses ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : (
+                                /* Pass the fetched expenses and delete handler */
+                                <ExpenseList expenses={expenses} onDeleteExpense={handleDeleteExpense} />
+                            )}
 
-                            {/* Use ExpenseTotal component */}
+                            {/* Pass the calculated total amount */}
                             <ExpenseTotal totalAmount={totalAmount} />
                             {/* TODO: Add button/logic to generate reimbursement link */}
                         </Box>
