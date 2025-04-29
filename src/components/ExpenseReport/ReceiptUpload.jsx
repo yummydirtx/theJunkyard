@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // Import useEffect
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -48,7 +48,20 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
     const [error, setError] = useState(null); // Stores error messages related to file selection or upload
 
     // --- Refs ---
-    const fileInputRef = useRef(null); // Ref to the hidden file input element, used to reset it programmatically
+    const fileInputRef = useRef(null); // Ref to the hidden file input element
+
+    // --- Effect to clear file input on mount/remount ---
+    useEffect(() => {
+        // Clear the actual file input value when the component mounts or the key changes
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+        // Reset component-specific state as well if needed, though remounting handles this
+        setSelectedFileName('');
+        setError(null);
+        setUploading(false);
+    }, []); // Empty dependency array ensures this runs on mount (and remount due to key change)
+
 
     /**
      * Handles the file selection event from the hidden input.

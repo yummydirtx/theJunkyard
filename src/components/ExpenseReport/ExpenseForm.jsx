@@ -39,6 +39,8 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'; /
 // Import Firebase/Vertex AI functions and Auth context
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 import { useAuth } from '../../contexts/AuthContext';
+// Import Firestore functions for pending receipts
+import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
 // --- Define the Schema for Structured Output from Vertex AI ---
 // This schema guides the AI to extract specific information from the receipt.
@@ -81,10 +83,12 @@ const receiptSchema = {
  * A form component for adding new expenses, optionally parsing details from an uploaded receipt using Vertex AI.
  * @param {object} props - Component props.
  * @param {function} props.onAddExpense - Callback function invoked when a new expense is successfully submitted.
- *                                        Receives an object with { description, amount, receiptUri, items }. // Added items
+ *                                        Receives an object with { description, amount, receiptUri, items }.
+ * @param {function} props.onDeleteStorageFile - Callback function to delete a file from storage by its gs:// URI.
  */
-export default function ExpenseForm({ onAddExpense }) {
-    const { app } = useAuth(); // Get Firebase app instance from authentication context
+export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
+    const { app, activeUser } = useAuth(); // Get Firebase app instance and user
+    const db = getFirestore(app); // Initialize Firestore
 
     // --- State Variables ---
     // Form input fields
@@ -92,6 +96,15 @@ export default function ExpenseForm({ onAddExpense }) {
     const [amount, setAmount] = useState(''); // Expense amount (as string for input control)
     const [receiptGsUri, setReceiptGsUri] = useState(''); // Google Cloud Storage URI of the uploaded receipt (e.g., gs://bucket/path/to/file)
     const [items, setItems] = useState([]); // State to hold parsed items from AI [{description: string, price?: number}]
+    // State and Ref to track the URI of the receipt uploaded but not yet submitted
+    const [unsubmittedReceiptUri, setUnsubmittedReceiptUri] = useState(null);
+    const [receiptUploadKey, setReceiptUploadKey] = useState(0); // Key to force re-render ReceiptUpload
+
+    // --- Refs ---
+    const unsubmittedReceiptUriRef = useRef(null);
+    const pendingReceiptDocIdRef = useRef(null);
+    // Ref to prevent cleanup effect during successful submission phase
+    const isSubmittingSuccessRef = useRef(false);
 
     // UI and process flow control
     const [isSubmitting, setIsSubmitting] = useState(false); // True when the form is being submitted to the parent
@@ -99,7 +112,6 @@ export default function ExpenseForm({ onAddExpense }) {
     const [error, setError] = useState(''); // Stores error messages for display
     const [info, setInfo] = useState(''); // Stores informational messages (e.g., "Parsing...", "Success!")
     const [isExpanded, setIsExpanded] = useState(true); // Controls the collapsible section of the form
-    const [receiptUploadKey, setReceiptUploadKey] = useState(0); // Key to force re-render ReceiptUpload
 
     // --- Effects ---
     // Reset info/error messages when the user manually changes description or amount,
@@ -113,33 +125,133 @@ export default function ExpenseForm({ onAddExpense }) {
         }
     }, [description, amount, parsingReceipt]); // Dependencies: run effect when these values change
 
+    // Helper function to delete pending receipt Firestore document
+    const deletePendingReceiptDoc = async (docId) => {
+        if (!docId || !db || !activeUser) return;
+        console.log("Deleting pending receipt document:", docId);
+        try {
+            await deleteDoc(doc(db, "pendingReceipts", docId));
+            pendingReceiptDocIdRef.current = null; // Clear ref after deletion
+        } catch (error) {
+            console.error("Error deleting pending receipt document:", docId, error);
+            // Log error, but don't necessarily block UI
+        }
+    };
+
+    // Effect to clean up unsubmitted receipt and pending doc on component unmount
+    useEffect(() => {
+        // Return the cleanup function
+        return () => {
+            // --- Check if cleanup should be skipped ---
+            if (isSubmittingSuccessRef.current) {
+                console.log("ExpenseForm cleanup skipped due to successful submission in progress.");
+                return; // Don't run cleanup if submission just succeeded
+            }
+            // --- End Check ---
+
+            const uriToDelete = unsubmittedReceiptUriRef.current;
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+
+            // Delete file from Storage
+            if (uriToDelete && onDeleteStorageFile) {
+                console.log("ExpenseForm unmounting/cleaning up unsubmitted receipt file:", uriToDelete);
+                onDeleteStorageFile(uriToDelete); // Fire-and-forget is okay here
+            }
+            // Delete pending document from Firestore
+            if (docIdToDelete) {
+                 console.log("ExpenseForm unmounting/cleaning up pending receipt doc:", docIdToDelete);
+                 deletePendingReceiptDoc(docIdToDelete); // Fire-and-forget
+            }
+            // Clear refs on unmount (only if not skipped)
+            unsubmittedReceiptUriRef.current = null;
+            pendingReceiptDocIdRef.current = null;
+        };
+        // Dependencies remain the same
+    }, [onDeleteStorageFile, db, activeUser]);
+
 
     /**
      * Handles the completion of a receipt upload from the ReceiptUpload component.
-     * Clears previous form data related to receipts and triggers AI parsing.
-     * @param {string} gsUri - The Google Cloud Storage URI of the uploaded file.
-     * @param {string} mimeType - The MIME type of the uploaded file (e.g., 'image/jpeg', 'application/pdf').
+     * Clears previous form data, deletes old unsubmitted files/docs, creates a new pending doc, and triggers parsing.
+     * @param {string} newGsUri - The Google Cloud Storage URI of the newly uploaded file.
+     * @param {string} mimeType - The MIME type of the uploaded file.
      */
-    const handleReceiptUpload = (gsUri, mimeType) => {
-        // Reset fields related to the previous receipt/parsing attempt
+    const handleReceiptUpload = async (newGsUri, mimeType) => {
+        // --- Delete previous unsubmitted receipt file AND pending doc ---
+        const oldUnsubmittedUri = unsubmittedReceiptUriRef.current;
+        const oldPendingDocId = pendingReceiptDocIdRef.current;
+
+        if (oldUnsubmittedUri && oldUnsubmittedUri !== newGsUri && onDeleteStorageFile) {
+            console.log("New receipt uploaded, deleting previous unsubmitted file:", oldUnsubmittedUri);
+            try {
+                await onDeleteStorageFile(oldUnsubmittedUri); // Wait for deletion attempt
+            } catch (delError) {
+                console.error("Failed to delete previous unsubmitted receipt file:", delError);
+            }
+        }
+        if (oldPendingDocId) {
+             console.log("New receipt uploaded, deleting previous pending doc:", oldPendingDocId);
+             await deletePendingReceiptDoc(oldPendingDocId); // Wait for deletion attempt
+        }
+        // Clear refs immediately after attempting deletion
+        unsubmittedReceiptUriRef.current = null;
+        pendingReceiptDocIdRef.current = null;
+        setUnsubmittedReceiptUri(null);
+        // --- End Deletion ---
+
+        // Reset form fields
         setReceiptGsUri('');
         setAmount('');
         setDescription('');
-        setItems([]); // Clear previous items
+        setItems([]);
         setError('');
         setInfo('');
 
-        if (gsUri && mimeType) {
-            setReceiptGsUri(gsUri); // Store the new receipt URI
+        if (newGsUri && mimeType && activeUser && db) {
+            setReceiptGsUri(newGsUri);
+            setUnsubmittedReceiptUri(newGsUri);
+            unsubmittedReceiptUriRef.current = newGsUri;
+
+            // --- Create new pending receipt document ---
+            try {
+                console.log("Creating pending receipt document for:", newGsUri);
+                const pendingData = {
+                    userId: activeUser.uid,
+                    gsUri: newGsUri,
+                    uploadTimestamp: serverTimestamp()
+                };
+                const docRef = await addDoc(collection(db, "pendingReceipts"), pendingData);
+                pendingReceiptDocIdRef.current = docRef.id; // Store the new pending doc ID
+                console.log("Pending receipt document created:", docRef.id);
+            } catch (error) {
+                console.error("Failed to create pending receipt document:", error);
+                setError("Failed to track pending receipt. Please try uploading again.");
+                // If creating the pending doc fails, we should probably delete the uploaded file
+                if (onDeleteStorageFile) {
+                    await onDeleteStorageFile(newGsUri);
+                }
+                unsubmittedReceiptUriRef.current = null;
+                setUnsubmittedReceiptUri(null);
+                setReceiptGsUri('');
+                return; // Stop processing
+            }
+            // --- End Create Pending Doc ---
+
             // Automatically start parsing the newly uploaded receipt
-            handleParseReceipt(gsUri, mimeType);
+            handleParseReceipt(newGsUri, mimeType);
+        } else {
+             // Clear refs if upload failed earlier or user/db not available
+             unsubmittedReceiptUriRef.current = null;
+             pendingReceiptDocIdRef.current = null;
+             setUnsubmittedReceiptUri(null);
+             if (!activeUser || !db) {
+                 setError("Cannot process upload: User or database unavailable.");
+             }
         }
     };
 
     /**
-     * Sends the uploaded receipt (via its gs:// URI) to Vertex AI Gemini model for analysis.
-     * Uses the predefined `receiptSchema` to request structured JSON output.
-     * Updates form fields (amount, description, items) based on the parsed data.
+     * Sends the uploaded receipt for analysis. Deletes the file and pending doc if parsing fails.
      * @param {string} gsUri - The Google Cloud Storage URI of the file to parse.
      * @param {string} mimeType - The MIME type of the file.
      */
@@ -249,6 +361,22 @@ export default function ExpenseForm({ onAddExpense }) {
             setError(userMessage); // Display the user-friendly error
             setInfo(''); // Clear info message on error
             setItems([]); // Clear items on API error
+
+            // --- Attempt to delete the failed receipt file AND pending doc ---
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+            if (gsUri && onDeleteStorageFile) {
+                console.log("Parsing failed, attempting to delete uploaded receipt file:", gsUri);
+                await onDeleteStorageFile(gsUri);
+            }
+            if (docIdToDelete) {
+                 console.log("Parsing failed, attempting to delete pending receipt doc:", docIdToDelete);
+                 await deletePendingReceiptDoc(docIdToDelete); // Uses the helper
+            }
+            // Clear tracking refs/state
+            unsubmittedReceiptUriRef.current = null;
+            pendingReceiptDocIdRef.current = null; // Already cleared in deletePendingReceiptDoc
+            setUnsubmittedReceiptUri(null);
+            // --- End Deletion on Failure ---
         } finally {
             setParsingReceipt(false); // Indicate that parsing has finished
              // Note: Info message is intentionally kept if parsing was successful,
@@ -258,8 +386,7 @@ export default function ExpenseForm({ onAddExpense }) {
 
 
     /**
-     * Handles the final submission of the expense form.
-     * Performs basic validation, calls the `onAddExpense` prop, and resets the form on success.
+     * Handles the final submission. Deletes the pending receipt doc on success.
      */
     const handleAdd = async () => {
         setError(''); // Clear previous submission errors
@@ -278,35 +405,68 @@ export default function ExpenseForm({ onAddExpense }) {
         }
         // --- End Validation ---
 
-        setIsSubmitting(true); // Indicate submission is in progress, disable form elements
+        setIsSubmitting(true);
+        isSubmittingSuccessRef.current = false; // Ensure it's false initially
 
         try {
-            // Call the parent component's function to handle adding the expense data
-            await onAddExpense({
-                description: description.trim(), // Send trimmed description (user might have edited it)
-                amount: parsedAmount,            // Send parsed numerical amount
-                receiptUri: receiptGsUri,        // Send the gs:// URI of the receipt (if any)
-                items: items,                    // Send the parsed items array
-            });
+            // Prepare data (ensure items are included)
+             const expenseData = {
+                description: description.trim(),
+                amount: parsedAmount,
+                receiptUri: receiptGsUri, // Use the URI stored in the main state
+                items: items,
+            };
 
-            // --- Reset Form on Successful Submission ---
+            // --- Mark submission success phase ---
+            isSubmittingSuccessRef.current = true;
+            // --- End Mark ---
+
+            await onAddExpense(expenseData); // Wait for the parent to confirm addition
+
+            // --- Clear Unsubmitted Receipt Tracking *IMMEDIATELY* after successful submission ---
+            // This prevents the unmount/cleanup effect from deleting the submitted file
+            const currentUnsubmittedUri = unsubmittedReceiptUriRef.current; // Store temporarily if needed for logging
+            unsubmittedReceiptUriRef.current = null;
+            setUnsubmittedReceiptUri(null);
+            console.log("Cleared unsubmitted URI ref after successful submission for:", currentUnsubmittedUri);
+            // --- End Clearing URI Tracking ---
+
+            // --- Delete Pending Receipt Doc on Success ---
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+            if (docIdToDelete) {
+                // No need to await this necessarily, can run in background
+                deletePendingReceiptDoc(docIdToDelete).then(() => {
+                     // pendingReceiptDocIdRef is cleared inside deletePendingReceiptDoc
+                     console.log("Pending doc deletion initiated for:", docIdToDelete);
+                });
+                // Clear the ref immediately after initiating deletion
+                pendingReceiptDocIdRef.current = null;
+            }
+            // --- End Deletion ---
+
+
+            // --- Reset Form ---
             setDescription('');
             setAmount('');
             setReceiptGsUri('');
-            setItems([]); // Clear items
-            // Increment the key to reset the ReceiptUpload component
+            setItems([]);
+            // Re-introduce key update to force ReceiptUpload remount/reset
             setReceiptUploadKey(prevKey => prevKey + 1);
-            setInfo('Expense added successfully!'); // Provide success feedback
-             // Optionally collapse the form after successful addition:
-             // setIsExpanded(false);
+            setInfo('Expense added successfully!');
+
+            // --- Unmark submission success phase *after* all state resets ---
+            isSubmittingSuccessRef.current = false;
+            // --- End Unmark ---
 
         } catch (err) {
-            // Handle errors that occur during the call to onAddExpense (e.g., backend issues)
+            // --- Ensure flag is reset on error too ---
+            isSubmittingSuccessRef.current = false;
+            // --- End Reset ---
             console.error("Submission error in form:", err);
             setError('Failed to add expense. Please try again.');
-            setInfo(''); // Clear info message on error
+            setInfo('');
         } finally {
-            setIsSubmitting(false); // Indicate submission process is complete
+            setIsSubmitting(false);
         }
     };
 
@@ -359,7 +519,7 @@ export default function ExpenseForm({ onAddExpense }) {
     };
 
 
-    // ... (handleReceiptUpload, handleParseReceipt, handleAdd, toggleExpand, isProcessing) ...
+    // ... (handleReceiptUpload, handleParseReceipt, toggleExpand, isProcessing) ...
 
     return (
         <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
@@ -416,10 +576,11 @@ export default function ExpenseForm({ onAddExpense }) {
                         <List dense disablePadding>
                             {items.map((item, index) => (
                                 <React.Fragment key={index}>
-                                    <ListItem disableGutters sx={{ py: 0.5, pr: 0 }}> {/* Remove right padding */}
+                                    <ListItem disableGutters sx={{ py: 0.5, pr: 0 }}>
+                                        {/* Grid v2: container prop remains */}
                                         <Grid container spacing={1} alignItems="center">
-                                            {/* Adjust grid sizes to make space for remove button */}
-                                            <Grid item xs={7}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={7}>
                                                 <TextField
                                                     label={`Item ${index + 1} Desc.`}
                                                     variant="outlined"
@@ -427,27 +588,28 @@ export default function ExpenseForm({ onAddExpense }) {
                                                     fullWidth
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                                    disabled={isProcessing} // Disable while submitting
+                                                    disabled={isProcessing}
                                                 />
                                             </Grid>
-                                            <Grid item xs={4}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={4}>
                                                 <TextField
                                                     label="Price"
                                                     variant="outlined"
                                                     size="small"
                                                     fullWidth
-                                                    type="number" // Use number type
-                                                    value={item.price !== undefined ? item.price.toString() : ''} // Handle undefined/number for input value
+                                                    type="number"
+                                                    value={item.price !== undefined ? item.price.toString() : ''}
                                                     onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-                                                    disabled={isProcessing} // Disable while submitting
-                                                    inputProps={{ step: "0.01", min: "0" }} // Allow decimals, non-negative
-                                                    InputProps={{ // Add '$' adornment
+                                                    disabled={isProcessing}
+                                                    inputProps={{ step: "0.01", min: "0" }}
+                                                    InputProps={{
                                                         startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography>,
                                                     }}
                                                 />
                                             </Grid>
-                                            {/* Remove Button */}
-                                            <Grid item xs={1} sx={{ textAlign: 'right', pl: 0 }}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={1} sx={{ textAlign: 'right', pl: 0 }}>
                                                 <IconButton
                                                     aria-label="remove item"
                                                     onClick={() => handleRemoveItem(index)}
@@ -458,7 +620,7 @@ export default function ExpenseForm({ onAddExpense }) {
                                                     <RemoveCircleOutlineIcon fontSize="small" />
                                                 </IconButton>
                                             </Grid>
-                                        </Grid>
+                                        </Grid> {/* End Grid container */}
                                     </ListItem>
                                     {index < items.length - 1 && <Divider component="li" light sx={{ my: 0.5 }} />}
                                 </React.Fragment>
