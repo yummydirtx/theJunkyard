@@ -224,6 +224,7 @@ export default function ExpenseReport({ setMode, mode }) {
                             openSignUpModal={openSignUpModal}
                             loading={authLoading}
                             user={activeUser}
+                            app_title="Expense Report"
                         />
                     )}
                 </Container>

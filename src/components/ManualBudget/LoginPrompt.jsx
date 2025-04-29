@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import Stack from '@mui/material/Stack';
 
-export default function LoginPrompt({ openLoginModal, openSignUpModal, loading, user }) {
+export default function LoginPrompt({ openLoginModal, openSignUpModal, loading, user, app_title }) {
     return (
         <Box sx={{
             display: 'flex',
@@ -35,7 +35,7 @@ export default function LoginPrompt({ openLoginModal, openSignUpModal, loading, 
         }}>
             <Fade in={!loading && !user} timeout={1000}>
                 <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>Please log in to use Manual Budget</Typography>
+                    <Typography variant="h5" sx={{ mb: 2 }}>Please log in to use {app_title}</Typography>
                     <Stack direction="row" spacing={2} sx={{ justifyContent: 'center' }}>
                         <Button
                             variant="contained"

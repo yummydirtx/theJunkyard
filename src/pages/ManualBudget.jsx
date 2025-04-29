@@ -312,6 +312,7 @@ export default function ManualBudget({ setMode, mode }) {
                             loading={loading}
                             user={activeUser}
                             key="login-prompt"
+                            app_title="Manual Budget"
                         />]
                     ))}
                     {loading && (
