@@ -35,6 +35,8 @@ import SignUpModal from '../components/Authentication/SignUpModal';
 import CircularProgress from '@mui/material/CircularProgress';
 // Import Firestore functions
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, deleteDoc } from "firebase/firestore"; // Added query, where, onSnapshot, orderBy, doc, deleteDoc
+// Import Storage functions for deletion
+import { getStorage, ref, deleteObject } from "firebase/storage"; // Added getStorage, ref, deleteObject
 // Import new placeholder components
 import ExpenseForm from '../components/ExpenseReport/ExpenseForm';
 import ExpenseList from '../components/ExpenseReport/ExpenseList';
@@ -49,6 +51,7 @@ export default function ExpenseReport({ setMode, mode }) {
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const db = getFirestore(app); // Initialize Firestore
+    const storage = getStorage(app); // Initialize Storage
 
     // State for expenses, fetched from Firestore
     const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
@@ -100,6 +103,7 @@ export default function ExpenseReport({ setMode, mode }) {
             description: newExpense.description,
             amount: newExpense.amount, // Ensure this is a number (already parsed in ExpenseForm)
             receiptUri: newExpense.receiptUri || null, // Store the gs:// URI directly
+            items: newExpense.items || null, // Store the items array (or null if empty/not provided)
             createdAt: serverTimestamp(),
         };
         try {
@@ -113,21 +117,44 @@ export default function ExpenseReport({ setMode, mode }) {
         }
     };
 
-    // Function to delete an expense from Firestore
+    // Function to delete an expense from Firestore and its associated receipt from Storage
     const handleDeleteExpense = async (expenseId) => {
-        if (!activeUser || !db) {
-            console.error("User not logged in or Firestore not initialized.");
+        if (!activeUser || !db || !storage) {
+            console.error("User not logged in or Firebase services not initialized.");
             // TODO: Show error to user
             return;
         }
-        console.log("Deleting expense from Firestore:", expenseId);
+        console.log("Deleting expense:", expenseId);
+
+        // Find the expense data locally to get the receiptUri
+        const expenseToDelete = expenses.find(exp => exp.id === expenseId);
+
+        // 1. Delete Receipt from Storage (if it exists)
+        if (expenseToDelete && expenseToDelete.receiptUri) {
+            console.log("Deleting receipt from Storage:", expenseToDelete.receiptUri);
+            try {
+                const storageRef = ref(storage, expenseToDelete.receiptUri); // Create ref from gs:// URI
+                await deleteObject(storageRef);
+                console.log("Receipt successfully deleted from Storage!");
+            } catch (storageError) {
+                // Log error but proceed with Firestore deletion
+                // Handle specific errors like 'object-not-found' if needed
+                console.error("Error deleting receipt from Storage:", storageError);
+                // Optionally inform the user if the file couldn't be deleted but the entry will be
+                // TODO: Show specific error based on storageError.code if necessary
+            }
+        } else {
+            console.log("No receipt URI found for this expense, skipping Storage deletion.");
+        }
+
+        // 2. Delete Expense Document from Firestore
         try {
             const expenseDocRef = doc(db, "users", activeUser.uid, "expenses", expenseId);
             await deleteDoc(expenseDocRef);
-            console.log("Document successfully deleted!");
+            console.log("Expense document successfully deleted from Firestore!");
             // No need to manually update state here, onSnapshot will handle it
-        } catch (e) {
-            console.error("Error deleting document: ", e);
+        } catch (firestoreError) {
+            console.error("Error deleting expense document from Firestore: ", firestoreError);
             // TODO: Show error to user
         }
     };

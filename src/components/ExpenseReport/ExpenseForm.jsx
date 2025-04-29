@@ -1,6 +1,6 @@
 // src/components/ExpenseReport/ExpenseForm.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -12,6 +12,12 @@ import IconButton from '@mui/material/IconButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Alert from '@mui/material/Alert'; // For displaying errors/info messages
+import List from '@mui/material/List'; // For displaying items
+import ListItem from '@mui/material/ListItem'; // For displaying items
+import Divider from '@mui/material/Divider'; // For displaying items
+import Grid from '@mui/material/Grid'; // For layout of item fields
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'; // Icon for Add Item
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'; // Icon for Remove Item
 
 // Import Firebase/Vertex AI functions and Auth context
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
@@ -26,9 +32,13 @@ const receiptSchema = {
             type: 'number',
             description: 'The final total amount paid on the receipt, including tax and tips. Extract only the numerical value.'
         },
+        transaction_summary: { // Added summary field
+            type: 'string',
+            description: 'A brief summary of the transaction (e.g., "Groceries at Safeway", "Gas at Shell", "Dinner at Restaurant Name"). Identify the merchant and general category if possible.'
+        },
         items: {
             type: 'array',
-            description: 'List of items purchased. Extract the description for each item.',
+            description: 'List of items purchased. Extract the description and price (if available) for each item.', // Updated description
             items: {
                 type: 'object',
                 properties: {
@@ -36,13 +46,17 @@ const receiptSchema = {
                         type: 'string',
                         description: 'Description of the purchased item.'
                     },
-                    // Optional: price: { type: 'number', description: 'Price of the item' } // Example of an optional field
+                    price: { // Added optional price
+                        type: 'number',
+                        description: 'Price of the item, if clearly identifiable. Extract only the numerical value.'
+                    }
                 },
                 required: ['description'] // Only description is required per item
             }
         }
     },
-    required: ['total_amount', 'items'] // Both top-level fields are required in the AI response
+    // Only total_amount is strictly required now, summary and items are preferred.
+    required: ['total_amount']
 };
 // --- End Schema Definition ---
 
@@ -50,7 +64,7 @@ const receiptSchema = {
  * A form component for adding new expenses, optionally parsing details from an uploaded receipt using Vertex AI.
  * @param {object} props - Component props.
  * @param {function} props.onAddExpense - Callback function invoked when a new expense is successfully submitted.
- *                                        Receives an object with { description, amount, receiptUri }.
+ *                                        Receives an object with { description, amount, receiptUri, items }. // Added items
  */
 export default function ExpenseForm({ onAddExpense }) {
     const { app } = useAuth(); // Get Firebase app instance from authentication context
@@ -60,6 +74,7 @@ export default function ExpenseForm({ onAddExpense }) {
     const [description, setDescription] = useState(''); // Expense description
     const [amount, setAmount] = useState(''); // Expense amount (as string for input control)
     const [receiptGsUri, setReceiptGsUri] = useState(''); // Google Cloud Storage URI of the uploaded receipt (e.g., gs://bucket/path/to/file)
+    const [items, setItems] = useState([]); // State to hold parsed items from AI [{description: string, price?: number}]
 
     // UI and process flow control
     const [isSubmitting, setIsSubmitting] = useState(false); // True when the form is being submitted to the parent
@@ -67,6 +82,7 @@ export default function ExpenseForm({ onAddExpense }) {
     const [error, setError] = useState(''); // Stores error messages for display
     const [info, setInfo] = useState(''); // Stores informational messages (e.g., "Parsing...", "Success!")
     const [isExpanded, setIsExpanded] = useState(true); // Controls the collapsible section of the form
+    const [receiptUploadKey, setReceiptUploadKey] = useState(0); // Key to force re-render ReceiptUpload
 
     // --- Effects ---
     // Reset info/error messages when the user manually changes description or amount,
@@ -75,6 +91,8 @@ export default function ExpenseForm({ onAddExpense }) {
         if (!parsingReceipt) {
             setInfo('');
             setError('');
+            // Note: We don't clear 'items' here, as they are linked to the receipt parsing.
+            // They get cleared when a new receipt is uploaded or form is submitted.
         }
     }, [description, amount, parsingReceipt]); // Dependencies: run effect when these values change
 
@@ -90,6 +108,7 @@ export default function ExpenseForm({ onAddExpense }) {
         setReceiptGsUri('');
         setAmount('');
         setDescription('');
+        setItems([]); // Clear previous items
         setError('');
         setInfo('');
 
@@ -103,7 +122,7 @@ export default function ExpenseForm({ onAddExpense }) {
     /**
      * Sends the uploaded receipt (via its gs:// URI) to Vertex AI Gemini model for analysis.
      * Uses the predefined `receiptSchema` to request structured JSON output.
-     * Updates form fields (amount, description) based on the parsed data.
+     * Updates form fields (amount, description, items) based on the parsed data.
      * @param {string} gsUri - The Google Cloud Storage URI of the file to parse.
      * @param {string} mimeType - The MIME type of the file.
      */
@@ -117,6 +136,7 @@ export default function ExpenseForm({ onAddExpense }) {
         setParsingReceipt(true); // Indicate that parsing has started
         setError(''); // Clear previous errors
         setInfo('Analyzing receipt...'); // Inform the user
+        setItems([]); // Clear previous items before parsing new ones
 
         try {
             // Initialize Vertex AI service
@@ -132,8 +152,8 @@ export default function ExpenseForm({ onAddExpense }) {
                 // Optional: Add safetySettings if needed (e.g., to block harmful content)
             });
 
-            // Define the prompt for the AI
-            const prompt = 'Extract the total amount and item descriptions from this receipt image/PDF. Provide the output in the specified JSON format.';
+            // Define the prompt for the AI - Updated to ask for summary
+            const prompt = 'Extract the total amount, a brief transaction summary (like "Groceries at Store" or "Gas at Station"), and item descriptions/prices from this receipt image/PDF. Provide the output in the specified JSON format.';
 
             // Construct the request payload for the Gemini API
             // It requires a 'contents' array, where each element represents a turn in the conversation.
@@ -167,10 +187,23 @@ export default function ExpenseForm({ onAddExpense }) {
                 // Set amount, converting the number to a string for the input field
                 setAmount(structuredData.total_amount !== undefined ? structuredData.total_amount.toString() : '');
 
-                // Combine extracted item descriptions into a single string
-                const descriptions = structuredData.items?.map(item => item.description?.trim()).filter(Boolean).join(', ') || '';
-                // Set description, providing a fallback if no items were found
-                setDescription(descriptions || 'Receipt Parsed - Check Items');
+                // Set items state
+                const parsedItems = structuredData.items || [];
+                setItems(parsedItems);
+
+                // Set main description - Prioritize summary, then fallback
+                let generatedDescription = structuredData.transaction_summary?.trim() || ''; // Use summary if available
+
+                if (!generatedDescription) { // Fallback logic if no summary provided
+                    if (parsedItems.length === 1 && parsedItems[0].description) {
+                        generatedDescription = parsedItems[0].description; // Use single item description
+                    } else if (parsedItems.length > 1) {
+                        generatedDescription = `Items from Receipt (${parsedItems.length})`; // Summary for multiple items
+                    } else {
+                         generatedDescription = 'Receipt Parsed - Check Details'; // Generic fallback
+                    }
+                }
+                setDescription(generatedDescription);
 
                 setInfo('Receipt analysis complete. Please review fields.'); // Update info message on success
 
@@ -179,6 +212,7 @@ export default function ExpenseForm({ onAddExpense }) {
                 console.error("Error parsing JSON response:", jsonError, "Raw text:", response.text());
                 setError(`AI analysis failed (JSON Parse). Raw: ${response.text()}`);
                 setInfo(''); // Clear info message on error
+                setItems([]); // Clear items on JSON parse error
             }
 
         } catch (apiError) {
@@ -197,6 +231,7 @@ export default function ExpenseForm({ onAddExpense }) {
              }
             setError(userMessage); // Display the user-friendly error
             setInfo(''); // Clear info message on error
+            setItems([]); // Clear items on API error
         } finally {
             setParsingReceipt(false); // Indicate that parsing has finished
              // Note: Info message is intentionally kept if parsing was successful,
@@ -231,17 +266,19 @@ export default function ExpenseForm({ onAddExpense }) {
         try {
             // Call the parent component's function to handle adding the expense data
             await onAddExpense({
-                description: description.trim(), // Send trimmed description
+                description: description.trim(), // Send trimmed description (user might have edited it)
                 amount: parsedAmount,            // Send parsed numerical amount
                 receiptUri: receiptGsUri,        // Send the gs:// URI of the receipt (if any)
+                items: items,                    // Send the parsed items array
             });
 
             // --- Reset Form on Successful Submission ---
             setDescription('');
             setAmount('');
             setReceiptGsUri('');
-            // TODO: Consider adding a way to visually reset the ReceiptUpload component if needed.
-            // This might involve passing a 'key' prop or adding a reset function to ReceiptUpload.
+            setItems([]); // Clear items
+            // Increment the key to reset the ReceiptUpload component
+            setReceiptUploadKey(prevKey => prevKey + 1);
             setInfo('Expense added successfully!'); // Provide success feedback
              // Optionally collapse the form after successful addition:
              // setIsExpanded(false);
@@ -265,6 +302,48 @@ export default function ExpenseForm({ onAddExpense }) {
     // Used to disable form elements during these operations.
     const isProcessing = parsingReceipt || isSubmitting;
 
+    /**
+     * Handles changes within the editable items list.
+     * @param {number} index - The index of the item being changed.
+     * @param {string} field - The field being changed ('description' or 'price').
+     * @param {string} value - The new value from the input field.
+     */
+    const handleItemChange = (index, field, value) => {
+        const updatedItems = [...items];
+        if (field === 'price') {
+            // Allow empty string or valid number for price
+            const numValue = value === '' ? '' : parseFloat(value);
+            if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
+                 updatedItems[index] = { ...updatedItems[index], [field]: value === '' ? undefined : numValue }; // Store as number or undefined
+            } else {
+                // Optionally provide feedback or prevent invalid input further
+                console.warn("Invalid price input:", value);
+                return; // Don't update state if invalid number format (excluding empty)
+            }
+        } else {
+            updatedItems[index] = { ...updatedItems[index], [field]: value };
+        }
+        setItems(updatedItems);
+    };
+
+    /**
+     * Adds a new, empty item to the items list.
+     */
+    const handleAddItem = () => {
+        setItems([...items, { description: '', price: undefined }]);
+    };
+
+    /**
+     * Removes an item from the list by its index.
+     * @param {number} indexToRemove - The index of the item to remove.
+     */
+    const handleRemoveItem = (indexToRemove) => {
+        setItems(items.filter((_, index) => index !== indexToRemove));
+    };
+
+
+    // ... (handleReceiptUpload, handleParseReceipt, handleAdd, toggleExpand, isProcessing) ...
+
     return (
         <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
             {/* Header section for the form, clickable to toggle expansion */}
@@ -280,6 +359,7 @@ export default function ExpenseForm({ onAddExpense }) {
             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                 {/* Receipt Upload Component */}
                 <ReceiptUpload
+                    key={receiptUploadKey} // Add the key prop here
                     onUploadComplete={handleReceiptUpload} // Callback when upload finishes
                     disabled={isProcessing} // Disable upload if parsing or submitting
                 />
@@ -304,10 +384,97 @@ export default function ExpenseForm({ onAddExpense }) {
                     fullWidth
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    sx={{ mt: 2, mb: 2 }}
+                    sx={{ mt: 2, mb: 1 }} // Reduced bottom margin
                     disabled={isProcessing} // Disable while processing
                     required // HTML5 required attribute
+                    helperText="Summary of the expense. Will be auto-filled from receipt if possible."
                 />
+
+                {/* Display Parsed Items (Editable) */}
+                {items.length > 0 && !parsingReceipt && (
+                    <Box sx={{ my: 1, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                        <Typography variant="caption" display="block" gutterBottom sx={{ color: 'text.secondary', mb: 1 }}>
+                            Parsed Items (Editable):
+                        </Typography>
+                        <List dense disablePadding>
+                            {items.map((item, index) => (
+                                <React.Fragment key={index}>
+                                    <ListItem disableGutters sx={{ py: 0.5, pr: 0 }}> {/* Remove right padding */}
+                                        <Grid container spacing={1} alignItems="center">
+                                            {/* Adjust grid sizes to make space for remove button */}
+                                            <Grid item xs={7}>
+                                                <TextField
+                                                    label={`Item ${index + 1} Desc.`}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    fullWidth
+                                                    value={item.description || ''}
+                                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                                    disabled={isProcessing} // Disable while submitting
+                                                />
+                                            </Grid>
+                                            <Grid item xs={4}>
+                                                <TextField
+                                                    label="Price"
+                                                    variant="outlined"
+                                                    size="small"
+                                                    fullWidth
+                                                    type="number" // Use number type
+                                                    value={item.price !== undefined ? item.price.toString() : ''} // Handle undefined/number for input value
+                                                    onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                                                    disabled={isProcessing} // Disable while submitting
+                                                    inputProps={{ step: "0.01", min: "0" }} // Allow decimals, non-negative
+                                                    InputProps={{ // Add '$' adornment
+                                                        startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography>,
+                                                    }}
+                                                />
+                                            </Grid>
+                                            {/* Remove Button */}
+                                            <Grid item xs={1} sx={{ textAlign: 'right', pl: 0 }}>
+                                                <IconButton
+                                                    aria-label="remove item"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                    disabled={isProcessing}
+                                                    size="small"
+                                                    color="error"
+                                                >
+                                                    <RemoveCircleOutlineIcon fontSize="small" />
+                                                </IconButton>
+                                            </Grid>
+                                        </Grid>
+                                    </ListItem>
+                                    {index < items.length - 1 && <Divider component="li" light sx={{ my: 0.5 }} />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                        {/* Add Item Button */}
+                        <Button
+                            startIcon={<AddCircleOutlineIcon />}
+                            onClick={handleAddItem}
+                            size="small"
+                            sx={{ mt: 1 }}
+                            disabled={isProcessing}
+                        >
+                            Add Item
+                        </Button>
+                         <Typography variant="caption" display="block" sx={{ color: 'text.secondary', mt: 1 }}>
+                            Note: Editing item prices does not automatically update the total amount field below.
+                        </Typography>
+                    </Box>
+                )}
+                {/* Show Add Item button even if list is initially empty (after parsing or if no receipt) */}
+                 {items.length === 0 && !parsingReceipt && (
+                     <Button
+                        startIcon={<AddCircleOutlineIcon />}
+                        onClick={handleAddItem}
+                        size="small"
+                        sx={{ mt: 1, mb: 1 }}
+                        disabled={isProcessing}
+                    >
+                        Add Expense Item 
+                    </Button>
+                 )}
+
 
                 {/* Amount Input Field */}
                 <TextField
@@ -321,6 +488,7 @@ export default function ExpenseForm({ onAddExpense }) {
                     disabled={isProcessing} // Disable while processing
                     required // HTML5 required attribute
                     inputProps={{ step: "0.01", min: "0.01" }} // Allow decimals, enforce positive value
+                    helperText="Total amount. Will be auto-filled from receipt if possible."
                 />
 
                  {/* General Error Message Area */}

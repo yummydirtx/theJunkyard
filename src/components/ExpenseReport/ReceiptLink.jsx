@@ -81,7 +81,7 @@ export default function ReceiptLink({ receiptUri }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 variant="caption"
-                sx={{ ml: 0.5, verticalAlign: 'middle' }}
+                sx={{ ml: 0.5, verticalAlign: 'middle', fontSize: '100%' }}
             >
                 (View Receipt)
             </Link>
