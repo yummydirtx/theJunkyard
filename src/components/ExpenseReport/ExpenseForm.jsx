@@ -98,9 +98,13 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     const [items, setItems] = useState([]); // State to hold parsed items from AI [{description: string, price?: number}]
     // State and Ref to track the URI of the receipt uploaded but not yet submitted
     const [unsubmittedReceiptUri, setUnsubmittedReceiptUri] = useState(null);
+    const [receiptUploadKey, setReceiptUploadKey] = useState(0); // Key to force re-render ReceiptUpload
+
+    // --- Refs ---
     const unsubmittedReceiptUriRef = useRef(null);
-    // Ref to store the ID of the pending receipt document in Firestore
     const pendingReceiptDocIdRef = useRef(null);
+    // Ref to prevent cleanup effect during successful submission phase
+    const isSubmittingSuccessRef = useRef(false);
 
     // UI and process flow control
     const [isSubmitting, setIsSubmitting] = useState(false); // True when the form is being submitted to the parent
@@ -108,7 +112,6 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     const [error, setError] = useState(''); // Stores error messages for display
     const [info, setInfo] = useState(''); // Stores informational messages (e.g., "Parsing...", "Success!")
     const [isExpanded, setIsExpanded] = useState(true); // Controls the collapsible section of the form
-    const [receiptUploadKey, setReceiptUploadKey] = useState(0); // Key to force re-render ReceiptUpload
 
     // --- Effects ---
     // Reset info/error messages when the user manually changes description or amount,
@@ -139,25 +142,32 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     useEffect(() => {
         // Return the cleanup function
         return () => {
+            // --- Check if cleanup should be skipped ---
+            if (isSubmittingSuccessRef.current) {
+                console.log("ExpenseForm cleanup skipped due to successful submission in progress.");
+                return; // Don't run cleanup if submission just succeeded
+            }
+            // --- End Check ---
+
             const uriToDelete = unsubmittedReceiptUriRef.current;
             const docIdToDelete = pendingReceiptDocIdRef.current;
 
             // Delete file from Storage
             if (uriToDelete && onDeleteStorageFile) {
-                console.log("ExpenseForm unmounting, cleaning up unsubmitted receipt file:", uriToDelete);
+                console.log("ExpenseForm unmounting/cleaning up unsubmitted receipt file:", uriToDelete);
                 onDeleteStorageFile(uriToDelete); // Fire-and-forget is okay here
             }
             // Delete pending document from Firestore
             if (docIdToDelete) {
-                 console.log("ExpenseForm unmounting, cleaning up pending receipt doc:", docIdToDelete);
+                 console.log("ExpenseForm unmounting/cleaning up pending receipt doc:", docIdToDelete);
                  deletePendingReceiptDoc(docIdToDelete); // Fire-and-forget
             }
-            // Clear refs on unmount
+            // Clear refs on unmount (only if not skipped)
             unsubmittedReceiptUriRef.current = null;
             pendingReceiptDocIdRef.current = null;
         };
-        // Include deletePendingReceiptDoc in dependencies if it were not defined inside useEffect
-    }, [onDeleteStorageFile, db, activeUser]); // Add db and activeUser dependencies
+        // Dependencies remain the same
+    }, [onDeleteStorageFile, db, activeUser]);
 
 
     /**
@@ -366,7 +376,6 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
             unsubmittedReceiptUriRef.current = null;
             pendingReceiptDocIdRef.current = null; // Already cleared in deletePendingReceiptDoc
             setUnsubmittedReceiptUri(null);
-            setReceiptGsUri('');
             // --- End Deletion on Failure ---
         } finally {
             setParsingReceipt(false); // Indicate that parsing has finished
@@ -396,7 +405,8 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
         }
         // --- End Validation ---
 
-        setIsSubmitting(true); // Indicate submission is in progress, disable form elements
+        setIsSubmitting(true);
+        isSubmittingSuccessRef.current = false; // Ensure it's false initially
 
         try {
             // Prepare data (ensure items are included)
@@ -407,37 +417,56 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                 items: items,
             };
 
-            await onAddExpense(expenseData);
+            // --- Mark submission success phase ---
+            isSubmittingSuccessRef.current = true;
+            // --- End Mark ---
+
+            await onAddExpense(expenseData); // Wait for the parent to confirm addition
+
+            // --- Clear Unsubmitted Receipt Tracking *IMMEDIATELY* after successful submission ---
+            // This prevents the unmount/cleanup effect from deleting the submitted file
+            const currentUnsubmittedUri = unsubmittedReceiptUriRef.current; // Store temporarily if needed for logging
+            unsubmittedReceiptUriRef.current = null;
+            setUnsubmittedReceiptUri(null);
+            console.log("Cleared unsubmitted URI ref after successful submission for:", currentUnsubmittedUri);
+            // --- End Clearing URI Tracking ---
 
             // --- Delete Pending Receipt Doc on Success ---
             const docIdToDelete = pendingReceiptDocIdRef.current;
             if (docIdToDelete) {
-                await deletePendingReceiptDoc(docIdToDelete); // Use the helper
+                // No need to await this necessarily, can run in background
+                deletePendingReceiptDoc(docIdToDelete).then(() => {
+                     // pendingReceiptDocIdRef is cleared inside deletePendingReceiptDoc
+                     console.log("Pending doc deletion initiated for:", docIdToDelete);
+                });
+                // Clear the ref immediately after initiating deletion
+                pendingReceiptDocIdRef.current = null;
             }
             // --- End Deletion ---
 
-            // --- Clear Unsubmitted Receipt Tracking on Success ---
-            unsubmittedReceiptUriRef.current = null;
-            setUnsubmittedReceiptUri(null);
-            // --- End Clearing ---
 
             // --- Reset Form ---
             setDescription('');
             setAmount('');
-            setReceiptGsUri(''); // Clear the main URI state
+            setReceiptGsUri('');
             setItems([]);
+            // Re-introduce key update to force ReceiptUpload remount/reset
             setReceiptUploadKey(prevKey => prevKey + 1);
-            setInfo('Expense added successfully!'); // Provide success feedback
-             // Optionally collapse the form after successful addition:
-             // setIsExpanded(false);
+            setInfo('Expense added successfully!');
+
+            // --- Unmark submission success phase *after* all state resets ---
+            isSubmittingSuccessRef.current = false;
+            // --- End Unmark ---
 
         } catch (err) {
-            // Handle errors that occur during the call to onAddExpense (e.g., backend issues)
+            // --- Ensure flag is reset on error too ---
+            isSubmittingSuccessRef.current = false;
+            // --- End Reset ---
             console.error("Submission error in form:", err);
             setError('Failed to add expense. Please try again.');
-            setInfo(''); // Clear info message on error
+            setInfo('');
         } finally {
-            setIsSubmitting(false); // Indicate submission process is complete
+            setIsSubmitting(false);
         }
     };
 
@@ -490,7 +519,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     };
 
 
-    // ... (handleReceiptUpload, handleParseReceipt, handleAdd, toggleExpand, isProcessing) ...
+    // ... (handleReceiptUpload, handleParseReceipt, toggleExpand, isProcessing) ...
 
     return (
         <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
@@ -547,10 +576,11 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                         <List dense disablePadding>
                             {items.map((item, index) => (
                                 <React.Fragment key={index}>
-                                    <ListItem disableGutters sx={{ py: 0.5, pr: 0 }}> {/* Remove right padding */}
+                                    <ListItem disableGutters sx={{ py: 0.5, pr: 0 }}>
+                                        {/* Grid v2: container prop remains */}
                                         <Grid container spacing={1} alignItems="center">
-                                            {/* Adjust grid sizes to make space for remove button */}
-                                            <Grid item xs={7}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={7}>
                                                 <TextField
                                                     label={`Item ${index + 1} Desc.`}
                                                     variant="outlined"
@@ -558,27 +588,28 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                                                     fullWidth
                                                     value={item.description || ''}
                                                     onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                                    disabled={isProcessing} // Disable while submitting
+                                                    disabled={isProcessing}
                                                 />
                                             </Grid>
-                                            <Grid item xs={4}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={4}>
                                                 <TextField
                                                     label="Price"
                                                     variant="outlined"
                                                     size="small"
                                                     fullWidth
-                                                    type="number" // Use number type
-                                                    value={item.price !== undefined ? item.price.toString() : ''} // Handle undefined/number for input value
+                                                    type="number"
+                                                    value={item.price !== undefined ? item.price.toString() : ''}
                                                     onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-                                                    disabled={isProcessing} // Disable while submitting
-                                                    inputProps={{ step: "0.01", min: "0" }} // Allow decimals, non-negative
-                                                    InputProps={{ // Add '$' adornment
+                                                    disabled={isProcessing}
+                                                    inputProps={{ step: "0.01", min: "0" }}
+                                                    InputProps={{
                                                         startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography>,
                                                     }}
                                                 />
                                             </Grid>
-                                            {/* Remove Button */}
-                                            <Grid item xs={1} sx={{ textAlign: 'right', pl: 0 }}>
+                                            {/* Grid v2: Replace 'xs' with 'size' */}
+                                            <Grid size={1} sx={{ textAlign: 'right', pl: 0 }}>
                                                 <IconButton
                                                     aria-label="remove item"
                                                     onClick={() => handleRemoveItem(index)}
@@ -589,7 +620,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                                                     <RemoveCircleOutlineIcon fontSize="small" />
                                                 </IconButton>
                                             </Grid>
-                                        </Grid>
+                                        </Grid> {/* End Grid container */}
                                     </ListItem>
                                     {index < items.length - 1 && <Divider component="li" light sx={{ my: 0.5 }} />}
                                 </React.Fragment>
