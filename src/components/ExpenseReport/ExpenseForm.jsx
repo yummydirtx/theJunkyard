@@ -39,6 +39,8 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline'; /
 // Import Firebase/Vertex AI functions and Auth context
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 import { useAuth } from '../../contexts/AuthContext';
+// Import Firestore functions for pending receipts
+import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 
 // --- Define the Schema for Structured Output from Vertex AI ---
 // This schema guides the AI to extract specific information from the receipt.
@@ -81,10 +83,12 @@ const receiptSchema = {
  * A form component for adding new expenses, optionally parsing details from an uploaded receipt using Vertex AI.
  * @param {object} props - Component props.
  * @param {function} props.onAddExpense - Callback function invoked when a new expense is successfully submitted.
- *                                        Receives an object with { description, amount, receiptUri, items }. // Added items
+ *                                        Receives an object with { description, amount, receiptUri, items }.
+ * @param {function} props.onDeleteStorageFile - Callback function to delete a file from storage by its gs:// URI.
  */
-export default function ExpenseForm({ onAddExpense }) {
-    const { app } = useAuth(); // Get Firebase app instance from authentication context
+export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
+    const { app, activeUser } = useAuth(); // Get Firebase app instance and user
+    const db = getFirestore(app); // Initialize Firestore
 
     // --- State Variables ---
     // Form input fields
@@ -92,6 +96,11 @@ export default function ExpenseForm({ onAddExpense }) {
     const [amount, setAmount] = useState(''); // Expense amount (as string for input control)
     const [receiptGsUri, setReceiptGsUri] = useState(''); // Google Cloud Storage URI of the uploaded receipt (e.g., gs://bucket/path/to/file)
     const [items, setItems] = useState([]); // State to hold parsed items from AI [{description: string, price?: number}]
+    // State and Ref to track the URI of the receipt uploaded but not yet submitted
+    const [unsubmittedReceiptUri, setUnsubmittedReceiptUri] = useState(null);
+    const unsubmittedReceiptUriRef = useRef(null);
+    // Ref to store the ID of the pending receipt document in Firestore
+    const pendingReceiptDocIdRef = useRef(null);
 
     // UI and process flow control
     const [isSubmitting, setIsSubmitting] = useState(false); // True when the form is being submitted to the parent
@@ -113,33 +122,126 @@ export default function ExpenseForm({ onAddExpense }) {
         }
     }, [description, amount, parsingReceipt]); // Dependencies: run effect when these values change
 
+    // Helper function to delete pending receipt Firestore document
+    const deletePendingReceiptDoc = async (docId) => {
+        if (!docId || !db || !activeUser) return;
+        console.log("Deleting pending receipt document:", docId);
+        try {
+            await deleteDoc(doc(db, "pendingReceipts", docId));
+            pendingReceiptDocIdRef.current = null; // Clear ref after deletion
+        } catch (error) {
+            console.error("Error deleting pending receipt document:", docId, error);
+            // Log error, but don't necessarily block UI
+        }
+    };
+
+    // Effect to clean up unsubmitted receipt and pending doc on component unmount
+    useEffect(() => {
+        // Return the cleanup function
+        return () => {
+            const uriToDelete = unsubmittedReceiptUriRef.current;
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+
+            // Delete file from Storage
+            if (uriToDelete && onDeleteStorageFile) {
+                console.log("ExpenseForm unmounting, cleaning up unsubmitted receipt file:", uriToDelete);
+                onDeleteStorageFile(uriToDelete); // Fire-and-forget is okay here
+            }
+            // Delete pending document from Firestore
+            if (docIdToDelete) {
+                 console.log("ExpenseForm unmounting, cleaning up pending receipt doc:", docIdToDelete);
+                 deletePendingReceiptDoc(docIdToDelete); // Fire-and-forget
+            }
+            // Clear refs on unmount
+            unsubmittedReceiptUriRef.current = null;
+            pendingReceiptDocIdRef.current = null;
+        };
+        // Include deletePendingReceiptDoc in dependencies if it were not defined inside useEffect
+    }, [onDeleteStorageFile, db, activeUser]); // Add db and activeUser dependencies
+
 
     /**
      * Handles the completion of a receipt upload from the ReceiptUpload component.
-     * Clears previous form data related to receipts and triggers AI parsing.
-     * @param {string} gsUri - The Google Cloud Storage URI of the uploaded file.
-     * @param {string} mimeType - The MIME type of the uploaded file (e.g., 'image/jpeg', 'application/pdf').
+     * Clears previous form data, deletes old unsubmitted files/docs, creates a new pending doc, and triggers parsing.
+     * @param {string} newGsUri - The Google Cloud Storage URI of the newly uploaded file.
+     * @param {string} mimeType - The MIME type of the uploaded file.
      */
-    const handleReceiptUpload = (gsUri, mimeType) => {
-        // Reset fields related to the previous receipt/parsing attempt
+    const handleReceiptUpload = async (newGsUri, mimeType) => {
+        // --- Delete previous unsubmitted receipt file AND pending doc ---
+        const oldUnsubmittedUri = unsubmittedReceiptUriRef.current;
+        const oldPendingDocId = pendingReceiptDocIdRef.current;
+
+        if (oldUnsubmittedUri && oldUnsubmittedUri !== newGsUri && onDeleteStorageFile) {
+            console.log("New receipt uploaded, deleting previous unsubmitted file:", oldUnsubmittedUri);
+            try {
+                await onDeleteStorageFile(oldUnsubmittedUri); // Wait for deletion attempt
+            } catch (delError) {
+                console.error("Failed to delete previous unsubmitted receipt file:", delError);
+            }
+        }
+        if (oldPendingDocId) {
+             console.log("New receipt uploaded, deleting previous pending doc:", oldPendingDocId);
+             await deletePendingReceiptDoc(oldPendingDocId); // Wait for deletion attempt
+        }
+        // Clear refs immediately after attempting deletion
+        unsubmittedReceiptUriRef.current = null;
+        pendingReceiptDocIdRef.current = null;
+        setUnsubmittedReceiptUri(null);
+        // --- End Deletion ---
+
+        // Reset form fields
         setReceiptGsUri('');
         setAmount('');
         setDescription('');
-        setItems([]); // Clear previous items
+        setItems([]);
         setError('');
         setInfo('');
 
-        if (gsUri && mimeType) {
-            setReceiptGsUri(gsUri); // Store the new receipt URI
+        if (newGsUri && mimeType && activeUser && db) {
+            setReceiptGsUri(newGsUri);
+            setUnsubmittedReceiptUri(newGsUri);
+            unsubmittedReceiptUriRef.current = newGsUri;
+
+            // --- Create new pending receipt document ---
+            try {
+                console.log("Creating pending receipt document for:", newGsUri);
+                const pendingData = {
+                    userId: activeUser.uid,
+                    gsUri: newGsUri,
+                    uploadTimestamp: serverTimestamp()
+                };
+                const docRef = await addDoc(collection(db, "pendingReceipts"), pendingData);
+                pendingReceiptDocIdRef.current = docRef.id; // Store the new pending doc ID
+                console.log("Pending receipt document created:", docRef.id);
+            } catch (error) {
+                console.error("Failed to create pending receipt document:", error);
+                setError("Failed to track pending receipt. Please try uploading again.");
+                // If creating the pending doc fails, we should probably delete the uploaded file
+                if (onDeleteStorageFile) {
+                    await onDeleteStorageFile(newGsUri);
+                }
+                unsubmittedReceiptUriRef.current = null;
+                setUnsubmittedReceiptUri(null);
+                setReceiptGsUri('');
+                return; // Stop processing
+            }
+            // --- End Create Pending Doc ---
+
             // Automatically start parsing the newly uploaded receipt
-            handleParseReceipt(gsUri, mimeType);
+            handleParseReceipt(newGsUri, mimeType);
+        } else {
+             // Clear refs if upload failed earlier or user/db not available
+             unsubmittedReceiptUriRef.current = null;
+             pendingReceiptDocIdRef.current = null;
+             setUnsubmittedReceiptUri(null);
+             if (!activeUser || !db) {
+                 setError("Cannot process upload: User or database unavailable.");
+             }
         }
     };
 
     /**
-     * Sends the uploaded receipt (via its gs:// URI) to Vertex AI Gemini model for analysis.
-     * Uses the predefined `receiptSchema` to request structured JSON output.
-     * Updates form fields (amount, description, items) based on the parsed data.
+     * Sends the uploaded receipt for analysis. Deletes the file and pending doc if parsing fails.
      * @param {string} gsUri - The Google Cloud Storage URI of the file to parse.
      * @param {string} mimeType - The MIME type of the file.
      */
@@ -249,6 +351,23 @@ export default function ExpenseForm({ onAddExpense }) {
             setError(userMessage); // Display the user-friendly error
             setInfo(''); // Clear info message on error
             setItems([]); // Clear items on API error
+
+            // --- Attempt to delete the failed receipt file AND pending doc ---
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+            if (gsUri && onDeleteStorageFile) {
+                console.log("Parsing failed, attempting to delete uploaded receipt file:", gsUri);
+                await onDeleteStorageFile(gsUri);
+            }
+            if (docIdToDelete) {
+                 console.log("Parsing failed, attempting to delete pending receipt doc:", docIdToDelete);
+                 await deletePendingReceiptDoc(docIdToDelete); // Uses the helper
+            }
+            // Clear tracking refs/state
+            unsubmittedReceiptUriRef.current = null;
+            pendingReceiptDocIdRef.current = null; // Already cleared in deletePendingReceiptDoc
+            setUnsubmittedReceiptUri(null);
+            setReceiptGsUri('');
+            // --- End Deletion on Failure ---
         } finally {
             setParsingReceipt(false); // Indicate that parsing has finished
              // Note: Info message is intentionally kept if parsing was successful,
@@ -258,8 +377,7 @@ export default function ExpenseForm({ onAddExpense }) {
 
 
     /**
-     * Handles the final submission of the expense form.
-     * Performs basic validation, calls the `onAddExpense` prop, and resets the form on success.
+     * Handles the final submission. Deletes the pending receipt doc on success.
      */
     const handleAdd = async () => {
         setError(''); // Clear previous submission errors
@@ -281,20 +399,33 @@ export default function ExpenseForm({ onAddExpense }) {
         setIsSubmitting(true); // Indicate submission is in progress, disable form elements
 
         try {
-            // Call the parent component's function to handle adding the expense data
-            await onAddExpense({
-                description: description.trim(), // Send trimmed description (user might have edited it)
-                amount: parsedAmount,            // Send parsed numerical amount
-                receiptUri: receiptGsUri,        // Send the gs:// URI of the receipt (if any)
-                items: items,                    // Send the parsed items array
-            });
+            // Prepare data (ensure items are included)
+             const expenseData = {
+                description: description.trim(),
+                amount: parsedAmount,
+                receiptUri: receiptGsUri, // Use the URI stored in the main state
+                items: items,
+            };
 
-            // --- Reset Form on Successful Submission ---
+            await onAddExpense(expenseData);
+
+            // --- Delete Pending Receipt Doc on Success ---
+            const docIdToDelete = pendingReceiptDocIdRef.current;
+            if (docIdToDelete) {
+                await deletePendingReceiptDoc(docIdToDelete); // Use the helper
+            }
+            // --- End Deletion ---
+
+            // --- Clear Unsubmitted Receipt Tracking on Success ---
+            unsubmittedReceiptUriRef.current = null;
+            setUnsubmittedReceiptUri(null);
+            // --- End Clearing ---
+
+            // --- Reset Form ---
             setDescription('');
             setAmount('');
-            setReceiptGsUri('');
-            setItems([]); // Clear items
-            // Increment the key to reset the ReceiptUpload component
+            setReceiptGsUri(''); // Clear the main URI state
+            setItems([]);
             setReceiptUploadKey(prevKey => prevKey + 1);
             setInfo('Expense added successfully!'); // Provide success feedback
              // Optionally collapse the form after successful addition:

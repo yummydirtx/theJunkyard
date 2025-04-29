@@ -89,6 +89,29 @@ export default function ExpenseReport({ setMode, mode }) {
         }
     }, [activeUser, db]); // Dependencies: run effect when user or db instance changes
 
+    // Function to delete a file from Firebase Storage using its gs:// URI
+    const handleDeleteStorageFile = async (gsUri) => {
+        if (!gsUri || !storage) {
+            console.log("No URI provided or storage not initialized, skipping deletion.");
+            return;
+        }
+        console.log("Attempting to delete file from Storage:", gsUri);
+        try {
+            const storageRef = ref(storage, gsUri); // Create ref directly from gs:// URI
+            await deleteObject(storageRef);
+            console.log("File successfully deleted from Storage:", gsUri);
+        } catch (error) {
+            // Log errors, especially 'object-not-found' which is common if deletion already happened or failed previously
+            if (error.code === 'storage/object-not-found') {
+                console.warn("Storage file not found (may have been already deleted):", gsUri);
+            } else {
+                console.error("Error deleting file from Storage:", gsUri, error);
+                // TODO: Optionally notify user of cleanup failure, though it might not be critical
+            }
+        }
+    };
+
+
     // Function to add a new expense to Firestore
     const handleAddExpense = async (newExpense) => {
         if (!activeUser || !db) {
@@ -131,18 +154,8 @@ export default function ExpenseReport({ setMode, mode }) {
 
         // 1. Delete Receipt from Storage (if it exists)
         if (expenseToDelete && expenseToDelete.receiptUri) {
-            console.log("Deleting receipt from Storage:", expenseToDelete.receiptUri);
-            try {
-                const storageRef = ref(storage, expenseToDelete.receiptUri); // Create ref from gs:// URI
-                await deleteObject(storageRef);
-                console.log("Receipt successfully deleted from Storage!");
-            } catch (storageError) {
-                // Log error but proceed with Firestore deletion
-                // Handle specific errors like 'object-not-found' if needed
-                console.error("Error deleting receipt from Storage:", storageError);
-                // Optionally inform the user if the file couldn't be deleted but the entry will be
-                // TODO: Show specific error based on storageError.code if necessary
-            }
+            // Use the reusable delete function
+            await handleDeleteStorageFile(expenseToDelete.receiptUri);
         } else {
             console.log("No receipt URI found for this expense, skipping Storage deletion.");
         }
@@ -201,8 +214,11 @@ export default function ExpenseReport({ setMode, mode }) {
                         </Box>
                     ) : activeUser ? (
                         <Box sx={{ flexGrow: 1 }}>
-                            {/* Pass the handleAddExpense function */}
-                            <ExpenseForm onAddExpense={handleAddExpense} />
+                            {/* Pass the handleAddExpense and handleDeleteStorageFile functions */}
+                            <ExpenseForm
+                                onAddExpense={handleAddExpense}
+                                onDeleteStorageFile={handleDeleteStorageFile} // Pass the delete function
+                            />
 
                             {/* Display loading indicator or the list */}
                             {loadingExpenses ? (
