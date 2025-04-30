@@ -31,6 +31,8 @@ import ReceiptLink from './ReceiptLink'; // Import the new component
 import Modal from '@mui/material/Modal'; // Import Modal
 import Divider from '@mui/material/Divider'; // For modal content
 import CloseIcon from '@mui/icons-material/Close'; // For modal close button
+import Chip from '@mui/material/Chip'; // Import Chip for status display
+import Tooltip from '@mui/material/Tooltip'; // Import Tooltip
 
 // Style for the modal
 const modalStyle = {
@@ -48,13 +50,14 @@ const modalStyle = {
 };
 
 /**
- * Displays a list of expenses with descriptions, amounts, and delete functionality.
+ * Displays a list of expenses with descriptions, amounts, status, and actions.
  * Includes a modal to view itemized details if available.
  * @param {object} props - Component props.
- * @param {Array<object>} props.expenses - Array of expense objects. Each object should have `id`, `description`, `amount`, and optionally `receiptUri` and `items`.
- * @param {function} props.onDeleteExpense - Callback function invoked when the delete button for an expense is clicked. Receives the expense `id`.
+ * @param {Array<object>} props.expenses - Array of expense objects. Each object should have `id`, `description`, `amount`, `status`, and optionally `receiptUri`, `items`, `denialReason`.
+ * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked (only shown if not isSharedView). Receives the expense `id`.
+ * @param {boolean} [props.isSharedView=false] - If true, hides the delete button and adjusts layout slightly.
  */
-export default function ExpenseList({ expenses, onDeleteExpense }) {
+export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = false }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
 
@@ -68,12 +71,24 @@ export default function ExpenseList({ expenses, onDeleteExpense }) {
         setSelectedExpenseItems([]); // Clear items when closing
     };
 
+    // Helper to get status chip color
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'reimbursed': return 'success';
+            case 'denied': return 'error';
+            case 'pending':
+            default: return 'warning';
+        }
+    };
+
     return (
         <> {/* Use Fragment to wrap List and Modal */}
             <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
-                <Typography variant="h6" gutterBottom>Expense Log</Typography>
+                <Typography variant="h6" gutterBottom>
+                    {isSharedView ? 'Expenses for Review' : 'Expense Log'}
+                </Typography>
                 {expenses.length === 0 ? (
-                    <Typography>No expenses logged yet.</Typography>
+                    <Typography>No expenses found.</Typography>
                 ) : (
                     <List>
                         {/* Ensure expenses is an array before mapping */}
@@ -93,26 +108,42 @@ export default function ExpenseList({ expenses, onDeleteExpense }) {
                                                 <InfoIcon />
                                             </IconButton>
                                         )}
-                                        <IconButton
-                                            edge="end"
-                                            aria-label="delete"
-                                            // Call the onDeleteExpense prop with the expense's ID
-                                            onClick={() => onDeleteExpense(expense.id)}
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
+                                        {/* Only show delete button if NOT in shared view and handler exists */}
+                                        {!isSharedView && onDeleteExpense && (
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="delete"
+                                                onClick={() => onDeleteExpense(expense.id)}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        )}
                                     </>
                                 }
                                 // Add divider for better separation
                                 divider
                             >
-                                {/* ... (ListItemText with ReceiptLink remains the same) ... */}
                                 <ListItemText
-                                    primary={expense.description || 'No Description'}
-                                    // Display amount and indicate if a receipt is attached
+                                    primary={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                                            <Typography component="span" sx={{ mr: 1 }}>
+                                                {expense.description || 'No Description'}
+                                            </Typography>
+                                            <Tooltip title={expense.status === 'denied' && expense.denialReason ? `Reason: ${expense.denialReason}` : ''}>
+                                                <Chip
+                                                    label={expense.status || 'pending'}
+                                                    color={getStatusColor(expense.status)}
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{ textTransform: 'capitalize' }}
+                                                />
+                                            </Tooltip>
+                                        </Box>
+                                    }
                                     secondary={
                                         <>
                                             {`$${(expense.amount || 0).toFixed(2)}`}
+                                            {/* Only show receipt link if URI exists (it will be null after reimbursement) */}
                                             {expense.receiptUri && (
                                                 <Typography
                                                     component="span" // Use span for inline display
@@ -124,6 +155,12 @@ export default function ExpenseList({ expenses, onDeleteExpense }) {
                                                     {/* Render the ReceiptLink component */}
                                                     <ReceiptLink receiptUri={expense.receiptUri} />
                                                 </Typography>
+                                            )}
+                                            {/* Show denial reason inline if present */}
+                                            {expense.status === 'denied' && expense.denialReason && !isSharedView && (
+                                                 <Typography variant="caption" display="block" sx={{ color: 'error.main', fontStyle: 'italic' }}>
+                                                    Reason: {expense.denialReason}
+                                                 </Typography>
                                             )}
                                         </>
                                     }

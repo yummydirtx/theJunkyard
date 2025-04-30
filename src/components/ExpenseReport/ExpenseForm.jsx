@@ -410,6 +410,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
 
         try {
             // Prepare data (ensure items are included)
+            // Status and denialReason are NOT included here; they are added by the parent.
              const expenseData = {
                 description: description.trim(),
                 amount: parsedAmount,

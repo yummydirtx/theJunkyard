@@ -1,4 +1,14 @@
 {
+  "firestore": {
+    "rules": "rules/firestore.rules"
+  },
+  "storage": [
+    {
+      "target": "storage",
+      "bucket": "thejunkyard-b1858.appspot.com",
+      "rules": "rules/storage.rules"
+    }
+  ],
   "hosting": {
     "public": "build",
     "ignore": [
