@@ -29,7 +29,7 @@ import Footer from '../components/Footer';
 import { useTitle } from '../components/useTitle';
 import { useAuth } from '../contexts/AuthContext';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt'; // Re-use LoginPrompt
-import useModal from '../hooks/useModal';
+import useModal from '../hooks/useModal'; // Import useModal hook
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -48,17 +48,28 @@ import ExpenseList from '../components/ExpenseReport/ExpenseList';
 import ExpenseTotal from '../components/ExpenseReport/ExpenseTotal';
 // Import Firebase functions callable
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from "firebase/auth"; // Import getAuth
+import IconButton from '@mui/material/IconButton'; // Import IconButton (was missing in previous snippet)
 
 
 export default function ExpenseReport({ setMode, mode }) {
     useTitle('theJunkyard: Expense Report');
     const defaultTheme = createTheme({ palette: { mode } });
     const { activeUser, loading: authLoading, app } = useAuth(); // Get app instance from context
-    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
-    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const db = getFirestore(app); // Initialize Firestore
     const storage = getStorage(app); // Initialize Storage
     const functions = getFunctions(app); // Initialize Firebase Functions
+    const auth = getAuth(app); // Get Auth instance
+
+    // Use the modal hook
+    const {
+        loginModalOpen,
+        signUpModalOpen,
+        openLoginModal,
+        closeLoginModal,
+        openSignUpModal,
+        closeSignUpModal,
+    } = useModal();
 
     // State for expenses, fetched from Firestore
     const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
@@ -203,11 +214,22 @@ export default function ExpenseReport({ setMode, mode }) {
 
     // Function to generate the shareable link
     const handleGenerateLink = async () => {
+        // Ensure user and functions are available
+        if (!activeUser || !functions || !auth.currentUser) {
+             console.error("Attempted to generate link without user, functions, or currentUser.");
+             setLinkError("Cannot generate link: User not logged in or services unavailable.");
+             return;
+        }
         setGeneratingLink(true);
         setLinkError('');
         setShareLink('');
         setCopied(false);
         try {
+            // Force refresh the ID token before calling the function
+            console.log("Forcing token refresh before calling function...");
+            await auth.currentUser.getIdToken(true); // Add this line
+            console.log("Token refreshed. Calling function...");
+
             const generateLinkFunction = httpsCallable(functions, 'generateExpenseReportShareLink');
             const result = await generateLinkFunction();
             const shareId = result.data.shareId;
@@ -220,7 +242,12 @@ export default function ExpenseReport({ setMode, mode }) {
             }
         } catch (error) {
             console.error("Error generating share link:", error);
-            setLinkError(`Failed to generate link: ${error.message}`);
+            // Check if the error is specifically an 'unauthenticated' error from the function
+            if (error.code === 'functions/unauthenticated') {
+                 setLinkError(`Authentication failed: ${error.message}. Please try logging out and back in.`);
+            } else {
+                 setLinkError(`Failed to generate link: ${error.message}`);
+            }
         } finally {
             setGeneratingLink(false);
         }
@@ -242,7 +269,13 @@ export default function ExpenseReport({ setMode, mode }) {
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
-            <AppAppBar mode={mode} toggleColorMode={setMode} />
+            {/* Pass modal handlers to AppAppBar */}
+            <AppAppBar
+                mode={mode}
+                toggleColorMode={setMode}
+                openLoginModal={openLoginModal}
+                openSignUpModal={openSignUpModal}
+            />
             <Box
                 sx={(theme) => ({
                     width: '100%',
@@ -273,6 +306,7 @@ export default function ExpenseReport({ setMode, mode }) {
                             <CircularProgress />
                         </Box>
                     ) : activeUser ? (
+                        // ... Logged-in view (Share Link, ExpenseForm, ExpenseList, ExpenseTotal) ...
                         <Box sx={{ flexGrow: 1 }}>
                             {/* Share Link Section */}
                             <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -281,7 +315,8 @@ export default function ExpenseReport({ setMode, mode }) {
                                     <Button
                                         variant="contained"
                                         onClick={handleGenerateLink}
-                                        disabled={generatingLink}
+                                        // Keep disabled logic simple if user is confirmed logged in
+                                        disabled={generatingLink || !activeUser} // Simplified: disable only if generating or no user
                                         startIcon={generatingLink ? <CircularProgress size={20} /> : null}
                                     >
                                         {generatingLink ? 'Generating...' : 'Generate Share Link'}
@@ -294,6 +329,7 @@ export default function ExpenseReport({ setMode, mode }) {
                                             {shareLink}
                                         </Link>
                                         <Tooltip title={copied ? "Copied!" : "Copy link"} placement="top">
+                                            {/* Ensure IconButton is imported and used */}
                                             <IconButton onClick={copyToClipboard} size="small" color={copied ? "success" : "primary"}>
                                                 <ContentCopyIcon fontSize="inherit" />
                                             </IconButton>
@@ -326,9 +362,9 @@ export default function ExpenseReport({ setMode, mode }) {
                             <Typography variant="caption" display="block" sx={{ color: 'text.secondary' }}>
                                 (Total includes pending expenses only)
                             </Typography>
-                            {/* TODO: Add button/logic to generate reimbursement link */}
                         </Box>
                     ) : (
+                        // Pass modal handlers to LoginPrompt
                         <LoginPrompt
                             openLoginModal={openLoginModal}
                             openSignUpModal={openSignUpModal}
@@ -341,13 +377,13 @@ export default function ExpenseReport({ setMode, mode }) {
                 <Footer />
             </Box>
 
-            {/* Login/Signup Modals */}
+            {/* Login/Signup Modals - Pass state and handlers, ensuring 'open' is boolean */}
             <LoginModal
-                open={loginModalOpen}
+                open={loginModalOpen || false} // Default to false if undefined
                 onClose={closeLoginModal}
             />
             <SignUpModal
-                open={signUpModalOpen}
+                open={signUpModalOpen || false} // Default to false if undefined
                 onClose={closeSignUpModal}
             />
         </ThemeProvider>

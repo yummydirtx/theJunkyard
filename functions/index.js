@@ -180,8 +180,16 @@ exports.cleanupOrphanReceipts = functions.scheduler
  */
 exports.generateExpenseReportShareLink = functions.https.onCall(
   async (data, context) => {
+    // --- Add Logging ---
+    console.log("generateExpenseReportShareLink called.");
+    console.log("context.auth:", JSON.stringify(context.auth || null)); // Log auth context
+    console.log("context.app:", JSON.stringify(context.app || null)); // Log App Check context (if available)
+    // --- End Logging ---
+
     // Check authentication
     if (!context.auth) {
+      // Log the failure reason
+      console.error("Authentication check failed: context.auth is missing.");
       throw new functions.https.HttpsError(
         "unauthenticated",
         "User must be logged in to generate a share link.",
