@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "thejunkyard-b1858"
-  }
+  },
+  "targets": {
+    "thejunkyard-b1858": {
+      "storage": {
+        "storage": [
+          "thejunkyard-b1858.appspot.com"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

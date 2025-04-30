@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User-specific data (theme, etc.)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User Expenses: Only the owner can CRUD their own expenses directly.
+    // Status updates via share links are handled by Cloud Functions.
+    match /users/{userId}/expenses/{expenseId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Pending Receipts: Only owner can create/delete. Cleanup function handles deletion too.
+    match /pendingReceipts/{docId} {
+       allow read, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+       // Allow admin/function reads/deletes (implicitly allowed for admin SDK)
+       // Disallow direct updates
+       allow update: if false;
+    }
+
+    // Shared Expense Reports: Stores mapping from shareId to userId.
+    // Only the owner (via Cloud Function) can create their link.
+    // Read access needed by the getSharedExpenses function (running as admin).
+    // No direct public read/write needed here.
+    match /sharedExpenseReports/{shareId} {
+      // Allow create only if done via the generateExpenseReportShareLink function (implicitly handled by auth check in function)
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow owner to read their own mapping if needed (e.g., to display the link again)
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // No public write/delete access directly via rules. Updates handled by functions.
+      allow update, delete: if false;
+    }
+
+    // Rules for user preferences
+    match /userPreferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Rules for the main manual budget document for a user
+    match /manualBudget/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Rules for any subcollections within a user's manual budget
+    // (e.g., /manualBudget/{userId}/categories/{categoryId})
+    match /manualBudget/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow admin access (implicitly granted to Admin SDK used by functions)
+    // match /{document=**} {
+    //   allow read, write: if isAdmin(); // Define isAdmin() if needed, or rely on service account
+    // }
+  }
+}

@@ -29,10 +29,15 @@ import Footer from '../components/Footer';
 import { useTitle } from '../components/useTitle';
 import { useAuth } from '../contexts/AuthContext';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt'; // Re-use LoginPrompt
-import useModal from '../hooks/useModal';
+import useModal from '../hooks/useModal'; // Import useModal hook
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import CircularProgress from '@mui/material/CircularProgress';
+import Button from '@mui/material/Button'; // Import Button
+import Link from '@mui/material/Link'; // Import Link
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'; // Import Icon
+import Alert from '@mui/material/Alert'; // Import Alert
+import Tooltip from '@mui/material/Tooltip'; // Import Tooltip
 // Import Firestore functions
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy, doc, deleteDoc } from "firebase/firestore"; // Added query, where, onSnapshot, orderBy, doc, deleteDoc
 // Import Storage functions for deletion
@@ -41,22 +46,39 @@ import { getStorage, ref, deleteObject } from "firebase/storage"; // Added getSt
 import ExpenseForm from '../components/ExpenseReport/ExpenseForm';
 import ExpenseList from '../components/ExpenseReport/ExpenseList';
 import ExpenseTotal from '../components/ExpenseReport/ExpenseTotal';
+// Import Firebase functions callable
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from "firebase/auth"; // Import getAuth
+import IconButton from '@mui/material/IconButton'; // Import IconButton (was missing in previous snippet)
 
-// TODO: Implement Expense Form, Expense List, Receipt Upload, Total Calculation
 
 export default function ExpenseReport({ setMode, mode }) {
     useTitle('theJunkyard: Expense Report');
     const defaultTheme = createTheme({ palette: { mode } });
     const { activeUser, loading: authLoading, app } = useAuth(); // Get app instance from context
-    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
-    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const db = getFirestore(app); // Initialize Firestore
     const storage = getStorage(app); // Initialize Storage
+    const functions = getFunctions(app); // Initialize Firebase Functions
+    const auth = getAuth(app); // Get Auth instance
+
+    // Use the modal hook
+    const {
+        loginModalOpen,
+        signUpModalOpen,
+        openLoginModal,
+        closeLoginModal,
+        openSignUpModal,
+        closeSignUpModal,
+    } = useModal();
 
     // State for expenses, fetched from Firestore
     const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
     const [totalAmount, setTotalAmount] = React.useState(0);
     const [loadingExpenses, setLoadingExpenses] = React.useState(false); // State for loading expenses
+    const [shareLink, setShareLink] = React.useState(''); // State for the shareable link
+    const [generatingLink, setGeneratingLink] = React.useState(false); // State for link generation loading
+    const [linkError, setLinkError] = React.useState(''); // State for link generation error
+    const [copied, setCopied] = React.useState(false); // State for copy feedback
 
     // Effect to fetch expenses from Firestore when user is logged in
     React.useEffect(() => {
@@ -70,7 +92,14 @@ export default function ExpenseReport({ setMode, mode }) {
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
                 const fetchedExpenses = [];
                 querySnapshot.forEach((doc) => {
-                    fetchedExpenses.push({ ...doc.data(), id: doc.id }); // Add document ID to the data
+                    // Include status and denialReason, providing defaults if missing
+                    const data = doc.data();
+                    fetchedExpenses.push({
+                        ...data,
+                        id: doc.id,
+                        status: data.status || 'pending', // Default to 'pending'
+                        denialReason: data.denialReason || null,
+                    });
                 });
                 setExpenses(fetchedExpenses); // Update state with fetched expenses
                 setLoadingExpenses(false); // Stop loading
@@ -120,13 +149,15 @@ export default function ExpenseReport({ setMode, mode }) {
             throw new Error("User not authenticated or database unavailable."); // Throw error to be caught in ExpenseForm
         }
         console.log("Adding expense to Firestore:", newExpense);
-        // No need to handle receiptFile upload here, as ExpenseForm passes receiptUri
+        // Add default status when creating a new expense
         const expenseData = {
             userId: activeUser.uid,
             description: newExpense.description,
             amount: newExpense.amount, // Ensure this is a number (already parsed in ExpenseForm)
             receiptUri: newExpense.receiptUri || null, // Store the gs:// URI directly
             items: newExpense.items || null, // Store the items array (or null if empty/not provided)
+            status: 'pending', // Default status for new expenses
+            denialReason: null, // Default denial reason
             createdAt: serverTimestamp(),
         };
         try {
@@ -173,16 +204,78 @@ export default function ExpenseReport({ setMode, mode }) {
     };
 
     // Effect to calculate total amount whenever expenses state changes
+    // Only include 'pending' expenses in the main total
     React.useEffect(() => {
-        // Calculate total amount when expenses change
-        const total = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-        setTotalAmount(total);
+        const pendingTotal = expenses
+            .filter(exp => exp.status === 'pending') // Filter for pending expenses
+            .reduce((sum, expense) => sum + (expense.amount || 0), 0);
+        setTotalAmount(pendingTotal);
     }, [expenses]); // Dependency: run effect when expenses array changes
+
+    // Function to generate the shareable link
+    const handleGenerateLink = async () => {
+        // Ensure user and functions are available
+        if (!activeUser || !functions || !auth.currentUser) {
+             console.error("Attempted to generate link without user, functions, or currentUser.");
+             setLinkError("Cannot generate link: User not logged in or services unavailable.");
+             return;
+        }
+        setGeneratingLink(true);
+        setLinkError('');
+        setShareLink('');
+        setCopied(false);
+        try {
+            // Force refresh the ID token before calling the function
+            console.log("Forcing token refresh before calling function...");
+            await auth.currentUser.getIdToken(true); // Add this line
+            console.log("Token refreshed. Calling function...");
+
+            const generateLinkFunction = httpsCallable(functions, 'generateExpenseReportShareLink');
+            const result = await generateLinkFunction();
+            const shareId = result.data.shareId;
+            if (shareId) {
+                // Construct the full URL based on the current window location
+                const link = `${window.location.origin}/share/expense-report/${shareId}`;
+                setShareLink(link);
+            } else {
+                throw new Error("No shareId received from function.");
+            }
+        } catch (error) {
+            console.error("Error generating share link:", error);
+            // Check if the error is specifically an 'unauthenticated' error from the function
+            if (error.code === 'functions/unauthenticated') {
+                 setLinkError(`Authentication failed: ${error.message}. Please try logging out and back in.`);
+            } else {
+                 setLinkError(`Failed to generate link: ${error.message}`);
+            }
+        } finally {
+            setGeneratingLink(false);
+        }
+    };
+
+    // Function to copy link to clipboard
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(shareLink).then(() => {
+            setCopied(true);
+            // Hide "Copied!" message after a few seconds
+            setTimeout(() => setCopied(false), 2000);
+        }, (err) => {
+            console.error('Failed to copy link: ', err);
+            setLinkError('Failed to copy link to clipboard.');
+        });
+    };
+
 
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
-            <AppAppBar mode={mode} toggleColorMode={setMode} />
+            {/* Pass modal handlers to AppAppBar */}
+            <AppAppBar
+                mode={mode}
+                toggleColorMode={setMode}
+                openLoginModal={openLoginModal}
+                openSignUpModal={openSignUpModal}
+            />
             <Box
                 sx={(theme) => ({
                     width: '100%',
@@ -213,7 +306,41 @@ export default function ExpenseReport({ setMode, mode }) {
                             <CircularProgress />
                         </Box>
                     ) : activeUser ? (
+                        // ... Logged-in view (Share Link, ExpenseForm, ExpenseList, ExpenseTotal) ...
                         <Box sx={{ flexGrow: 1 }}>
+                            {/* Share Link Section */}
+                            <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                <Typography variant="h6" gutterBottom>Share Report</Typography>
+                                {!shareLink && (
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleGenerateLink}
+                                        // Keep disabled logic simple if user is confirmed logged in
+                                        disabled={generatingLink || !activeUser} // Simplified: disable only if generating or no user
+                                        startIcon={generatingLink ? <CircularProgress size={20} /> : null}
+                                    >
+                                        {generatingLink ? 'Generating...' : 'Generate Share Link'}
+                                    </Button>
+                                )}
+                                {linkError && <Alert severity="error" sx={{ mt: 1 }}>{linkError}</Alert>}
+                                {shareLink && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, flexWrap: 'wrap' }}>
+                                        <Link href={shareLink} target="_blank" rel="noopener noreferrer" sx={{ mr: 1, wordBreak: 'break-all' }}>
+                                            {shareLink}
+                                        </Link>
+                                        <Tooltip title={copied ? "Copied!" : "Copy link"} placement="top">
+                                            {/* Ensure IconButton is imported and used */}
+                                            <IconButton onClick={copyToClipboard} size="small" color={copied ? "success" : "primary"}>
+                                                <ContentCopyIcon fontSize="inherit" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                )}
+                                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                                    Generate a unique link to share your expense report for review and reimbursement processing. Anyone with the link can view expenses and mark them as reimbursed or denied.
+                                </Typography>
+                            </Box>
+
                             {/* Pass the handleAddExpense and handleDeleteStorageFile functions */}
                             <ExpenseForm
                                 onAddExpense={handleAddExpense}
@@ -230,11 +357,14 @@ export default function ExpenseReport({ setMode, mode }) {
                                 <ExpenseList expenses={expenses} onDeleteExpense={handleDeleteExpense} />
                             )}
 
-                            {/* Pass the calculated total amount */}
+                            {/* Pass the calculated total amount (now only pending) */}
                             <ExpenseTotal totalAmount={totalAmount} />
-                            {/* TODO: Add button/logic to generate reimbursement link */}
+                            <Typography variant="caption" display="block" sx={{ color: 'text.secondary' }}>
+                                (Total includes pending expenses only)
+                            </Typography>
                         </Box>
                     ) : (
+                        // Pass modal handlers to LoginPrompt
                         <LoginPrompt
                             openLoginModal={openLoginModal}
                             openSignUpModal={openSignUpModal}
@@ -247,13 +377,13 @@ export default function ExpenseReport({ setMode, mode }) {
                 <Footer />
             </Box>
 
-            {/* Login/Signup Modals */}
+            {/* Login/Signup Modals - Pass state and handlers, ensuring 'open' is boolean */}
             <LoginModal
-                open={loginModalOpen}
+                open={loginModalOpen || false} // Default to false if undefined
                 onClose={closeLoginModal}
             />
             <SignUpModal
-                open={signUpModalOpen}
+                open={signUpModalOpen || false} // Default to false if undefined
                 onClose={closeSignUpModal}
             />
         </ThemeProvider>

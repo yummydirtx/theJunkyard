@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Match the specific path for profile pictures - New rule added
+    match /profilePictures/{userId}/{fileName} {
+      // Allow read access to any authenticated user
+      allow read: if request.auth != null;
+
+      // Allow create and update only if the requesting user's ID matches the {userId}
+      // AND validate the resource being uploaded/updated.
+      allow create, update: if request.auth != null && request.auth.uid == userId
+                           // Use the 1MB limit for create/update validation
+                           && request.resource.size < 1 * 1024 * 1024
+                           && request.resource.contentType.matches('image/.*');
+
+      // Explicitly allow delete only if the requesting user's ID matches the {userId}.
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow users to read/write/delete only their own folder within expenseReceipts - Updated rule
+    // Match any file inside a folder named after the user's UID
+    match /expenseReceipts/{userId}/{allPaths=**} {
+      // Allow read, write, delete only if the userId in the path matches the authenticated user's UID
+      // Also ensure the user is authenticated (request.auth is not null)
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      // Allow delete access by the Cloud Function (implicitly handled by Admin SDK)
+    }
+
+    // Default deny all other paths if needed
+    // match /{allPaths=**} {
+    //   allow read, write: if false;
+    // }
+  }
+}
