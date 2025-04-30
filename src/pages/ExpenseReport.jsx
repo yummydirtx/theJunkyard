@@ -62,14 +62,8 @@ export default function ExpenseReport({ setMode, mode }) {
     const auth = getAuth(app); // Get Auth instance
 
     // Use the modal hook
-    const {
-        loginModalOpen,
-        signUpModalOpen,
-        openLoginModal,
-        closeLoginModal,
-        openSignUpModal,
-        closeSignUpModal,
-    } = useModal();
+    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
     // State for expenses, fetched from Firestore
     const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
