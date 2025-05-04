@@ -50,14 +50,15 @@ const modalStyle = {
 };
 
 /**
- * Displays a list of expenses with descriptions, amounts, status, and actions.
+ * Displays a list of expenses or just the content of a single expense item.
  * Includes a modal to view itemized details if available.
  * @param {object} props - Component props.
  * @param {Array<object>} props.expenses - Array of expense objects. Each object should have `id`, `description`, `amount`, `status`, and optionally `receiptUri`, `items`, `denialReason`.
  * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked (only shown if not isSharedView). Receives the expense `id`.
  * @param {boolean} [props.isSharedView=false] - If true, hides the delete button and adjusts layout slightly.
+ * @param {boolean} [props.renderItemContentOnly=false] - If true, renders only the content for the first expense item.
  */
-export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = false }) {
+export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = false, renderItemContentOnly = false }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
 
@@ -80,6 +81,81 @@ export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = 
             default: return 'warning';
         }
     };
+
+    // If renderItemContentOnly is true, render only the content for the first expense
+    if (renderItemContentOnly) {
+        // Ensure expenses is an array and has at least one item
+        if (!Array.isArray(expenses) || expenses.length === 0) {
+            return null; // Or render some placeholder/error
+        }
+        const expense = expenses[0]; // Get the single expense
+
+        return (
+            <React.Fragment> {/* Use Fragment to avoid extra divs */}
+                <ListItemText
+                    primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <Typography component="span" sx={{ mr: 1 }}>
+                                {expense.description || 'No Description'}
+                            </Typography>
+                            <Tooltip title={expense.status === 'denied' && expense.denialReason ? `Reason: ${expense.denialReason}` : ''}>
+                                <Chip
+                                    label={expense.status || 'pending'}
+                                    color={getStatusColor(expense.status)}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ textTransform: 'capitalize' }}
+                                />
+                            </Tooltip>
+                        </Box>
+                    }
+                    secondary={
+                        <>
+                            {`$${(expense.amount || 0).toFixed(2)}`}
+                            {expense.receiptUri && (
+                                <Typography
+                                    component="span" // Use span for inline display
+                                    variant="body2"
+                                    sx={{ display: 'inline', ml: 1, color: 'text.secondary', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '75%' }}
+                                >
+                                    <DescriptionIcon sx={{ fontSize: '100%', mr: 0.5 }}/>
+                                    Receipt Attached
+                                    <ReceiptLink receiptUri={expense.receiptUri} />
+                                </Typography>
+                            )}
+                            {expense.status === 'denied' && expense.denialReason && !isSharedView && (
+                                 <Typography variant="caption" display="block" sx={{ color: 'error.main', fontStyle: 'italic' }}>
+                                    Reason: {expense.denialReason}
+                                 </Typography>
+                            )}
+                        </>
+                    }
+                />
+                {/* Secondary Action (Icons) */}
+                <>
+                    {expense.items && expense.items.length > 0 && (
+                        <IconButton
+                            edge="end"
+                            aria-label="view items"
+                            onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }} // Prevent ListItem click
+                            sx={{ mr: 1 }}
+                        >
+                            <InfoIcon />
+                        </IconButton>
+                    )}
+                    {!isSharedView && onDeleteExpense && (
+                        <IconButton
+                            edge="end"
+                            aria-label="delete"
+                            onClick={(e) => { e.stopPropagation(); onDeleteExpense(expense.id); }} // Prevent ListItem click
+                        >
+                            <DeleteIcon />
+                        </IconButton>
+                    )}
+                </>
+            </React.Fragment>
+        );
+    }
 
     return (
         <> {/* Use Fragment to wrap List and Modal */}

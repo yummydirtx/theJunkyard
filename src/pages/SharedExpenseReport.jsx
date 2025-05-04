@@ -36,6 +36,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import AppAppBar from '../components/AppAppBar'; // Reuse AppAppBar for consistent look
 import Footer from '../components/Footer'; // Reuse Footer
@@ -48,12 +49,12 @@ import { initializeApp } from "firebase/app"; // Need to initialize minimal app 
 // Minimal Firebase config (only needs projectId if functions region is default)
 // Or provide the full config if needed.
 const firebaseConfig = {
-  apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI", // May not be strictly needed for functions call
-  authDomain: "thejunkyard-b1858.firebaseapp.com",
-  projectId: "thejunkyard-b1858",
-  // storageBucket: "thejunkyard-b1858.appspot.com", // Not needed here
-  // messagingSenderId: "66694016123", // Not needed here
-  // appId: "1:66694016123:web:1c659a2c06d31c5a7b86de" // Not needed here
+    apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI", // May not be strictly needed for functions call
+    authDomain: "thejunkyard-b1858.firebaseapp.com",
+    projectId: "thejunkyard-b1858",
+    // storageBucket: "thejunkyard-b1858.appspot.com", // Not needed here
+    // messagingSenderId: "66694016123", // Not needed here
+    // appId: "1:66694016123:web:1c659a2c06d31c5a7b86de" // Not needed here
 };
 
 // Initialize a minimal Firebase app instance specifically for this page if not using context
@@ -71,8 +72,8 @@ try {
         try {
             app = initializeApp(firebaseConfig); // Attempt to get default if initialization failed due to existing default
         } catch (defaultError) {
-             console.error("Firebase initialization error on shared page (fallback):", defaultError);
-             // Handle error appropriately, maybe show an error message
+            console.error("Firebase initialization error on shared page (fallback):", defaultError);
+            // Handle error appropriately, maybe show an error message
         }
     } else {
         console.error("Firebase initialization error on shared page:", e);
@@ -84,8 +85,10 @@ try {
 export default function SharedExpenseReport({ mode, setMode }) {
     useTitle('theJunkyard: Shared Expense Report');
     const { shareId } = useParams(); // Get shareId from URL
+    console.log("[SharedExpenseReport] Extracted shareId:", shareId); // Log shareId
     const defaultTheme = createTheme({ palette: { mode } });
     const functions = app ? getFunctions(app) : null; // Initialize Firebase Functions
+    console.log("[SharedExpenseReport] Firebase Functions initialized:", functions ? 'Yes' : 'No'); // Log functions init
 
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -100,7 +103,9 @@ export default function SharedExpenseReport({ mode, setMode }) {
     // Fetch expenses on component mount or when shareId changes
     useEffect(() => {
         const fetchExpenses = async () => {
+            console.log("[SharedExpenseReport] useEffect triggered. shareId:", shareId, "functions:", functions ? 'Yes' : 'No'); // Log effect trigger
             if (!shareId || !functions) {
+                console.error("[SharedExpenseReport] Missing shareId or functions instance."); // Log missing prereqs
                 setError("Invalid share link or functions not initialized.");
                 setLoading(false);
                 return;
@@ -109,21 +114,26 @@ export default function SharedExpenseReport({ mode, setMode }) {
             setError('');
             setExpenses([]); // Clear previous expenses
             setSelectedExpenses(new Set()); // Reset selection
+            console.log("[SharedExpenseReport] Calling getSharedExpenses function..."); // Log before call
 
             try {
                 const getSharedExpensesFunction = httpsCallable(functions, 'getSharedExpenses');
                 const result = await getSharedExpensesFunction({ shareId });
+                console.log("[SharedExpenseReport] Received result from getSharedExpenses:", result); // Log result
+
                 // Ensure status defaults are applied if missing from backend data
                 const fetched = result.data.expenses.map(exp => ({
                     ...exp,
                     status: exp.status || 'pending',
                     denialReason: exp.denialReason || null,
                 }));
+                console.log("[SharedExpenseReport] Processed expenses:", fetched); // Log processed data
                 setExpenses(fetched);
             } catch (err) {
-                console.error("Error fetching shared expenses:", err);
+                console.error("[SharedExpenseReport] Error fetching shared expenses:", err); // Log error
                 setError(`Failed to load expenses: ${err.message}`);
             } finally {
+                console.log("[SharedExpenseReport] Setting loading to false."); // Log finally block
                 setLoading(false);
             }
         };
@@ -168,8 +178,8 @@ export default function SharedExpenseReport({ mode, setMode }) {
             return;
         }
         if (!functions) {
-             setUpdateError("Functions not available.");
-             return;
+            setUpdateError("Functions not available.");
+            return;
         }
 
         setUpdating(true);
@@ -177,6 +187,13 @@ export default function SharedExpenseReport({ mode, setMode }) {
         setUpdateSuccess('');
 
         const expenseIdsToUpdate = Array.from(selectedExpenses);
+        // Add log to verify data being sent
+        console.log(`[SharedExpenseReport] Calling updateSharedExpenseStatus with:`, {
+            shareId,
+            expenseIds: expenseIdsToUpdate,
+            action,
+            reason: action === 'deny' ? reason : null,
+        });
 
         try {
             const updateStatusFunction = httpsCallable(functions, 'updateSharedExpenseStatus');
@@ -187,12 +204,22 @@ export default function SharedExpenseReport({ mode, setMode }) {
                 reason: action === 'deny' ? reason : null,
             });
 
+            // Add log to inspect the result from the function
+            console.log("[SharedExpenseReport] Result from updateSharedExpenseStatus:", result.data);
+
             if (result.data.success) {
-                setUpdateSuccess(`Successfully updated ${result.data.updatedCount} expense(s) to '${action}'.`);
+                // Check the updatedCount specifically
+                if (result.data.updatedCount > 0) {
+                    setUpdateSuccess(`Successfully updated ${result.data.updatedCount} expense(s) to '${action}'.`);
+                } else {
+                    // If count is 0, it's suspicious, log a warning or different message
+                    console.warn("[SharedExpenseReport] Update function reported success but updated 0 expenses.");
+                    setUpdateError("Update completed, but no expenses were modified. Please check if they were already updated."); // Provide more specific feedback
+                }
                 // Refresh expenses list after successful update
                 const getSharedExpensesFunction = httpsCallable(functions, 'getSharedExpenses');
                 const refreshResult = await getSharedExpensesFunction({ shareId });
-                 const refreshed = refreshResult.data.expenses.map(exp => ({
+                const refreshed = refreshResult.data.expenses.map(exp => ({
                     ...exp,
                     status: exp.status || 'pending',
                     denialReason: exp.denialReason || null,
@@ -200,7 +227,8 @@ export default function SharedExpenseReport({ mode, setMode }) {
                 setExpenses(refreshed);
                 setSelectedExpenses(new Set()); // Clear selection after update
             } else {
-                throw new Error("Update failed on the server.");
+                // Use the error message from the function if available
+                throw new Error(result.data.error || "Update failed on the server.");
             }
         } catch (err) {
             console.error(`Error updating expenses to ${action}:`, err);
@@ -242,7 +270,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
             {/* Pass dummy toggle function if setMode is not passed */}
-            <AppAppBar mode={mode} toggleColorMode={setMode || (() => {})} showAuthButtons={false} />
+            <AppAppBar mode={mode} toggleColorMode={setMode || (() => { })} showAuthButtons={false} />
             <Box
                 sx={(theme) => ({
                     width: '100%',
@@ -258,7 +286,18 @@ export default function SharedExpenseReport({ mode, setMode }) {
                 })}
             >
                 <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, flexGrow: 1 }}> {/* Allow container to grow */}
-                    <Typography variant='h4' gutterBottom>Shared Expense Report</Typography>
+                    <Typography variant='h2'
+                        sx={{
+                            mb: 2,
+                            display: { xs: 'flex', sm: 'flex' },
+                            flexDirection: { xs: 'column', md: 'row' },
+                            alignSelf: 'left',
+                            textAlign: 'left',
+                            fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+                            fontWeight: 'bold',
+                        }}>
+                        Shared Expense Report
+                    </Typography>
 
                     {loading && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
@@ -295,9 +334,9 @@ export default function SharedExpenseReport({ mode, setMode }) {
                             {updateSuccess && <Alert severity="success" sx={{ my: 1 }}>{updateSuccess}</Alert>}
 
                             {/* Expense List with Checkboxes */}
-                             <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}> {/* Add background color */}
+                            <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}> {/* Add background color */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
-                                     <Checkbox
+                                    <Checkbox
                                         indeterminate={somePendingSelected && !allPendingSelected}
                                         checked={allPendingSelected}
                                         onChange={handleSelectAllPending}
@@ -313,44 +352,59 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                     <Typography>No expenses found for this report.</Typography>
                                 ) : (
                                     <List sx={{ p: 0 }}> {/* Remove padding from List */}
-                                        {expenses.map((expense) => (
-                                            <ListItem
-                                                key={expense.id}
-                                                // Make list item clickable only for pending items
-                                                button={expense.status === 'pending'}
-                                                onClick={expense.status === 'pending' ? () => handleSelect(expense.id) : undefined}
-                                                disabled={updating}
-                                                divider
-                                                sx={{ p: 0 }} // Remove padding from ListItem
-                                            >
-                                                <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1 }}> {/* Adjust padding */}
-                                                    {/* Only show checkbox for pending items */}
-                                                    {expense.status === 'pending' ? (
-                                                        <Checkbox
-                                                            edge="start"
-                                                            checked={selectedExpenses.has(expense.id)}
-                                                            tabIndex={-1}
-                                                            disableRipple
-                                                            inputProps={{ 'aria-labelledby': `expense-label-${expense.id}` }}
-                                                            disabled={updating}
+                                        {expenses.map((expense) => {
+                                            // Remove 'key' from commonItemProps
+                                            const commonItemProps = {
+                                                disabled: updating,
+                                                divider: true,
+                                                sx: { p: 0, alignItems: 'flex-start' } // Common styles
+                                            };
+
+                                            const listItemContent = (
+                                                <>
+                                                    <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1, pt: 1.5 }}>
+                                                        {expense.status === 'pending' ? (
+                                                            <Checkbox
+                                                                edge="start"
+                                                                checked={selectedExpenses.has(expense.id)}
+                                                                tabIndex={-1}
+                                                                disableRipple
+                                                                inputProps={{ 'aria-labelledby': `expense-label-${expense.id}` }}
+                                                                disabled={updating}
+                                                            />
+                                                        ) : (
+                                                            <Box sx={{ width: 42, height: 42 }} />
+                                                        )}
+                                                    </ListItemIcon>
+                                                    <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', pt: 1, pb: 1, pr: 1 }}>
+                                                        <ExpenseList
+                                                            expenses={[expense]}
+                                                            isSharedView={true}
+                                                            renderItemContentOnly={true}
                                                         />
-                                                    ) : (
-                                                        // Placeholder or different icon for non-pending
-                                                        <Box sx={{ width: 42 }} /> // Match checkbox width roughly
-                                                    )}
-                                                </ListItemIcon>
-                                                {/* Use ExpenseList component internally for consistent display */}
-                                                {/* We pass a single expense in an array to reuse its rendering logic */}
-                                                {/* We set isSharedView to prevent delete button */}
-                                                {/* Remove the outer Box from ExpenseList to avoid double borders/padding */}
-                                                <Box sx={{ flexGrow: 1, '& > div': { border: 'none', p: 0, mb: 0 } }}> {/* Target inner Box */}
-                                                    <ExpenseList
-                                                        expenses={[expense]} // Pass single expense as array
-                                                        isSharedView={true} // Indicate shared context
-                                                    />
-                                                </Box>
-                                            </ListItem>
-                                        ))}
+                                                    </Box>
+                                                </>
+                                            );
+
+                                            return expense.status === 'pending' ? (
+                                                <ListItemButton
+                                                    key={expense.id} // Pass key directly
+                                                    {...commonItemProps}
+                                                    onClick={() => handleSelect(expense.id)}
+                                                    // Adjust padding for ListItemButton if needed
+                                                    sx={{ ...commonItemProps.sx, display: 'flex' }} // Ensure display flex for content alignment
+                                                >
+                                                    {listItemContent}
+                                                </ListItemButton>
+                                            ) : (
+                                                <ListItem
+                                                    key={expense.id} // Pass key directly
+                                                    {...commonItemProps}
+                                                >
+                                                    {listItemContent}
+                                                </ListItem>
+                                            );
+                                        })}
                                     </List>
                                 )}
                             </Box>

@@ -233,11 +233,15 @@ exports.generateExpenseReportShareLink = functions.https.onCall(
 /**
  * Fetches expenses associated with a given shareId. Publicly accessible.
  */
-exports.getSharedExpenses = functions.https.onCall(async (data, context) => {
-  const { shareId } = data;
+// Use v2 onCall signature: (request) => { ... }
+exports.getSharedExpenses = onCall(async (request) => {
+  // Access data via request.data
+  const { shareId } = request.data;
+  logger.info("[getSharedExpenses] Function called with shareId:", shareId); // Log input
 
   if (!shareId || typeof shareId !== "string") {
-    throw new functions.https.HttpsError(
+    logger.error("[getSharedExpenses] Invalid shareId received:", shareId); // Log validation failure
+    throw new HttpsError( // Use HttpsError from v2 import
       "invalid-argument",
       "A valid shareId must be provided.",
     );
@@ -246,164 +250,199 @@ exports.getSharedExpenses = functions.https.onCall(async (data, context) => {
   try {
     // 1. Find the userId associated with the shareId
     const shareDocRef = db.collection("sharedExpenseReports").doc(shareId);
+    logger.info("[getSharedExpenses] Looking up share document:", shareDocRef.path); // Log lookup path
     const shareDoc = await shareDocRef.get();
 
     if (!shareDoc.exists) {
-      throw new functions.https.HttpsError(
-        "not-found",
-        "Invalid or expired share link.",
-      );
+      logger.warn("[getSharedExpenses] Share document not found for shareId:", shareId); // Log not found
+      throw new HttpsError("not-found", "Invalid or expired share link."); // Use HttpsError
     }
-    const userId = shareDoc.data().userId;
+    const shareData = shareDoc.data();
+    const userId = shareData.userId;
+    logger.info("[getSharedExpenses] Found share document. userId:", userId, "Data:", shareData); // Log found userId and data
+
+    if (!userId) {
+        logger.error("[getSharedExpenses] Share document found, but userId is missing. shareId:", shareId, "Data:", shareData); // Log missing userId
+        throw new HttpsError("internal", "Share link data is corrupted (missing userId).");
+    }
 
     // 2. Fetch expenses for that userId, ordered by creation time
-    const expensesColRef = db.collection("users", userId, "expenses");
+    const expensesColRef = db.collection("users").doc(userId).collection("expenses");
+    logger.info("[getSharedExpenses] Querying expenses collection:", expensesColRef.path); // Log query path
     const q = expensesColRef.orderBy("createdAt", "desc");
     const expensesSnapshot = await q.get();
+    logger.info(`[getSharedExpenses] Query completed. Found ${expensesSnapshot.size} expense documents.`); // Log query result size
 
     const expenses = [];
     expensesSnapshot.forEach((doc) => {
+      // Log each document found (optional, can be verbose)
+      // logger.debug("[getSharedExpenses] Processing expense doc:", doc.id, doc.data());
       expenses.push({ ...doc.data(), id: doc.id });
     });
 
-    console.log(`Fetched ${expenses.length} expenses for shareId ${shareId} (user ${userId})`);
+    logger.info(`[getSharedExpenses] Returning ${expenses.length} expenses for shareId ${shareId} (user ${userId})`);
     return { expenses };
   } catch (error) {
-    console.error(`Error fetching expenses for shareId ${shareId}:`, error);
-    if (error instanceof functions.https.HttpsError) {
-      throw error; // Re-throw HttpsError
+    // Log the specific error before potentially re-throwing
+    logger.error(`[getSharedExpenses] Error processing shareId ${shareId}:`, error);
+    if (error instanceof HttpsError) { // Check against imported HttpsError
+      throw error; // Re-throw known HttpsError
     }
-    throw new functions.https.HttpsError(
+    // Throw a generic internal error for unexpected issues
+    throw new HttpsError( // Use HttpsError
       "internal",
       "Could not fetch shared expenses.",
-      error.message,
+      error.message, // Include original error message if available
     );
   }
 });
 
 /**
  * Updates the status (reimbursed/denied) of specified expenses via a share link.
- * Handles receipt deletion for reimbursed items. Publicly accessible via shareId.
  */
-exports.updateSharedExpenseStatus = functions.https.onCall(
-  async (data, context) => {
-    const { shareId, expenseIds, action, reason } = data;
+// Use v2 onCall signature: (request) => { ... }
+exports.updateSharedExpenseStatus = onCall(async (request) => {
+  // Access data via request.data
+  const { shareId, expenseIds, action, reason } = request.data;
+  // Log Input
+  logger.info("[updateSharedExpenseStatus] Function called with:", { shareId, expenseIds, action, reason });
 
-    // --- Validation ---
-    if (!shareId || typeof shareId !== "string") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "A valid shareId must be provided.",
-      );
-    }
-    if (!Array.isArray(expenseIds) || expenseIds.length === 0) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "An array of expenseIds must be provided.",
-      );
-    }
-    if (action !== "reimburse" && action !== "deny") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Action must be either 'reimburse' or 'deny'.",
-      );
-    }
-    if (action === "deny" && reason && typeof reason !== "string") {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Denial reason must be a string if provided.",
-      );
-    }
-    // --- End Validation ---
+  // --- Validation ---
+  if (!shareId || typeof shareId !== "string") {
+    logger.error("[updateSharedExpenseStatus] Validation failed: Invalid shareId", { shareId });
+    throw new HttpsError("invalid-argument", "A valid shareId must be provided.");
+  }
+  if (!Array.isArray(expenseIds) || expenseIds.length === 0) {
+    logger.error("[updateSharedExpenseStatus] Validation failed: Invalid expenseIds", { expenseIds });
+    throw new HttpsError("invalid-argument", "An array of expenseIds must be provided.");
+  }
+  if (action !== "reimburse" && action !== "deny") {
+    logger.error("[updateSharedExpenseStatus] Validation failed: Invalid action", { action });
+    throw new HttpsError("invalid-argument", "Action must be either 'reimburse' or 'deny'.");
+  }
+  if (action === "deny" && reason && typeof reason !== "string") {
+    logger.error("[updateSharedExpenseStatus] Validation failed: Invalid reason type", { reason });
+    throw new HttpsError("invalid-argument", "Denial reason must be a string if provided.");
+  }
+  logger.info("[updateSharedExpenseStatus] Input validation passed.");
+  // --- End Validation ---
 
-    try {
-      // 1. Find the userId associated with the shareId
-      const shareDocRef = db.collection("sharedExpenseReports").doc(shareId);
-      const shareDoc = await shareDocRef.get();
+  try {
+    // 1. Get User ID from Share ID
+    const shareDocRef = db.collection("sharedExpenseReports").doc(shareId);
+    logger.info("[updateSharedExpenseStatus] Looking up share document:", shareDocRef.path);
+    const shareDoc = await shareDocRef.get();
 
-      if (!shareDoc.exists) {
-        throw new functions.https.HttpsError(
-          "not-found",
-          "Invalid or expired share link.",
-        );
+    if (!shareDoc.exists) {
+      logger.warn("[updateSharedExpenseStatus] Share document not found:", shareDocRef.path);
+      throw new HttpsError("not-found", "Invalid or expired share link.");
+    }
+    const userId = shareDoc.data().userId;
+    if (!userId) {
+        logger.error("[updateSharedExpenseStatus] Share document found, but userId is missing:", shareDocRef.path, shareDoc.data());
+        throw new HttpsError("internal", "Share link data is corrupted (missing userId).");
+    }
+    logger.info("[updateSharedExpenseStatus] Found userId:", userId, "for shareId:", shareId);
+
+    // 2. Prepare Batch Update
+    const userExpensesRef = db.collection("users", userId, "expenses");
+    logger.info("[updateSharedExpenseStatus] User expenses collection path:", userExpensesRef.path);
+
+    const batch = db.batch();
+    const storageDeletionPromises = [];
+    const expensesToUpdate = []; // Track IDs actually being updated
+
+    // 3. Query for the specific expense documents
+    logger.info("[updateSharedExpenseStatus] Querying for expense documents with IDs:", expenseIds);
+    const expenseDocs = await userExpensesRef
+      .where(admin.firestore.FieldPath.documentId(), "in", expenseIds)
+      .get();
+
+    logger.info(`[updateSharedExpenseStatus] Firestore query returned ${expenseDocs.size} documents.`);
+    if (expenseDocs.size !== expenseIds.length) {
+       logger.warn(`[updateSharedExpenseStatus] Mismatch: requested ${expenseIds.length} updates, found ${expenseDocs.size} docs for user ${userId}`);
+    }
+
+    // 4. Iterate and add updates to batch
+    expenseDocs.forEach((doc) => {
+      if (!doc.exists) {
+        // This case shouldn't happen with the 'in' query, but good practice
+        logger.warn(`[updateSharedExpenseStatus] Document ${doc.id} unexpectedly not found in query result. Skipping.`);
+        return;
       }
-      const userId = shareDoc.data().userId;
-      const userExpensesRef = db.collection("users", userId, "expenses");
 
-      // 2. Process updates in a batch
-      const batch = db.batch();
-      const storageDeletionPromises = [];
-      const expensesToUpdate = []; // Keep track for logging/response
+      const expenseData = doc.data();
+      const expenseRef = userExpensesRef.doc(doc.id);
+      logger.info(`[updateSharedExpenseStatus] Processing doc ID: ${doc.id}, Path: ${expenseRef.path}`);
+      expensesToUpdate.push(doc.id); // Add ID to tracking array
 
-      // Fetch expense docs to get receipt URIs before updating
-      const expenseDocs = await userExpensesRef
-        .where(admin.firestore.FieldPath.documentId(), "in", expenseIds)
-        .get();
-
-      if (expenseDocs.size !== expenseIds.length) {
-         console.warn(`Mismatch: requested ${expenseIds.length} updates, found ${expenseDocs.size} docs for user ${userId}`);
-         // You might want to throw an error here if an exact match is required
-         // throw new functions.https.HttpsError("not-found", "One or more expense IDs were not found.");
-      }
-
-      expenseDocs.forEach((doc) => {
-        if (!doc.exists) {
-          console.warn(`Expense document ${doc.id} not found for user ${userId}. Skipping.`);
-          return; // Skip this ID
+      let updatePayload;
+      if (action === "reimburse") {
+        updatePayload = {
+          status: "reimbursed",
+          denialReason: null,
+          receiptUri: null, // Clear receipt URI on reimbursement
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        logger.info(`[updateSharedExpenseStatus] Adding 'reimburse' update to batch for ${doc.id}:`, updatePayload);
+        batch.update(expenseRef, updatePayload);
+        // Schedule receipt deletion if URI exists
+        if (expenseData.receiptUri) {
+          logger.info(`[updateSharedExpenseStatus] Scheduling storage deletion for receipt: ${expenseData.receiptUri}`);
+          storageDeletionPromises.push(deleteStorageFile(expenseData.receiptUri));
         }
+      } else { // action === 'deny'
+        updatePayload = {
+          status: "denied",
+          denialReason: reason || null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        logger.info(`[updateSharedExpenseStatus] Adding 'deny' update to batch for ${doc.id}:`, updatePayload);
+        batch.update(expenseRef, updatePayload);
+      }
+    });
 
-        const expenseData = doc.data();
-        const expenseRef = userExpensesRef.doc(doc.id);
-        expensesToUpdate.push(doc.id);
+    // 5. Commit Batch
+    if (expensesToUpdate.length === 0) {
+        logger.warn("[updateSharedExpenseStatus] No valid expense documents found to update. Skipping batch commit.");
+        // Return success but indicate 0 updates
+        return { success: true, updatedCount: 0 };
+    }
 
-        if (action === "reimburse") {
-          batch.update(expenseRef, {
-            status: "reimbursed",
-            denialReason: null, // Clear any previous denial reason
-            receiptUri: null, // Clear receipt URI
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-          // If a receipt exists, schedule its deletion
-          if (expenseData.receiptUri) {
-            storageDeletionPromises.push(deleteStorageFile(expenseData.receiptUri));
-          }
-        } else { // action === 'deny'
-          batch.update(expenseRef, {
-            status: "denied",
-            denialReason: reason || null, // Store reason or null
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
+    logger.info(`[updateSharedExpenseStatus] Committing batch update for ${expensesToUpdate.length} documents.`);
+    await batch.commit();
+    logger.info(`[updateSharedExpenseStatus] Batch commit successful. Updated status to '${action}' for expenses:`, expensesToUpdate);
+
+    // 6. Handle Storage Deletions (if any)
+    if (storageDeletionPromises.length > 0) {
+      logger.info(`[updateSharedExpenseStatus] Waiting for ${storageDeletionPromises.length} storage deletion(s) to settle.`);
+      const results = await Promise.allSettled(storageDeletionPromises);
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          // Log the error associated with the failed deletion
+          logger.error(`[updateSharedExpenseStatus] Storage deletion failed (Promise ${index}):`, result.reason);
+        } else {
+          logger.info(`[updateSharedExpenseStatus] Storage deletion succeeded (Promise ${index}).`);
         }
       });
-
-      // 3. Commit Firestore batch updates
-      await batch.commit();
-      console.log(`Successfully updated status to '${action}' for ${expensesToUpdate.length} expenses for shareId ${shareId}`);
-
-      // 4. Wait for all storage deletions to settle (if any)
-      if (storageDeletionPromises.length > 0) {
-        const results = await Promise.allSettled(storageDeletionPromises);
-        results.forEach((result) => {
-          if (result.status === "rejected") {
-            // Log errors from deleteStorageFile (already logged within the helper)
-            console.error("A storage deletion failed during batch update:", result.reason);
-            // Decide if this should cause the function to report an overall error
-            // For now, we'll log it but still return success for the Firestore updates
-          }
-        });
-      }
-
-      return { success: true, updatedCount: expensesToUpdate.length };
-    } catch (error) {
-      console.error(`Error updating expenses for shareId ${shareId}:`, error);
-      if (error instanceof functions.https.HttpsError) {
-        throw error; // Re-throw HttpsError
-      }
-      throw new functions.https.HttpsError(
-        "internal",
-        "Could not update expense statuses.",
-        error.message,
-      );
+      logger.info("[updateSharedExpenseStatus] Finished processing storage deletions.");
     }
-  },
-);
+
+    // 7. Return Success
+    logger.info("[updateSharedExpenseStatus] Function finished successfully.", { updatedCount: expensesToUpdate.length });
+    return { success: true, updatedCount: expensesToUpdate.length };
+
+  } catch (error) {
+    // Log the specific error before potentially re-throwing
+    logger.error(`[updateSharedExpenseStatus] Error processing shareId ${shareId}:`, error);
+    if (error instanceof HttpsError) { // Check against imported HttpsError
+      throw error; // Re-throw known HttpsError
+    }
+    // Throw a generic internal error for unexpected issues
+    throw new HttpsError( // Use HttpsError
+      "internal",
+      "Could not update expense statuses.",
+      error.message, // Include original error message if available
+    );
+  }
+});
