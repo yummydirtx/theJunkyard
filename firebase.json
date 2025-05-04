@@ -18,7 +18,7 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "!**/*.@(js|css|png|jpg|jpeg|gif|svg|ico|json|txt|map|woff|woff2|ttf|eot)",
         "destination": "/index.html"
       }
     ]
@@ -33,7 +33,8 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
-      ]
+      ],
+      "runtime": "nodejs22"
     }
   ]
 }

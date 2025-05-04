@@ -62,14 +62,8 @@ export default function ExpenseReport({ setMode, mode }) {
     const auth = getAuth(app); // Get Auth instance
 
     // Use the modal hook
-    const {
-        loginModalOpen,
-        signUpModalOpen,
-        openLoginModal,
-        closeLoginModal,
-        openSignUpModal,
-        closeSignUpModal,
-    } = useModal();
+    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
     // State for expenses, fetched from Firestore
     const [expenses, setExpenses] = React.useState([]); // Initialize as empty array
@@ -226,9 +220,10 @@ export default function ExpenseReport({ setMode, mode }) {
         setCopied(false);
         try {
             // Force refresh the ID token before calling the function
-            console.log("Forcing token refresh before calling function...");
-            await auth.currentUser.getIdToken(true); // Add this line
-            console.log("Token refreshed. Calling function...");
+            // console.log("Forcing token refresh before calling function...");
+            // await auth.currentUser.getIdToken(true); // REMOVE OR COMMENT OUT THIS LINE FOR TESTING
+            // console.log("Token refreshed. Calling function..."); // Can comment out too
+            console.log("Calling function without forced token refresh..."); // Add this log
 
             const generateLinkFunction = httpsCallable(functions, 'generateExpenseReportShareLink');
             const result = await generateLinkFunction();

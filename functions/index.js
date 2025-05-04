@@ -1,17 +1,19 @@
-// The Cloud Functions for Firebase SDK to create Cloud Functions and triggers.
-const functions = require("firebase-functions");
+// v2 Imports for HTTPS triggers and Scheduler
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+// v2 Logger
+const logger = require("firebase-functions/logger");
 // The Firebase Admin SDK to access Firestore and Storage.
 const admin = require("firebase-admin");
 // UUID for generating unique share IDs
 const { v4: uuidv4 } = require("uuid");
 
 // Initialize Firebase Admin SDK
-// Ensure your service account key is set up correctly for local emulation or deployment
-// (Often handled automatically in the deployed environment)
 try {
   admin.initializeApp();
 } catch (e) {
-  console.error("Firebase admin initialization error", e);
+  // Use logger for errors
+  logger.error("Firebase admin initialization error", e);
 }
 
 const db = admin.firestore();
@@ -26,7 +28,7 @@ const defaultBucket = storage.bucket(); // Get the default Storage bucket
  */
 const deleteStorageFile = async (gsUri) => {
   if (!gsUri) {
-    console.log("No gsUri provided, skipping Storage deletion.");
+    logger.info("No gsUri provided, skipping Storage deletion.");
     return;
   }
   const bucketName = defaultBucket.name;
@@ -36,199 +38,193 @@ const deleteStorageFile = async (gsUri) => {
 
   if (filePath) {
     const fileRef = defaultBucket.file(filePath);
-    console.log(`Attempting to delete Storage file: ${filePath}`);
+    logger.info(`Attempting to delete Storage file: ${filePath}`);
     try {
       await fileRef.delete();
-      console.log(`Successfully deleted Storage file: ${filePath}`);
+      logger.info(`Successfully deleted Storage file: ${filePath}`);
     } catch (err) {
       if (err.code === 404) {
-        console.warn(
+        logger.warn(
           `Storage file not found (may be already deleted): ${filePath}`,
         );
       } else {
-        console.error(`Failed to delete Storage file ${filePath}:`, err);
+        logger.error(`Failed to delete Storage file ${filePath}:`, err);
         // Re-throw or handle as needed, maybe prevent Firestore update if critical
-        throw new functions.https.HttpsError(
+        throw new HttpsError( // Use HttpsError from v2 import
           "internal",
           `Failed to delete receipt file: ${filePath}`,
         );
       }
     }
   } else {
-    console.warn(`Could not parse file path from gsUri: ${gsUri}`);
+    logger.warn(`Could not parse file path from gsUri: ${gsUri}`);
     // Throw error as this indicates a problem with the stored URI
-    throw new functions.https.HttpsError(
+    throw new HttpsError( // Use HttpsError from v2 import
       "invalid-argument",
       `Invalid gsUri format: ${gsUri}`,
     );
   }
 };
 
-// --- Scheduled Function (Existing) ---
+// --- Scheduled Function (v2 Syntax) ---
 
 /**
  * Scheduled function to clean up orphaned receipts from Cloud Storage.
  * Runs periodically (e.g., every 24 hours).
- * Checks the 'pendingReceipts' collection for entries older than a threshold
- * and deletes the corresponding file from Storage and the entry from Firestore.
  */
-// Use the v2/v3+ syntax for scheduled functions
-exports.cleanupOrphanReceipts = functions.scheduler
-  // Schedule to run every 24 hours. Use Crontab syntax or App Engine syntax.
-  // See: https://firebase.google.com/docs/functions/schedule-functions
-  .onSchedule("every 24 hours", async (context) => {
-    console.log("Running scheduled job: cleanupOrphanReceipts");
+// Use the v2 onSchedule syntax
+exports.cleanupOrphanReceipts = onSchedule("every 24 hours", async (event) => {
+  // Use logger
+  logger.info("Running scheduled job: cleanupOrphanReceipts", { structuredData: true, event });
 
-    // Calculate the timestamp threshold (e.g., 24 hours ago)
-    const thresholdHours = 24;
-    const thresholdMillis = thresholdHours * 60 * 60 * 1000;
-    const thresholdTimestamp = admin.firestore.Timestamp.fromMillis(
-      Date.now() - thresholdMillis,
-    );
+  // Calculate the timestamp threshold (e.g., 24 hours ago)
+  const thresholdHours = 24;
+  const thresholdMillis = thresholdHours * 60 * 60 * 1000;
+  const thresholdTimestamp = admin.firestore.Timestamp.fromMillis(
+    Date.now() - thresholdMillis,
+  );
 
-    // Query for pending receipts older than the threshold
-    const pendingReceiptsRef = db.collection("pendingReceipts");
-    const oldPendingReceiptsQuery = pendingReceiptsRef.where(
-      "uploadTimestamp",
-      "<",
-      thresholdTimestamp,
-    );
+  // Query for pending receipts older than the threshold
+  const pendingReceiptsRef = db.collection("pendingReceipts");
+  const oldPendingReceiptsQuery = pendingReceiptsRef.where(
+    "uploadTimestamp",
+    "<",
+    thresholdTimestamp,
+  );
 
-    try {
-      const snapshot = await oldPendingReceiptsQuery.get();
-      if (snapshot.empty) {
-        console.log("No old pending receipts found to clean up.");
-        return null;
-      }
+  try {
+    const snapshot = await oldPendingReceiptsQuery.get();
+    if (snapshot.empty) {
+      logger.info("No old pending receipts found to clean up.");
+      return null;
+    }
 
-      console.log(`Found ${snapshot.size} old pending receipts to clean up.`);
+    logger.info(`Found ${snapshot.size} old pending receipts to clean up.`);
 
-      const deletionPromises = []; // Store promises for concurrent execution
+    const deletionPromises = []; // Store promises for concurrent execution
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const gsUri = data.gsUri;
-        const docId = doc.id;
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const gsUri = data.gsUri;
+      const docId = doc.id;
 
-        if (!gsUri) {
-          console.warn(`Pending doc ${docId} missing gsUri, deleting doc only.`);
-          // Add promise to delete the Firestore document only
-          deletionPromises.push(
-            doc.ref.delete().catch((err) => {
-              console.error(`Failed to delete Firestore doc ${docId}:`, err);
-            }),
-          );
-          return; // Skip Storage deletion for this doc
-        }
-
-        // --- Delete Storage File ---
-        // Extract file path from gs:// URI
-        const bucketName = defaultBucket.name;
-        const filePath = gsUri.startsWith(`gs://${bucketName}/`) ?
-          gsUri.replace(`gs://${bucketName}/`, "") :
-          null;
-
-        if (filePath) {
-          const fileRef = defaultBucket.file(filePath);
-          console.log(`Attempting to delete Storage file: ${filePath}`);
-          // Add promise for Storage file deletion
-          deletionPromises.push(
-            fileRef
-              .delete()
-              .then(() => console.log(`Successfully deleted Storage file: ${filePath}`))
-              .catch((err) => {
-                // If file not found, it might have been deleted already (e.g., by client)
-                if (err.code === 404) {
-                  console.warn(`Storage file not found (may be already deleted): ${filePath}`);
-                } else {
-                  console.error(`Failed to delete Storage file ${filePath}:`, err);
-                  // Decide if you want to proceed deleting the Firestore doc even if Storage deletion failed
-                }
-              }),
-          );
-        } else {
-          console.warn(`Could not parse file path from gsUri: ${gsUri} in doc ${docId}`);
-          // Optionally, still delete the Firestore doc if the URI is invalid
-        }
-
-        // --- Delete Firestore Document ---
-        console.log(`Attempting to delete Firestore doc: ${docId}`);
-        // Add promise for Firestore document deletion (runs after Storage attempt)
+      if (!gsUri) {
+        logger.warn(`Pending doc ${docId} missing gsUri, deleting doc only.`);
+        // Add promise to delete the Firestore document only
         deletionPromises.push(
           doc.ref.delete().catch((err) => {
-            console.error(`Failed to delete Firestore doc ${docId}:`, err);
+            logger.error(`Failed to delete Firestore doc ${docId}:`, err);
           }),
         );
-      }); // End snapshot.forEach
+        return; // Skip Storage deletion for this doc
+      }
 
-      // Wait for all deletion operations to settle
-      await Promise.allSettled(deletionPromises);
-      console.log("Cleanup process finished.");
-      return null;
-    } catch (error) {
-      console.error("Error querying or processing old pending receipts:", error);
-      return null; // Indicate failure, but function completed
-    }
-  });
+      // --- Delete Storage File ---
+      const bucketName = defaultBucket.name;
+      const filePath = gsUri.startsWith(`gs://${bucketName}/`) ?
+        gsUri.replace(`gs://${bucketName}/`, "") :
+        null;
+
+      if (filePath) {
+        const fileRef = defaultBucket.file(filePath);
+        logger.info(`Attempting to delete Storage file: ${filePath}`);
+        // Add promise for Storage file deletion
+        deletionPromises.push(
+          fileRef
+            .delete()
+            .then(() => logger.info(`Successfully deleted Storage file: ${filePath}`))
+            .catch((err) => {
+              if (err.code === 404) {
+                logger.warn(`Storage file not found (may be already deleted): ${filePath}`);
+              } else {
+                logger.error(`Failed to delete Storage file ${filePath}:`, err);
+              }
+            }),
+        );
+      } else {
+        logger.warn(`Could not parse file path from gsUri: ${gsUri} in doc ${docId}`);
+      }
+
+      // --- Delete Firestore Document ---
+      logger.info(`Attempting to delete Firestore doc: ${docId}`);
+      deletionPromises.push(
+        doc.ref.delete().catch((err) => {
+          logger.error(`Failed to delete Firestore doc ${docId}:`, err);
+        }),
+      );
+    }); // End snapshot.forEach
+
+    // Wait for all deletion operations to settle
+    await Promise.allSettled(deletionPromises);
+    logger.info("Cleanup process finished.");
+    return null;
+  } catch (error) {
+    logger.error("Error querying or processing old pending receipts:", error);
+    return null; // Indicate failure, but function completed
+  }
+});
 
 
-// --- New Callable Functions for Sharing ---
+// --- Callable Functions (v2 Syntax) ---
 
 /**
  * Generates or retrieves a unique shareable link ID for the calling user's expense report.
- * Stores the mapping between shareId and userId in Firestore.
  */
-exports.generateExpenseReportShareLink = functions.https.onCall(
-  async (data, context) => {
-    // --- Add Logging ---
-    console.log("generateExpenseReportShareLink called.");
-    console.log("context.auth:", JSON.stringify(context.auth || null)); // Log auth context
-    console.log("context.app:", JSON.stringify(context.app || null)); // Log App Check context (if available)
-    // --- End Logging ---
+// Use v2 onCall signature: (request) => { ... }
+exports.generateExpenseReportShareLink = onCall(async (request) => {
+  logger.info("generateExpenseReportShareLink called.");
 
-    // Check authentication
-    if (!context.auth) {
-      // Log the failure reason
-      console.error("Authentication check failed: context.auth is missing.");
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "User must be logged in to generate a share link.",
-      );
+  // Log headers (request.rawRequest might contain them)
+  if (request.rawRequest && request.rawRequest.headers) {
+    logger.info("Raw Request Headers:", JSON.stringify(request.rawRequest.headers));
+    logger.info("Authorization Header:", request.rawRequest.headers.authorization || "Not Present");
+    logger.info("X-Firebase-AppCheck Header:", request.rawRequest.headers["x-firebase-appcheck"] || "Not Present");
+  } else {
+    logger.info("Raw request or headers not available in request object for logging.");
+  }
+
+  // Access auth and app context via request object
+  logger.info("request.auth:", JSON.stringify(request.auth || null));
+  logger.info("request.app:", JSON.stringify(request.app || null));
+
+  // Check authentication using request.auth
+  if (!request.auth) {
+    logger.error("Authentication check failed: request.auth is missing.");
+    throw new HttpsError( // Use HttpsError from v2 import
+      "unauthenticated",
+      "User must be logged in to generate a share link.",
+    );
+  }
+  const userId = request.auth.uid;
+  const shareCollectionRef = db.collection("sharedExpenseReports");
+
+  try {
+    // Check if a share link already exists for this user
+    const existingQuery = shareCollectionRef.where("userId", "==", userId).limit(1);
+    const existingSnapshot = await existingQuery.get();
+
+    if (!existingSnapshot.empty) {
+      const existingDoc = existingSnapshot.docs[0];
+      logger.info(`Returning existing shareId ${existingDoc.id} for user ${userId}`);
+      return { shareId: existingDoc.id };
+    } else {
+      const shareId = uuidv4();
+      await shareCollectionRef.doc(shareId).set({
+        userId: userId,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      logger.info(`Generated new shareId ${shareId} for user ${userId}`);
+      return { shareId: shareId };
     }
-    const userId = context.auth.uid;
-    const shareCollectionRef = db.collection("sharedExpenseReports");
-
-    try {
-      // Check if a share link already exists for this user
-      const existingQuery = shareCollectionRef.where("userId", "==", userId).limit(1);
-      const existingSnapshot = await existingQuery.get();
-
-      if (!existingSnapshot.empty) {
-        // Return existing shareId
-        const existingDoc = existingSnapshot.docs[0];
-        console.log(`Returning existing shareId ${existingDoc.id} for user ${userId}`);
-        return { shareId: existingDoc.id };
-      } else {
-        // Generate a new unique shareId
-        const shareId = uuidv4();
-        // Store the new mapping
-        await shareCollectionRef.doc(shareId).set({
-          userId: userId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        console.log(`Generated new shareId ${shareId} for user ${userId}`);
-        return { shareId: shareId };
-      }
-    } catch (error) {
-      console.error("Error generating share link for user", userId, error);
-      throw new functions.https.HttpsError(
-        "internal",
-        "Could not generate share link.",
-        error.message,
-      );
-    }
-  },
-);
+  } catch (error) {
+    logger.error("Error generating share link for user", userId, error);
+    throw new HttpsError( // Use HttpsError from v2 import
+      "internal",
+      "Could not generate share link.",
+      error.message,
+    );
+  }
+});
 
 /**
  * Fetches expenses associated with a given shareId. Publicly accessible.
@@ -248,7 +244,6 @@ exports.getSharedExpenses = onCall(async (request) => {
   }
 
   try {
-    // 1. Find the userId associated with the shareId
     const shareDocRef = db.collection("sharedExpenseReports").doc(shareId);
     logger.info("[getSharedExpenses] Looking up share document:", shareDocRef.path); // Log lookup path
     const shareDoc = await shareDocRef.get();
