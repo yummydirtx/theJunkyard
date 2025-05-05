@@ -34,6 +34,10 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 // Style for the modal
 const modalStyle = {
@@ -104,6 +108,48 @@ export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, 
         handleMenuClose();
     };
 
+    // Separate expenses by status (only when not shared)
+    const pendingExpenses = isSharedView ? expenses : expenses.filter(exp => exp.status === 'pending');
+    const deniedExpenses = isSharedView ? [] : expenses.filter(exp => exp.status === 'denied');
+    const reimbursedExpenses = isSharedView ? [] : expenses.filter(exp => exp.status === 'reimbursed');
+
+    // Helper function to render a list item (to avoid repetition)
+    const renderListItem = (expense) => {
+        const hasItems = expense.items && expense.items.length > 0;
+        const canDelete = !isSharedView && onDeleteExpense;
+        const canEdit = !isSharedView && onEditExpense && expense.status === 'pending';
+        const showMenuButton = !isSharedView && (hasItems || canDelete || canEdit);
+
+        return (
+            <ListItem
+                key={expense.id}
+                secondaryAction={
+                    <>
+                        {showMenuButton && (
+                            <IconButton
+                                edge="end"
+                                aria-label="actions"
+                                aria-controls={`actions-menu-${expense.id}`}
+                                aria-haspopup="true"
+                                onClick={(e) => handleMenuOpen(e, expense.id)}
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                        )}
+                    </>
+                }
+                divider
+                sx={expense.status !== 'pending' ? { opacity: 0.7 } : {}}
+            >
+                <ExpenseListItemContent
+                    expense={expense}
+                    showDenialReason={!isSharedView && expense.status === 'denied'}
+                    isSharedView={isSharedView} // Pass the prop down
+                />
+            </ListItem>
+        );
+    };
+
     return (
         <> {/* Wrap List and Modal */}
             <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
@@ -113,41 +159,81 @@ export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, 
                 {expenses.length === 0 ? (
                     <Typography>No expenses found.</Typography>
                 ) : (
-                    <List>
-                        {Array.isArray(expenses) && expenses.map((expense) => {
-                            const hasItems = expense.items && expense.items.length > 0;
-                            const canDelete = !isSharedView && onDeleteExpense;
-                            const canEdit = !isSharedView && onEditExpense && expense.status === 'pending';
-                            const showMenuButton = !isSharedView && (hasItems || canDelete || canEdit);
+                    <>
+                        {/* Render Pending Expenses directly */}
+                        <List sx={{ p: 0 }}>
+                            {pendingExpenses.length === 0 && !isSharedView && (
+                                <Typography sx={{ p: 1, fontStyle: 'italic', color: 'text.secondary' }}>
+                                    No pending expenses.
+                                </Typography>
+                            )}
+                            {pendingExpenses.map(renderListItem)}
+                        </List>
 
-                            return (
-                                <ListItem
-                                    key={expense.id}
-                                    secondaryAction={
-                                        <>
-                                            {showMenuButton && (
-                                                <IconButton
-                                                    edge="end"
-                                                    aria-label="actions"
-                                                    aria-controls={`actions-menu-${expense.id}`}
-                                                    aria-haspopup="true"
-                                                    onClick={(e) => handleMenuOpen(e, expense.id)}
-                                                >
-                                                    <MoreVertIcon />
-                                                </IconButton>
-                                            )}
-                                        </>
-                                    }
-                                    divider
+                        {/* Render Denied Expenses in Accordion (only if not shared view and items exist) */}
+                        {!isSharedView && deniedExpenses.length > 0 && (
+                            <Accordion
+                                disableGutters
+                                sx={{
+                                    // Add margin only if pending list exists
+                                    mt: pendingExpenses.length > 0 ? 2 : 0,
+                                    '&:before': { display: 'none' },
+                                    boxShadow: 'none',
+                                    borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                                    bgcolor: 'transparent',
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls="denied-expenses-content"
+                                    id="denied-expenses-header"
+                                    // Match styling of reimbursed summary
+                                    sx={{ minHeight: '48px', '& .MuiAccordionSummary-content': { my: '12px' } }}
                                 >
-                                    <ExpenseListItemContent
-                                        expense={expense}
-                                        showDenialReason={!isSharedView}
-                                    />
-                                </ListItem>
-                            );
-                        })}
-                    </List>
+                                    <Typography sx={{ color: 'text.secondary' }}>
+                                        Denied Expenses ({deniedExpenses.length})
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ p: 0 }}>
+                                    <List sx={{ p: 0 }}>
+                                        {deniedExpenses.map(renderListItem)}
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
+                        )}
+
+                        {/* Render Reimbursed Expenses in Accordion (only if not shared view and items exist) */}
+                        {!isSharedView && reimbursedExpenses.length > 0 && (
+                            <Accordion
+                                disableGutters
+                                sx={{
+                                    // Add margin only if pending or denied list exists
+                                    mt: (pendingExpenses.length > 0 || deniedExpenses.length > 0) ? 2 : 0,
+                                    '&:before': { display: 'none' },
+                                    boxShadow: 'none',
+                                    borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+                                    bgcolor: 'transparent',
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls="reimbursed-expenses-content"
+                                    id="reimbursed-expenses-header"
+                                    // Match styling of denied summary
+                                    sx={{ minHeight: '48px', '& .MuiAccordionSummary-content': { my: '12px' } }}
+                                >
+                                    <Typography sx={{ color: 'text.secondary' }}>
+                                        Reimbursed Expenses ({reimbursedExpenses.length})
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ p: 0 }}>
+                                    <List sx={{ p: 0 }}>
+                                        {reimbursedExpenses.map(renderListItem)}
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
+                        )}
+                    </>
                 )}
             </Box>
 

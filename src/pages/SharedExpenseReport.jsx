@@ -219,7 +219,11 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                         )}
                                                     </ListItemIcon>
                                                     <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', pt: 1, pb: 1, pr: 1 }}>
-                                                        <ExpenseListItemContent expense={expense} showDenialReason={false} />
+                                                        <ExpenseListItemContent
+                                                            expense={expense}
+                                                            showDenialReason={false}
+                                                            isSharedView={true} // Explicitly pass true
+                                                        />
                                                         {expense.items && expense.items.length > 0 && (
                                                             <IconButton
                                                                 edge="end"

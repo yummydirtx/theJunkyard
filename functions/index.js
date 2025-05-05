@@ -375,12 +375,15 @@ exports.updateSharedExpenseStatus = onCall(async (request) => {
       expensesToUpdate.push(doc.id); // Add ID to tracking array
 
       let updatePayload;
+      const now = admin.firestore.FieldValue.serverTimestamp(); // Get timestamp once
+
       if (action === "reimburse") {
         updatePayload = {
           status: "reimbursed",
           denialReason: null,
           receiptUri: null, // Clear receipt URI on reimbursement
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: now,
+          processedAt: now, // Add processed timestamp
         };
         logger.info(`[updateSharedExpenseStatus] Adding 'reimburse' update to batch for ${doc.id}:`, updatePayload);
         batch.update(expenseRef, updatePayload);
@@ -393,7 +396,8 @@ exports.updateSharedExpenseStatus = onCall(async (request) => {
         updatePayload = {
           status: "denied",
           denialReason: reason || null,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: now,
+          processedAt: now, // Add processed timestamp
         };
         logger.info(`[updateSharedExpenseStatus] Adding 'deny' update to batch for ${doc.id}:`, updatePayload);
         batch.update(expenseRef, updatePayload);
@@ -440,6 +444,105 @@ exports.updateSharedExpenseStatus = onCall(async (request) => {
     throw new HttpsError( // Use HttpsError
       "internal",
       "Could not update expense statuses.",
+      error.message, // Include original error message if available
+    );
+  }
+});
+
+/**
+ * Generates a short-lived signed URL for a specific expense receipt,
+ * verifying access via the shareId.
+ */
+// Use v2 onCall signature: (request) => { ... }
+exports.getReceiptDownloadUrl = onCall(async (request) => {
+  // Access data via request.data
+  const { shareId, expenseId } = request.data;
+  logger.info("[getReceiptDownloadUrl] Function called with:", { shareId, expenseId });
+
+  // --- Validation ---
+  if (!shareId || typeof shareId !== "string") {
+    logger.error("[getReceiptDownloadUrl] Validation failed: Invalid shareId", { shareId });
+    throw new HttpsError("invalid-argument", "A valid shareId must be provided.");
+  }
+  if (!expenseId || typeof expenseId !== "string") {
+    logger.error("[getReceiptDownloadUrl] Validation failed: Invalid expenseId", { expenseId });
+    throw new HttpsError("invalid-argument", "A valid expenseId must be provided.");
+  }
+  logger.info("[getReceiptDownloadUrl] Input validation passed.");
+  // --- End Validation ---
+
+  try {
+    // 1. Get User ID from Share ID (Verify share link exists)
+    const shareDocRef = db.collection("sharedExpenseReports").doc(shareId);
+    logger.info("[getReceiptDownloadUrl] Looking up share document:", shareDocRef.path);
+    const shareDoc = await shareDocRef.get();
+
+    if (!shareDoc.exists) {
+      logger.warn("[getReceiptDownloadUrl] Share document not found:", shareDocRef.path);
+      throw new HttpsError("not-found", "Invalid or expired share link.");
+    }
+    const userId = shareDoc.data().userId;
+    if (!userId) {
+        logger.error("[getReceiptDownloadUrl] Share document found, but userId is missing:", shareDocRef.path, shareDoc.data());
+        throw new HttpsError("internal", "Share link data is corrupted (missing userId).");
+    }
+    logger.info("[getReceiptDownloadUrl] Found userId:", userId, "for shareId:", shareId);
+
+    // 2. Get the specific expense document to find the receipt URI
+    const expenseDocRef = db.collection("users").doc(userId).collection("expenses").doc(expenseId);
+    logger.info("[getReceiptDownloadUrl] Looking up expense document:", expenseDocRef.path);
+    const expenseDoc = await expenseDocRef.get();
+
+    if (!expenseDoc.exists) {
+      logger.warn("[getReceiptDownloadUrl] Expense document not found:", expenseDocRef.path);
+      throw new HttpsError("not-found", "Expense record not found.");
+    }
+
+    const expenseData = expenseDoc.data();
+    const gsUri = expenseData.receiptUri;
+
+    if (!gsUri) {
+      logger.warn("[getReceiptDownloadUrl] Expense document found, but receiptUri is missing:", expenseDocRef.path);
+      throw new HttpsError("not-found", "No receipt is attached to this expense.");
+    }
+    logger.info("[getReceiptDownloadUrl] Found receiptUri:", gsUri);
+
+    // 3. Parse the file path from the gs:// URI
+    const bucketName = defaultBucket.name;
+    const filePath = gsUri.startsWith(`gs://${bucketName}/`) ?
+      gsUri.replace(`gs://${bucketName}/`, "") :
+      null;
+
+    if (!filePath) {
+      logger.error("[getReceiptDownloadUrl] Could not parse file path from gsUri:", gsUri);
+      throw new HttpsError("internal", "Invalid receipt file path stored.");
+    }
+    logger.info("[getReceiptDownloadUrl] Parsed file path:", filePath);
+
+    // 4. Generate a signed URL
+    const options = {
+      version: 'v4', // Recommended version
+      action: 'read',
+      expires: Date.now() + 15 * 60 * 1000, // 15 minutes expiration time
+    };
+
+    logger.info("[getReceiptDownloadUrl] Generating signed URL for:", filePath);
+    const [signedUrl] = await defaultBucket.file(filePath).getSignedUrl(options);
+    logger.info("[getReceiptDownloadUrl] Signed URL generated successfully.");
+
+    // 5. Return the signed URL
+    return { downloadUrl: signedUrl };
+
+  } catch (error) {
+    // Log the specific error before potentially re-throwing
+    logger.error(`[getReceiptDownloadUrl] Error processing request for shareId ${shareId}, expenseId ${expenseId}:`, error);
+    if (error instanceof HttpsError) { // Check against imported HttpsError
+      throw error; // Re-throw known HttpsError
+    }
+    // Throw a generic internal error for unexpected issues
+    throw new HttpsError( // Use HttpsError
+      "internal",
+      "Could not get receipt download URL.",
       error.message, // Include original error message if available
     );
   }

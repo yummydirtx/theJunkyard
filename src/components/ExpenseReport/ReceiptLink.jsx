@@ -19,76 +19,87 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from '@mui/material/Link';
-import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
+import CircularProgress from '@mui/material/CircularProgress';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+// Import Firebase functions if not already (assuming initialized elsewhere)
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { initializeApp, getApps, getApp } from "firebase/app"; // To get app instance
 
-// Import Firebase Storage functions and Auth context
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { useAuth } from '../../contexts/AuthContext';
+// Ensure Firebase app is initialized (similar pattern to SharedExpenseReport)
+let app;
+if (getApps().length === 0) {
+    // This component might not have the config, rely on parent initialization
+    // If it might be used standalone, add config and initialization here.
+    // For now, assume app is initialized by the time this renders.
+    app = getApp();
+} else {
+    app = getApp();
+}
+const functions = app ? getFunctions(app) : null;
 
 /**
- * Internal component to fetch and display a link to a receipt stored in Firebase Storage.
+ * Displays a link to view a receipt. Fetches a signed URL if necessary (e.g., for shared reports).
  * @param {object} props
- * @param {string} props.receiptUri - The gs:// URI of the receipt file.
+ * @param {string} props.receiptUri - The gs:// URI of the receipt.
+ * @param {string} [props.shareId] - The share ID (required if isSharedView is true).
+ * @param {string} [props.expenseId] - The expense ID (required if isSharedView is true).
+ * @param {boolean} [props.isSharedView=false] - Indicates if the link is being rendered in a shared context.
  */
-export default function ReceiptLink({ receiptUri }) {
-    const { app } = useAuth();
-    const [downloadUrl, setDownloadUrl] = useState(null);
+export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedView = false }) {
+    const [downloadUrl, setDownloadUrl] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        let isMounted = true; // Prevent state update on unmounted component
-        const fetchUrl = async () => {
-            if (!receiptUri || !app) return;
+        // Only fetch signed URL if it's a shared view and we have the necessary IDs and functions
+        if (isSharedView && functions && shareId && expenseId && receiptUri) {
+            const fetchSignedUrl = async () => {
+                setLoading(true);
+                setError('');
+                setDownloadUrl(''); // Clear previous URL
 
-            setLoading(true);
-            setError(null);
-            setDownloadUrl(null);
+                try {
+                    const getReceiptDownloadUrl = httpsCallable(functions, 'getReceiptDownloadUrl');
+                    console.log(`[ReceiptLink] Calling getReceiptDownloadUrl for shareId: ${shareId}, expenseId: ${expenseId}`);
+                    const result = await getReceiptDownloadUrl({ shareId, expenseId });
+                    console.log("[ReceiptLink] Signed URL result:", result.data);
 
-            try {
-                const storage = getStorage(app);
-                // Create ref directly from gs:// URI
-                const storageRef = ref(storage, receiptUri);
-                const url = await getDownloadURL(storageRef);
-                if (isMounted) {
-                    setDownloadUrl(url);
-                }
-            } catch (err) {
-                console.error("Error getting download URL:", err);
-                if (isMounted) {
-                    // Handle specific errors if needed (e.g., permissions)
-                    setError("Could not load receipt link.");
-                }
-            } finally {
-                if (isMounted) {
+                    if (result.data && result.data.downloadUrl) {
+                        setDownloadUrl(result.data.downloadUrl);
+                    } else {
+                        throw new Error("No download URL received from function.");
+                    }
+                } catch (err) {
+                    console.error("[ReceiptLink] Error fetching signed URL:", err);
+                    setError(err.message || 'Failed to get receipt link.');
+                } finally {
                     setLoading(false);
                 }
-            }
-        };
+            };
 
-        fetchUrl();
+            fetchSignedUrl();
+        } else if (!isSharedView) {
+            // Handle non-shared view (e.g., direct download URL - though this might also fail if rules change)
+            // For simplicity, we'll just show a placeholder or potentially fetch differently later.
+            // Currently, this component is primarily used in SharedExpenseReport where isSharedView=true.
+            // If used elsewhere, direct URL fetching logic would be needed here.
+             console.warn("[ReceiptLink] Non-shared view or missing props, cannot fetch signed URL.");
+             // setDownloadUrl(receiptUri); // Or fetch direct URL if needed
+        }
+    }, [receiptUri, shareId, expenseId, isSharedView, functions]); // Add functions to dependency array
 
-        return () => {
-            isMounted = false; // Cleanup function
-        };
-    }, [receiptUri, app]); // Re-run if URI or app instance changes
+    if (!receiptUri) return null; // Don't render if no URI
 
+    // Render different states: loading, error, success
     if (loading) {
-        return (
-            <Tooltip title="Loading receipt link...">
-                <CircularProgress size={14} sx={{ ml: 1, verticalAlign: 'middle' }} />
-            </Tooltip>
-        );
+        return <CircularProgress size={12} sx={{ ml: 0.5, verticalAlign: 'middle' }} />;
     }
 
     if (error) {
         return (
-            <Tooltip title={error}>
-                 <Typography component="span" variant="caption" sx={{ ml: 1, color: 'error.main', fontStyle: 'italic' }}>
-                    (Link Error)
-                 </Typography>
+            <Tooltip title={`Error: ${error}`} placement="top">
+                <ErrorOutlineIcon color="error" sx={{ fontSize: 'inherit', ml: 0.5, verticalAlign: 'middle' }} />
             </Tooltip>
         );
     }
@@ -99,13 +110,15 @@ export default function ReceiptLink({ receiptUri }) {
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                variant="caption"
-                sx={{ ml: 0.5, verticalAlign: 'middle', fontSize: '100%' }}
+                sx={{ ml: 0.5 }} // Add slight margin if needed
+                onClick={(e) => e.stopPropagation()} // Prevent clicks on list items etc.
             >
-                (View Receipt)
+                (View)
             </Link>
         );
     }
 
-    return null; // Render nothing if no URI or still initializing
+    // Fallback if not shared or URL not fetched yet (and not loading/error)
+    // You might want a placeholder or different behavior here.
+    return null;
 }
