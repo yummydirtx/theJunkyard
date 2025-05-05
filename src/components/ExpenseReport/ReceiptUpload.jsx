@@ -17,17 +17,16 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useRef, useEffect } from 'react'; // Import useEffect
+import React, { useState, useRef, useEffect } from 'react';
 import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
+import Input from '@mui/material/Input'; // Or use styled input
 import Typography from '@mui/material/Typography';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert'; // Import Alert for displaying error messages
-
+import Alert from '@mui/material/Alert';
 // Import Firebase Storage functions and Auth context
 import { getStorage, ref, uploadBytes } from "firebase/storage";
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
 /**
  * A component that allows users to select and upload a receipt file (image or PDF)
@@ -62,7 +61,6 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
         setUploading(false);
     }, []); // Empty dependency array ensures this runs on mount (and remount due to key change)
 
-
     /**
      * Handles the file selection event from the hidden input.
      * Validates the selected file (type, size) and initiates the upload process if valid.
@@ -88,7 +86,7 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
         if (file.size > MAX_SIZE_BYTES) {
             setError(`File is too large. Max size is ${MAX_SIZE_MB}MB.`);
             setSelectedFileName(''); // Clear display name
-             if (fileInputRef.current) fileInputRef.current.value = ""; // Reset the file input so the same file can be re-selected after error
+            if (fileInputRef.current) fileInputRef.current.value = ""; // Reset the file input so the same file can be re-selected after error
             return; // Stop processing
         }
         // Check file type
@@ -100,7 +98,6 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
         }
         // --- End Validation ---
 
-
         // If validation passes, proceed with the upload
         setSelectedFileName(file.name); // Display the selected file name
         setError(null); // Clear any previous errors
@@ -110,7 +107,6 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
         if (!activeUser) {
             setError("User not authenticated. Cannot upload file.");
             setUploading(false); // Reset uploading state
-            // Optionally clear file name and reset input here as well
             setSelectedFileName('');
             if (fileInputRef.current) fileInputRef.current.value = "";
             return;
@@ -118,80 +114,71 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
 
         try {
             // --- Firebase Storage Upload ---
-            // Create a unique file path in Storage: `expenseReceipts/{userId}/{timestamp}_{originalFilename}`
-            // This helps organize files per user and avoids name collisions.
             const filePath = `expenseReceipts/${activeUser.uid}/${Date.now()}_${file.name}`;
-            const storageRef = ref(storage, filePath); // Create a reference to the storage location
-
-            // Start the upload process
+            const storageRef = ref(storage, filePath);
             console.log(`Uploading receipt to: ${filePath}`);
-            const snapshot = await uploadBytes(storageRef, file); // Upload the file blob
-            console.log('Uploaded successfully!', snapshot); // Log success details
+            const snapshot = await uploadBytes(storageRef, file);
+            console.log('Uploaded successfully!', snapshot);
 
-            // Construct the gs:// URI required by Vertex AI
-            const gsUri = `gs://${snapshot.ref.bucket}/${snapshot.ref.fullPath}`;
-            console.log('File available at gs URI:', gsUri);
+            // Construct the gs:// URI
+            const gsUri = `gs://${snapshot.metadata.bucket}/${snapshot.metadata.fullPath}`;
+            console.log('Generated gsUri:', gsUri);
 
-            // --- Callback ---
-            // Call the parent component's callback function with the gs:// URI and the file's MIME type
-            if (onUploadComplete) {
-                onUploadComplete(gsUri, file.type);
-            }
-
-            // Note: Clearing the selected file name and resetting the input *after* successful
-            // processing in the parent might be desired. Currently, it's cleared on error or new selection.
-            // Example:
-            // setSelectedFileName('');
-            // if (fileInputRef.current) fileInputRef.current.value = "";
+            // Call the callback function with the gs:// URI and MIME type
+            onUploadComplete(gsUri, file.type);
 
         } catch (uploadError) {
-            // Handle errors during the Firebase Storage upload
-            console.error("Error uploading file:", uploadError);
-            setError(`Error uploading file: ${uploadError.message}`); // Display a user-friendly error
-             // Clear file name and reset input on upload error
-            setSelectedFileName('');
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            console.error('Upload failed:', uploadError);
+            setError(`Upload failed: ${uploadError.message}`);
+            setSelectedFileName(''); // Clear filename on error
+            if (fileInputRef.current) fileInputRef.current.value = ""; // Reset input on error
         } finally {
-            // Ensure uploading state is reset regardless of success or failure
-            setUploading(false);
+            setUploading(false); // Set uploading state back to false
+        }
+    };
+
+    // --- Trigger File Input Click ---
+    /**
+     * Programmatically clicks the hidden file input element when the visible button is clicked.
+     */
+    const handleButtonClick = () => {
+        setError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.click(); // Trigger the hidden input
         }
     };
 
     return (
-        <Box sx={{ mt: 2, mb: 2 }}>
-            {/* The visible button that triggers the hidden file input */}
+        <Box sx={{ my: 2 }}>
+            {/* Hidden File Input */}
+            <Input
+                type="file"
+                inputRef={fileInputRef}
+                onChange={handleFileChange}
+                sx={{ display: 'none' }} // Hide the default input element
+                inputProps={{ accept: "image/jpeg,image/png,image/webp,application/pdf" }}
+            />
+
+            {/* Visible Upload Button */}
             <Button
-                component="label" // Makes the button act like a <label> for the hidden input
-                role={undefined} // Accessibility attribute
                 variant="outlined"
-                tabIndex={-1} // Removes button from tab order (input itself might be focusable)
-                startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />} // Show spinner or icon
-                // Disable button if parent component disables it OR if an upload is in progress
-                disabled={disabled || uploading}
+                onClick={handleButtonClick}
+                disabled={disabled || uploading} // Disable if globally disabled or currently uploading
+                startIcon={uploading ? <CircularProgress size={20} /> : null} // Show spinner when uploading
             >
-                {/* Change button text based on uploading state */}
-                {uploading ? 'Uploading...' : 'Upload Receipt'}
-                {/* The actual file input element, visually hidden */}
-                <input
-                    type="file"
-                    hidden // Hides the default browser file input UI
-                    onChange={handleFileChange} // Triggered when a file is selected
-                    // Specify which file types the browser should suggest
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    ref={fileInputRef} // Attach the ref to allow programmatic reset
-                    // Also disable the input itself when the button is disabled
-                    disabled={disabled || uploading}
-                />
+                {uploading ? 'Uploading...' : 'Upload Receipt (Optional)'}
             </Button>
-            {/* Display the name of the selected file if not uploading and no error */}
-            {selectedFileName && !uploading && !error && (
-                <Typography variant="body2" sx={{ display: 'inline', ml: 1 }}>
+
+            {/* Display Selected File Name or Status */}
+            {selectedFileName && !error && (
+                <Typography variant="body2" sx={{ display: 'inline', ml: 2 }}>
                     Selected: {selectedFileName}
                 </Typography>
             )}
-             {/* Display Error Messages using MUI Alert component */}
+
+            {/* Display Error Message */}
             {error && (
-                 <Alert severity="error" sx={{ mt: 1, fontSize: '0.8rem' }}>{error}</Alert>
+                <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>
             )}
         </Box>
     );

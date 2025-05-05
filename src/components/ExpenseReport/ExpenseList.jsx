@@ -17,22 +17,23 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState } from 'react'; // Added useState
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
-import InfoIcon from '@mui/icons-material/Info'; // Icon for viewing items
+import InfoIcon from '@mui/icons-material/Info';
 import Typography from '@mui/material/Typography';
-import DescriptionIcon from '@mui/icons-material/Description'; // Icon for receipt
-import ReceiptLink from './ReceiptLink'; // Import the new component
-import Modal from '@mui/material/Modal'; // Import Modal
-import Divider from '@mui/material/Divider'; // For modal content
-import CloseIcon from '@mui/icons-material/Close'; // For modal close button
-import Chip from '@mui/material/Chip'; // Import Chip for status display
-import Tooltip from '@mui/material/Tooltip'; // Import Tooltip
+import Modal from '@mui/material/Modal';
+import Divider from '@mui/material/Divider';
+import CloseIcon from '@mui/icons-material/Close';
+import ExpenseListItemContent from './ExpenseListItemContent';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
 
 // Style for the modal
 const modalStyle = {
@@ -50,17 +51,19 @@ const modalStyle = {
 };
 
 /**
- * Displays a list of expenses or just the content of a single expense item.
- * Includes a modal to view itemized details if available.
+ * Displays a list of expenses. Includes a modal to view itemized details.
  * @param {object} props - Component props.
- * @param {Array<object>} props.expenses - Array of expense objects. Each object should have `id`, `description`, `amount`, `status`, and optionally `receiptUri`, `items`, `denialReason`.
- * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked (only shown if not isSharedView). Receives the expense `id`.
- * @param {boolean} [props.isSharedView=false] - If true, hides the delete button and adjusts layout slightly.
- * @param {boolean} [props.renderItemContentOnly=false] - If true, renders only the content for the first expense item.
+ * @param {Array<object>} props.expenses - Array of expense objects.
+ * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked. Receives the expense `id`.
+ * @param {function} [props.onEditExpense] - Callback function invoked when the edit action is selected. Receives the expense object.
+ * @param {boolean} [props.isSharedView=false] - If true, hides the delete/edit actions.
  */
-export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = false, renderItemContentOnly = false }) {
+export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, isSharedView = false }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [menuExpenseId, setMenuExpenseId] = useState(null);
 
     const handleOpenItemsModal = (items) => {
         setSelectedExpenseItems(items || []);
@@ -69,96 +72,40 @@ export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = 
 
     const handleCloseItemsModal = () => {
         setModalOpen(false);
-        setSelectedExpenseItems([]); // Clear items when closing
+        setSelectedExpenseItems([]);
     };
 
-    // Helper to get status chip color
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'reimbursed': return 'success';
-            case 'denied': return 'error';
-            case 'pending':
-            default: return 'warning';
-        }
+    const handleMenuOpen = (event, expenseId) => {
+        setAnchorEl(event.currentTarget);
+        setMenuExpenseId(expenseId);
     };
 
-    // If renderItemContentOnly is true, render only the content for the first expense
-    if (renderItemContentOnly) {
-        // Ensure expenses is an array and has at least one item
-        if (!Array.isArray(expenses) || expenses.length === 0) {
-            return null; // Or render some placeholder/error
-        }
-        const expense = expenses[0]; // Get the single expense
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+        setMenuExpenseId(null);
+    };
 
-        return (
-            <React.Fragment> {/* Use Fragment to avoid extra divs */}
-                <ListItemText
-                    primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Typography component="span" sx={{ mr: 1 }}>
-                                {expense.description || 'No Description'}
-                            </Typography>
-                            <Tooltip title={expense.status === 'denied' && expense.denialReason ? `Reason: ${expense.denialReason}` : ''}>
-                                <Chip
-                                    label={expense.status || 'pending'}
-                                    color={getStatusColor(expense.status)}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ textTransform: 'capitalize' }}
-                                />
-                            </Tooltip>
-                        </Box>
-                    }
-                    secondary={
-                        <>
-                            {`$${(expense.amount || 0).toFixed(2)}`}
-                            {expense.receiptUri && (
-                                <Typography
-                                    component="span" // Use span for inline display
-                                    variant="body2"
-                                    sx={{ display: 'inline', ml: 1, color: 'text.secondary', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '75%' }}
-                                >
-                                    <DescriptionIcon sx={{ fontSize: '100%', mr: 0.5 }}/>
-                                    Receipt Attached
-                                    <ReceiptLink receiptUri={expense.receiptUri} />
-                                </Typography>
-                            )}
-                            {expense.status === 'denied' && expense.denialReason && !isSharedView && (
-                                 <Typography variant="caption" display="block" sx={{ color: 'error.main', fontStyle: 'italic' }}>
-                                    Reason: {expense.denialReason}
-                                 </Typography>
-                            )}
-                        </>
-                    }
-                />
-                {/* Secondary Action (Icons) */}
-                <>
-                    {expense.items && expense.items.length > 0 && (
-                        <IconButton
-                            edge="end"
-                            aria-label="view items"
-                            onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }} // Prevent ListItem click
-                            sx={{ mr: 1 }}
-                        >
-                            <InfoIcon />
-                        </IconButton>
-                    )}
-                    {!isSharedView && onDeleteExpense && (
-                        <IconButton
-                            edge="end"
-                            aria-label="delete"
-                            onClick={(e) => { e.stopPropagation(); onDeleteExpense(expense.id); }} // Prevent ListItem click
-                        >
-                            <DeleteIcon />
-                        </IconButton>
-                    )}
-                </>
-            </React.Fragment>
-        );
-    }
+    const handleMenuViewItems = (items) => {
+        handleOpenItemsModal(items);
+        handleMenuClose();
+    };
+
+    const handleMenuDelete = (expenseId) => {
+        if (onDeleteExpense) {
+            onDeleteExpense(expenseId);
+        }
+        handleMenuClose();
+    };
+
+    const handleMenuEdit = (expense) => {
+        if (onEditExpense) {
+            onEditExpense(expense);
+        }
+        handleMenuClose();
+    };
 
     return (
-        <> {/* Use Fragment to wrap List and Modal */}
+        <> {/* Wrap List and Modal */}
             <Box sx={{ p: 2, border: '1px dashed grey', mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     {isSharedView ? 'Expenses for Review' : 'Expense Log'}
@@ -167,87 +114,88 @@ export default function ExpenseList({ expenses, onDeleteExpense, isSharedView = 
                     <Typography>No expenses found.</Typography>
                 ) : (
                     <List>
-                        {/* Ensure expenses is an array before mapping */}
-                        {Array.isArray(expenses) && expenses.map((expense) => (
-                            <ListItem
-                                key={expense.id} // Use the unique ID from the expense object
-                                secondaryAction={
-                                    <> {/* Wrap buttons */}
-                                        {/* Conditionally render Info button if items exist */}
-                                        {expense.items && expense.items.length > 0 && (
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="view items"
-                                                onClick={() => handleOpenItemsModal(expense.items)}
-                                                sx={{ mr: 1 }} // Add margin between buttons
-                                            >
-                                                <InfoIcon />
-                                            </IconButton>
-                                        )}
-                                        {/* Only show delete button if NOT in shared view and handler exists */}
-                                        {!isSharedView && onDeleteExpense && (
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="delete"
-                                                onClick={() => onDeleteExpense(expense.id)}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        )}
-                                    </>
-                                }
-                                // Add divider for better separation
-                                divider
-                            >
-                                <ListItemText
-                                    primary={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-                                            <Typography component="span" sx={{ mr: 1 }}>
-                                                {expense.description || 'No Description'}
-                                            </Typography>
-                                            <Tooltip title={expense.status === 'denied' && expense.denialReason ? `Reason: ${expense.denialReason}` : ''}>
-                                                <Chip
-                                                    label={expense.status || 'pending'}
-                                                    color={getStatusColor(expense.status)}
-                                                    size="small"
-                                                    variant="outlined"
-                                                    sx={{ textTransform: 'capitalize' }}
-                                                />
-                                            </Tooltip>
-                                        </Box>
-                                    }
-                                    secondary={
+                        {Array.isArray(expenses) && expenses.map((expense) => {
+                            const hasItems = expense.items && expense.items.length > 0;
+                            const canDelete = !isSharedView && onDeleteExpense;
+                            const canEdit = !isSharedView && onEditExpense && expense.status === 'pending';
+                            const showMenuButton = !isSharedView && (hasItems || canDelete || canEdit);
+
+                            return (
+                                <ListItem
+                                    key={expense.id}
+                                    secondaryAction={
                                         <>
-                                            {`$${(expense.amount || 0).toFixed(2)}`}
-                                            {/* Only show receipt link if URI exists (it will be null after reimbursement) */}
-                                            {expense.receiptUri && (
-                                                <Typography
-                                                    component="span" // Use span for inline display
-                                                    variant="body2"
-                                                    sx={{ display: 'inline', ml: 1, color: 'text.secondary', fontStyle: 'italic', verticalAlign: 'middle', fontSize: '75%' }}
+                                            {showMenuButton && (
+                                                <IconButton
+                                                    edge="end"
+                                                    aria-label="actions"
+                                                    aria-controls={`actions-menu-${expense.id}`}
+                                                    aria-haspopup="true"
+                                                    onClick={(e) => handleMenuOpen(e, expense.id)}
                                                 >
-                                                    <DescriptionIcon sx={{ fontSize: '100%', mr: 0.5 }}/>
-                                                    Receipt Attached
-                                                    {/* Render the ReceiptLink component */}
-                                                    <ReceiptLink receiptUri={expense.receiptUri} />
-                                                </Typography>
-                                            )}
-                                            {/* Show denial reason inline if present */}
-                                            {expense.status === 'denied' && expense.denialReason && !isSharedView && (
-                                                 <Typography variant="caption" display="block" sx={{ color: 'error.main', fontStyle: 'italic' }}>
-                                                    Reason: {expense.denialReason}
-                                                 </Typography>
+                                                    <MoreVertIcon />
+                                                </IconButton>
                                             )}
                                         </>
                                     }
-                                />
-                            </ListItem>
-                        ))}
+                                    divider
+                                >
+                                    <ExpenseListItemContent
+                                        expense={expense}
+                                        showDenialReason={!isSharedView}
+                                    />
+                                </ListItem>
+                            );
+                        })}
                     </List>
                 )}
             </Box>
 
-            {/* Modal for displaying items */}
+            {!isSharedView && (
+                <Menu
+                    id={`actions-menu-${menuExpenseId}`}
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl && menuExpenseId)}
+                    onClose={handleMenuClose}
+                    MenuListProps={{
+                        'aria-labelledby': 'actions-button',
+                    }}
+                >
+                    {(() => {
+                        const currentExpense = expenses.find(exp => exp.id === menuExpenseId);
+                        if (!currentExpense) return null;
+
+                        const menuItems = [];
+                        if (currentExpense.items && currentExpense.items.length > 0) {
+                            menuItems.push(
+                                <MenuItem key="view-items" onClick={() => handleMenuViewItems(currentExpense.items)}>
+                                    <InfoIcon sx={{ mr: 1 }} fontSize="small" /> View Items
+                                </MenuItem>
+                            );
+                        }
+                        if (onEditExpense && currentExpense.status === 'pending') {
+                            menuItems.push(
+                                <MenuItem key="edit" onClick={() => handleMenuEdit(currentExpense)}>
+                                    <EditIcon sx={{ mr: 1 }} fontSize="small" /> Edit
+                                </MenuItem>
+                            );
+                        }
+                        if (onDeleteExpense) {
+                            menuItems.push(
+                                <MenuItem key="delete" onClick={() => handleMenuDelete(currentExpense.id)} sx={{ color: 'error.main' }}>
+                                    <DeleteIcon sx={{ mr: 1 }} fontSize="small" /> Delete
+                                </MenuItem>
+                            );
+                        }
+                        if (menuItems.length === 0) {
+                            return <MenuItem disabled>No actions available</MenuItem>;
+                        }
+
+                        return menuItems;
+                    })()}
+                </Menu>
+            )}
+
             <Modal
                 open={modalOpen}
                 onClose={handleCloseItemsModal}
