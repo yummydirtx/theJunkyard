@@ -228,6 +228,7 @@ exports.generateExpenseReportShareLink = onCall(async (request) => {
 
 /**
  * Fetches expenses associated with a given shareId. Publicly accessible.
+ * Only returns expenses that are 'pending'.
  */
 // Use v2 onCall signature: (request) => { ... }
 exports.getSharedExpenses = onCall(async (request) => {
@@ -266,17 +267,18 @@ exports.getSharedExpenses = onCall(async (request) => {
     logger.info("[getSharedExpenses] Querying expenses collection:", expensesColRef.path); // Log query path
     const q = expensesColRef.orderBy("createdAt", "desc");
     const expensesSnapshot = await q.get();
-    logger.info(`[getSharedExpenses] Query completed. Found ${expensesSnapshot.size} expense documents.`); // Log query result size
+    logger.info(`[getSharedExpenses] Query completed. Found ${expensesSnapshot.size} total expense documents for user ${userId}.`); // Log query result size
 
-    const expenses = [];
+    const allExpenses = [];
     expensesSnapshot.forEach((doc) => {
-      // Log each document found (optional, can be verbose)
-      // logger.debug("[getSharedExpenses] Processing expense doc:", doc.id, doc.data());
-      expenses.push({ ...doc.data(), id: doc.id });
+      allExpenses.push({ ...doc.data(), id: doc.id });
     });
 
-    logger.info(`[getSharedExpenses] Returning ${expenses.length} expenses for shareId ${shareId} (user ${userId})`);
-    return { expenses };
+    // 3. Filter to keep only 'pending' expenses
+    const expensesToShare = allExpenses.filter(exp => exp.status === 'pending');
+    logger.info(`[getSharedExpenses] Filtering for 'pending' status. Returning ${expensesToShare.length} pending expenses for shareId ${shareId}`);
+
+    return { expenses: expensesToShare }; // Return the filtered list (pending only)
   } catch (error) {
     // Log the specific error before potentially re-throwing
     logger.error(`[getSharedExpenses] Error processing shareId ${shareId}:`, error);
