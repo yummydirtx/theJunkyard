@@ -35,7 +35,7 @@ export default function ExpenseAccordion({ title, count, expenses, renderItem, a
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls={`${title.toLowerCase().replace(' ', '-')}-content`}
                 id={`${title.toLowerCase().replace(' ', '-')}-header`}
-                sx={{ minHeight: '48px', px: 0, '& .MuiAccordionSummary-content': { my: '12px', mx: 0 } }}
+                sx={{ minHeight: '48px', '& .MuiAccordionSummary-content': { my: '12px' } }}
             >
                 <Typography sx={{ color: 'text.secondary' }}>
                     {title} ({count})
