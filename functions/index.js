@@ -340,7 +340,8 @@ exports.updateSharedExpenseStatus = onCall(async (request) => {
     logger.info("[updateSharedExpenseStatus] Found userId:", userId, "for shareId:", shareId);
 
     // 2. Prepare Batch Update
-    const userExpensesRef = db.collection("users", userId, "expenses");
+    // Correctly reference the subcollection: users/{userId}/expenses
+    const userExpensesRef = db.collection("users").doc(userId).collection("expenses");
     logger.info("[updateSharedExpenseStatus] User expenses collection path:", userExpensesRef.path);
 
     const batch = db.batch();
