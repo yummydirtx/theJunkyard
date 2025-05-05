@@ -41,6 +41,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import AppAppBar from '../components/AppAppBar'; // Reuse AppAppBar for consistent look
 import Footer from '../components/Footer'; // Reuse Footer
 import ExpenseList from '../components/ExpenseReport/ExpenseList'; // Reuse ExpenseList
+import ExpenseTotal from '../components/ExpenseReport/ExpenseTotal'; // Import ExpenseTotal
 import { useTitle } from '../components/useTitle';
 // Import Firebase functions callable
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -266,6 +267,9 @@ export default function SharedExpenseReport({ mode, setMode }) {
     const allPendingSelected = pendingExpenses.length > 0 && pendingExpenses.every(id => selectedExpenses.has(id.id));
     const somePendingSelected = pendingExpenses.some(id => selectedExpenses.has(id.id));
 
+    // Calculate total amount for displayed expenses (pending + denied)
+    const displayedTotalAmount = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
@@ -408,6 +412,11 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                     </List>
                                 )}
                             </Box>
+
+                            {/* Display Total Amount */}
+                            {expenses.length > 0 && (
+                                <ExpenseTotal totalAmount={displayedTotalAmount} />
+                            )}
                         </>
                     )}
                 </Container>
