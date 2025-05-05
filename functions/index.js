@@ -296,6 +296,7 @@ exports.getSharedExpenses = onCall(async (request) => {
 
 /**
  * Updates the status (reimbursed/denied) of specified expenses via a share link.
+ * Also deletes the receipt from storage if reimbursed or denied.
  */
 // Use v2 onCall signature: (request) => { ... }
 exports.updateSharedExpenseStatus = onCall(async (request) => {
@@ -389,18 +390,24 @@ exports.updateSharedExpenseStatus = onCall(async (request) => {
         batch.update(expenseRef, updatePayload);
         // Schedule receipt deletion if URI exists
         if (expenseData.receiptUri) {
-          logger.info(`[updateSharedExpenseStatus] Scheduling storage deletion for receipt: ${expenseData.receiptUri}`);
+          logger.info(`[updateSharedExpenseStatus] Scheduling storage deletion for reimbursed receipt: ${expenseData.receiptUri}`);
           storageDeletionPromises.push(deleteStorageFile(expenseData.receiptUri));
         }
       } else { // action === 'deny'
         updatePayload = {
           status: "denied",
           denialReason: reason || null,
+          receiptUri: null, // Also clear receipt URI on denial
           updatedAt: now,
           processedAt: now, // Add processed timestamp
         };
         logger.info(`[updateSharedExpenseStatus] Adding 'deny' update to batch for ${doc.id}:`, updatePayload);
         batch.update(expenseRef, updatePayload);
+        // Schedule receipt deletion if URI exists
+        if (expenseData.receiptUri) {
+          logger.info(`[updateSharedExpenseStatus] Scheduling storage deletion for denied receipt: ${expenseData.receiptUri}`);
+          storageDeletionPromises.push(deleteStorageFile(expenseData.receiptUri));
+        }
       }
     });
 
