@@ -22,8 +22,9 @@ import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import CircularProgress from '@mui/material/CircularProgress';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-// Import Firebase functions if not already (assuming initialized elsewhere)
+// Import Firebase functions and storage
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getStorage, ref, getDownloadURL } from "firebase/storage"; // Import storage functions
 import { initializeApp, getApps, getApp } from "firebase/app"; // To get app instance
 
 // Ensure Firebase app is initialized (similar pattern to SharedExpenseReport)
@@ -37,9 +38,11 @@ if (getApps().length === 0) {
     app = getApp();
 }
 const functions = app ? getFunctions(app) : null;
+const storage = app ? getStorage(app) : null; // Initialize storage
 
 /**
- * Displays a link to view a receipt. Fetches a signed URL if necessary (e.g., for shared reports).
+ * Displays a link to view a receipt. Fetches a signed URL for shared reports,
+ * or a standard download URL for non-shared views.
  * @param {object} props
  * @param {string} props.receiptUri - The gs:// URI of the receipt.
  * @param {string} [props.shareId] - The share ID (required if isSharedView is true).
@@ -52,13 +55,13 @@ export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedVi
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // Only fetch signed URL if it's a shared view and we have the necessary IDs and functions
+        setLoading(true);
+        setError('');
+        setDownloadUrl(''); // Clear previous URL on any change
+
+        // Fetch signed URL for shared view
         if (isSharedView && functions && shareId && expenseId && receiptUri) {
             const fetchSignedUrl = async () => {
-                setLoading(true);
-                setError('');
-                setDownloadUrl(''); // Clear previous URL
-
                 try {
                     const getReceiptDownloadUrl = httpsCallable(functions, 'getReceiptDownloadUrl');
                     console.log(`[ReceiptLink] Calling getReceiptDownloadUrl for shareId: ${shareId}, expenseId: ${expenseId}`);
@@ -77,17 +80,40 @@ export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedVi
                     setLoading(false);
                 }
             };
-
             fetchSignedUrl();
-        } else if (!isSharedView) {
-            // Handle non-shared view (e.g., direct download URL - though this might also fail if rules change)
-            // For simplicity, we'll just show a placeholder or potentially fetch differently later.
-            // Currently, this component is primarily used in SharedExpenseReport where isSharedView=true.
-            // If used elsewhere, direct URL fetching logic would be needed here.
-             console.warn("[ReceiptLink] Non-shared view or missing props, cannot fetch signed URL.");
-             // setDownloadUrl(receiptUri); // Or fetch direct URL if needed
         }
-    }, [receiptUri, shareId, expenseId, isSharedView, functions]); // Add functions to dependency array
+        // Fetch standard download URL for non-shared view
+        else if (!isSharedView && storage && receiptUri) {
+            const fetchDirectUrl = async () => {
+                try {
+                    console.log(`[ReceiptLink] Getting direct download URL for: ${receiptUri}`);
+                    const storageRef = ref(storage, receiptUri); // Create ref from gs:// URI
+                    const url = await getDownloadURL(storageRef);
+                    console.log("[ReceiptLink] Direct URL result:", url);
+                    setDownloadUrl(url);
+                } catch (err) {
+                    console.error("[ReceiptLink] Error fetching direct download URL:", err);
+                    // Handle potential errors like object not found or permission issues
+                    if (err.code === 'storage/object-not-found') {
+                         setError('Receipt file not found.');
+                    } else if (err.code === 'storage/unauthorized') {
+                         setError('Permission denied to view receipt.');
+                    } else {
+                        setError(err.message || 'Failed to get receipt link.');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchDirectUrl();
+        }
+        // Handle cases where fetching isn't possible
+        else {
+             console.warn("[ReceiptLink] Cannot fetch URL. Missing dependencies:", { isSharedView, functions, storage, shareId, expenseId, receiptUri });
+             setError("Cannot load receipt link."); // Set an error if no URL can be fetched
+             setLoading(false);
+        }
+    }, [receiptUri, shareId, expenseId, isSharedView, functions, storage]);
 
     if (!receiptUri) return null; // Don't render if no URI
 
