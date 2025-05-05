@@ -4,6 +4,10 @@ import MenuItem from '@mui/material/MenuItem';
 import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+// Import icons for status changes
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import ReplayIcon from '@mui/icons-material/Replay';
 
 /**
  * Renders the action menu for an expense list item.
@@ -12,9 +16,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
  * @param {string|null} props.menuExpenseId - The ID of the expense the menu is for.
  * @param {Array<object>} props.expenses - The full list of expenses (to find the current one).
  * @param {function} props.onClose - Function to close the menu.
+ * @param {function} props.onExited - Function called after the menu exit transition finishes. // New prop description
  * @param {function} props.onViewItems - Function to trigger viewing items.
  * @param {function} props.onEdit - Function to trigger editing the expense.
  * @param {function} props.onDelete - Function to trigger deleting the expense.
+ * @param {function} props.onUpdateStatus - Function to trigger updating the expense status. Receives (expenseId, newStatus).
  * @param {boolean} props.canEdit - Whether the edit action should be available.
  * @param {boolean} props.canDelete - Whether the delete action should be available.
  */
@@ -23,9 +29,11 @@ export default function ExpenseActionMenu({
     menuExpenseId,
     expenses,
     onClose,
+    onExited, // Accept the new prop
     onViewItems,
     onEdit,
     onDelete,
+    onUpdateStatus,
     canEdit,
     canDelete
 }) {
@@ -53,6 +61,13 @@ export default function ExpenseActionMenu({
         onClose();
     };
 
+    const handleStatusChange = (newStatus) => {
+        if (currentExpense && onUpdateStatus) {
+            onUpdateStatus(currentExpense.id, newStatus);
+        }
+        onClose();
+    };
+
     const menuItems = [];
     if (hasItems) {
         menuItems.push(
@@ -68,6 +83,30 @@ export default function ExpenseActionMenu({
             </MenuItem>
         );
     }
+
+    // --- Add Status Change Options ---
+    if (onUpdateStatus && currentExpense) {
+        if (currentExpense.status === 'pending') {
+            menuItems.push(
+                <MenuItem key="reimburse" onClick={() => handleStatusChange('reimbursed')}>
+                    <CheckCircleOutlineIcon sx={{ mr: 1, color: 'success.main' }} fontSize="small" /> Mark as Reimbursed
+                </MenuItem>
+            );
+            menuItems.push(
+                <MenuItem key="deny" onClick={() => handleStatusChange('denied')}>
+                    <CancelOutlinedIcon sx={{ mr: 1, color: 'warning.main' }} fontSize="small" /> Mark as Denied
+                </MenuItem>
+            );
+        } else if (currentExpense.status === 'reimbursed' || currentExpense.status === 'denied') {
+            menuItems.push(
+                <MenuItem key="pending" onClick={() => handleStatusChange('pending')}>
+                    <ReplayIcon sx={{ mr: 1 }} fontSize="small" /> Mark as Pending
+                </MenuItem>
+            );
+        }
+    }
+    // --- End Status Change Options ---
+
     if (canDelete) {
         menuItems.push(
             <MenuItem key="delete" onClick={handleDelete} sx={{ color: 'error.main' }}>
@@ -82,6 +121,9 @@ export default function ExpenseActionMenu({
             anchorEl={anchorEl}
             open={Boolean(anchorEl && menuExpenseId)}
             onClose={onClose}
+            TransitionProps={{
+                onExited: onExited, // Call the handler when the transition finishes
+            }}
             MenuListProps={{
                 'aria-labelledby': 'actions-button',
             }}

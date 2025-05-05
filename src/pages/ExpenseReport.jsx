@@ -18,7 +18,7 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -77,6 +77,10 @@ export default function ExpenseReport({ setMode, mode }) {
     const [expenseToEdit, setExpenseToEdit] = useState(null);
     const [updateError, setUpdateError] = useState('');
 
+    // State for Action Menu
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [menuExpenseId, setMenuExpenseId] = useState(null);
+
     // Handlers for Edit Modal
     const handleOpenEditModal = (expense) => {
         if (expense.status === 'pending') {
@@ -103,6 +107,47 @@ export default function ExpenseReport({ setMode, mode }) {
             console.error("Failed to update expense:", error);
             setUpdateError(`Failed to save changes: ${error.message}`);
         }
+    };
+
+    // Menu Handlers
+    const handleMenuOpen = (event, expenseId) => {
+        setAnchorEl(event.currentTarget);
+        setMenuExpenseId(expenseId);
+    };
+
+    // Only set anchorEl to null to start the closing animation
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    // New handler to reset menuExpenseId after the menu has fully closed
+    const handleMenuExited = useCallback(() => {
+        setMenuExpenseId(null);
+    }, []);
+
+    /**
+     * Handles updating the status of an expense.
+     * @param {string} expenseId - The ID of the expense to update.
+     * @param {string} newStatus - The new status ('pending', 'reimbursed', 'denied').
+     */
+    const handleUpdateStatus = async (expenseId, newStatus) => {
+        setUpdateError(''); // Clear previous errors
+        console.log(`Updating status for ${expenseId} to ${newStatus}`);
+        try {
+            // Prepare payload - clear denial reason if not denying
+            const payload = {
+                status: newStatus,
+                denialReason: newStatus === 'denied' ? 'Manually Denied' : null, // Add a default reason or null
+                processedAt: newStatus !== 'pending' ? new Date() : null, // Set processed time if not pending
+            };
+            // Note: The updateExpense hook should handle setting updatedAt
+            await updateExpense(expenseId, payload);
+            // Optionally add success feedback here if needed
+        } catch (error) {
+            console.error(`Failed to update status for expense ${expenseId}:`, error);
+            setUpdateError(`Failed to update status: ${error.message}`);
+        }
+        // Note: No need to manually refresh data, useUserExpenses hook handles updates
     };
 
     return (
@@ -171,6 +216,12 @@ export default function ExpenseReport({ setMode, mode }) {
                                     expenses={expenses}
                                     onDeleteExpense={deleteExpense}
                                     onEditExpense={handleOpenEditModal}
+                                    onUpdateStatus={handleUpdateStatus}
+                                    handleMenuOpen={handleMenuOpen}
+                                    handleMenuClose={handleMenuClose}
+                                    anchorEl={anchorEl}
+                                    menuExpenseId={menuExpenseId}
+                                    handleMenuExited={handleMenuExited}
                                 />
                             )}
 

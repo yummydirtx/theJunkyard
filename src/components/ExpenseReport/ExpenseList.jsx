@@ -38,18 +38,32 @@ import ExpenseListItemContent from './ExpenseListItemContent';
  * @param {Array<object>} props.expenses - Array of expense objects.
  * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked. Receives the expense `id`.
  * @param {function} [props.onEditExpense] - Callback function invoked when the edit action is selected. Receives the expense object.
+ * @param {function} [props.onUpdateStatus] - Callback function invoked when a status change action is selected. Receives (expenseId, newStatus).
  * @param {boolean} [props.isSharedView=false] - If true, hides the delete/edit actions and accordion structure.
+ * @param {function} props.handleMenuOpen - Function to open the action menu.
+ * @param {function} props.handleMenuClose - Function to close the action menu.
+ * @param {function} props.handleMenuExited - Function called after menu closes.
+ * @param {HTMLElement | null} props.anchorEl - Anchor element for the menu.
+ * @param {string | null} props.menuExpenseId - ID of the expense for the open menu.
  */
-export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, isSharedView = false }) {
-    // State for Item Details Modal
+export default function ExpenseList({
+    expenses,
+    onDeleteExpense,
+    onEditExpense,
+    onUpdateStatus,
+    isSharedView = false,
+    // Receive menu state and handlers from parent
+    handleMenuOpen,
+    handleMenuClose,
+    handleMenuExited,
+    anchorEl,
+    menuExpenseId
+}) {
+    // State for Item Details Modal (remains local)
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
 
-    // State for Action Menu
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [menuExpenseId, setMenuExpenseId] = useState(null);
-
-    // Modal Handlers
+    // Modal Handlers (remain the same)
     const handleOpenItemsModal = (items) => {
         setSelectedExpenseItems(items || []);
         setModalOpen(true);
@@ -57,16 +71,6 @@ export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, 
     const handleCloseItemsModal = () => {
         setModalOpen(false);
         setSelectedExpenseItems([]);
-    };
-
-    // Menu Handlers
-    const handleMenuOpen = (event, expenseId) => {
-        setAnchorEl(event.currentTarget);
-        setMenuExpenseId(expenseId);
-    };
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-        setMenuExpenseId(null);
     };
 
     // Separate expenses by status (only when not shared)
@@ -91,6 +95,7 @@ export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, 
                             aria-label="actions"
                             aria-controls={`actions-menu-${expense.id}`}
                             aria-haspopup="true"
+                            // Use the passed-in handler
                             onClick={(e) => handleMenuOpen(e, expense.id)}
                         >
                             <MoreVertIcon />
@@ -158,13 +163,16 @@ export default function ExpenseList({ expenses, onDeleteExpense, onEditExpense, 
             {/* Action Menu Component */}
             {!isSharedView && (
                 <ExpenseActionMenu
+                    // Pass down state and handlers from parent
                     anchorEl={anchorEl}
                     menuExpenseId={menuExpenseId}
-                    expenses={expenses} // Pass full list to find the current expense
-                    onClose={handleMenuClose}
-                    onViewItems={handleOpenItemsModal} // Pass modal opener
-                    onEdit={onEditExpense} // Pass edit handler directly
-                    onDelete={onDeleteExpense} // Pass delete handler directly
+                    expenses={expenses}
+                    onClose={handleMenuClose} // Pass the close handler
+                    onExited={handleMenuExited} // Pass the exited handler
+                    onViewItems={handleOpenItemsModal}
+                    onEdit={onEditExpense}
+                    onDelete={onDeleteExpense}
+                    onUpdateStatus={onUpdateStatus}
                     canEdit={!isSharedView && !!onEditExpense}
                     canDelete={!isSharedView && !!onDeleteExpense}
                 />
