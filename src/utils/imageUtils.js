@@ -17,6 +17,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import { centerCrop, makeAspectCrop } from 'react-image-crop';
+
 /**
  * Converts a Data URL string to a Blob object.
  * @param {string} dataurl - The Data URL string.
@@ -66,8 +68,7 @@ export function centerAspectCrop(
   mediaHeight,
   aspect,
 ) {
-  // Use react-image-crop's built-in functions
-  const { centerCrop, makeAspectCrop } = require('react-image-crop');
+  // Use react-image-crop's built-in functions, imported at the top level now
   return centerCrop(
     makeAspectCrop(
       {
