@@ -40,6 +40,9 @@ import logo from '../assets/websitelogo.png';
 import useModal from '../hooks/useModal';
 import ProfileMenu from './ProfileMenu'; // Use the updated ProfileMenu
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import Menu from '@mui/material/Menu'; // Import Menu
+import Collapse from '@mui/material/Collapse'; // Import Collapse
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'; // Optional: Icon for dropdown
 
 const logoStyle = {
   width: '150px',
@@ -47,7 +50,7 @@ const logoStyle = {
   cursor: 'pointer',
 };
 
-function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed directly anymore
+function AppAppBar({ mode, toggleColorMode, app }) {
   const [open, setOpen] = useState(false);
   const { activeUser, loading, db } = useAuth(); // Get user and loading state from context
   // const db = getFirestore(app); // Get db from context if needed, or directly
@@ -55,13 +58,28 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
   const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
   const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
-  // Remove useEffect for onAuthStateChanged - context handles this
+  // State for Desktop "More" Menu
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMoreMenu = Boolean(anchorEl);
+  const handleMoreMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMoreMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // State for Mobile "More" Collapse
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const handleMobileMoreToggle = () => {
+    setMobileMoreOpen(!mobileMoreOpen);
+  };
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
+    if (!newOpen) {
+        setMobileMoreOpen(false); // Close mobile more section when drawer closes
+    }
   };
-
-  // Remove handleSignOut - context handles this via ProfileMenu
 
   const handleThemeChange = async () => {
     toggleColorMode();
@@ -83,7 +101,6 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
     }
   };
 
-  // Keep modal openers, ProfileMenu will use context actions
   const handleOpenLoginModal = () => {
     openLoginModal();
     if (open) setOpen(false); // Close drawer if open
@@ -150,31 +167,61 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
                     Home
                   </Typography>
                 </MenuItem>
-                <MenuItem onClick={() => window.open("/calcbasic-web", "_self")} sx={{ py: '6px', px: '12px' }}>
-                  <Typography variant="body2" color="text.primary">
-                    calcBasic
-                  </Typography>
-                </MenuItem>
-                <MenuItem onClick={() => window.open("/ytthumb", "_self")} sx={{ py: '6px', px: '12px' }}>
-                  <Typography variant="body2" color="text.primary">
-                    YTThumb
-                  </Typography>
-                </MenuItem>
                 <MenuItem onClick={() => window.open("/manualbudget", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     Manual Budget
                   </Typography>
                 </MenuItem>
-                <MenuItem onClick={() => window.open("/expensereport", "_self")} sx={{ py: '6px', px: '12px' }}> {/* Add Expense Report Link */}
+                <MenuItem onClick={() => window.open("/expensereport", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
                     Expense Report (beta)
                   </Typography>
                 </MenuItem>
+                <Button
+                  id="more-button"
+                  aria-controls={openMoreMenu ? 'more-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={openMoreMenu ? 'true' : undefined}
+                  onClick={handleMoreMenuClick}
+                  sx={{ py: '6px', px: '12px', textTransform: 'none' }}
+                  endIcon={<KeyboardArrowDownIcon />}
+                >
+                   <Typography variant="body2" color="text.primary">
+                    More
+                  </Typography>
+                </Button>
+                <Menu
+                  id="more-menu"
+                  anchorEl={anchorEl}
+                  open={openMoreMenu}
+                  onClose={handleMoreMenuClose}
+                  MenuListProps={{
+                    'aria-labelledby': 'more-button',
+                  }}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem onClick={() => { handleMoreMenuClose(); window.open("/calcbasic-web", "_self"); }} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">
+                      calcBasic
+                    </Typography>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleMoreMenuClose(); window.open("/ytthumb", "_self"); }} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary">
+                      YTThumb
+                    </Typography>
+                  </MenuItem>
+                </Menu>
               </Box>
             </Box>
-            {/* Desktop: Show auth buttons or ProfileMenu based on context */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-              {(!loading && !activeUser) ? ( // Check activeUser from context
+              {(!loading && !activeUser) ? (
                 <>
                   <MenuItem onClick={handleOpenSignUpModal} sx={{ py: '6px', px: '12px' }}>
                     <HowToRegIcon sx={{ mr: 0.5, color: 'text.primary' }} />
@@ -185,20 +232,17 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
                     <Typography variant="body2" color="text.primary">Log In</Typography>
                   </MenuItem>
                 </>
-              ) : !loading ? ( // Render ProfileMenu if not loading and user exists
+              ) : !loading ? (
                 <ProfileMenu
-                  // Pass modal openers for the "Add Account" functionality
                   openLoginModal={handleOpenLoginModal}
                   openSignUpModal={handleOpenSignUpModal}
-                  // No need to pass user or signOut, ProfileMenu uses context
                   sx={{ p: 0 }}
                 />
-              ) : null /* Optionally show a loader */}
+              ) : null}
               <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
             </Box>
             <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
-              {/* Mobile: ProfileMenu placed left of hamburger */}
-              {!loading && activeUser && ( // Only show ProfileMenu if logged in
+              {!loading && activeUser && (
                  <ProfileMenu
                     openLoginModal={handleOpenLoginModal}
                     openSignUpModal={handleOpenSignUpModal}
@@ -218,7 +262,6 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
           </Toolbar>
         </Container>
       </AppBar>
-      {/* Mobile Drawer */}
       <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
         <Box
           sx={{
@@ -238,24 +281,29 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
           >
             <ToggleColorMode mode={mode} toggleColorMode={handleThemeChange} />
           </Box>
-          {/* Navigation MenuItems remain the same */}
           <MenuItem onClick={() => window.open("/", "_self")}>
             Home
-          </MenuItem>
-          <MenuItem onClick={() => window.open("/calcbasic-web", "_self")}>
-            calcBasic
-          </MenuItem>
-          <MenuItem onClick={() => window.open("/ytthumb", "_self")}>
-            YTThumb
           </MenuItem>
           <MenuItem onClick={() => window.open("/manualbudget", "_self")}>
             Manual Budget
           </MenuItem>
-          <MenuItem onClick={() => window.open("/expensereport", "_self")}> {/* Add Expense Report Link */}
+          <MenuItem onClick={() => window.open("/expensereport", "_self")}>
             Expense Report (beta)
           </MenuItem>
+          <MenuItem onClick={handleMobileMoreToggle}>
+            More <KeyboardArrowDownIcon sx={{ transform: mobileMoreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+          </MenuItem>
+          <Collapse in={mobileMoreOpen} timeout="auto" unmountOnExit>
+            <Box sx={{ pl: 2 }}>
+              <MenuItem onClick={() => { toggleDrawer(false)(); window.open("/calcbasic-web", "_self"); }}>
+                calcBasic
+              </MenuItem>
+              <MenuItem onClick={() => { toggleDrawer(false)(); window.open("/ytthumb", "_self"); }}>
+                YTThumb
+              </MenuItem>
+            </Box>
+          </Collapse>
           <Divider />
-          {/* Mobile Auth Options - Render based on context */}
           {(!loading && !activeUser) ? (
             <>
               <MenuItem onClick={() => { handleOpenSignUpModal(); toggleDrawer(false)(); }}>
@@ -265,26 +313,16 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
                  <LoginIcon sx={{ mr: 1 }} /> Log In
               </MenuItem>
             </>
-          ) : (
-            // Optionally add mobile-specific account management items here if needed,
-            // or rely on the ProfileMenu component being accessible.
-            // For simplicity, we assume ProfileMenu handles mobile needs too.
-            // If not, add items like "Switch Account", "Sign Out", etc. here, using context functions.
-            null
-          )}
+          ) : null}
         </Box>
       </Drawer>
-
-      {/* Modals remain the same, but their internal logic will change */}
       <LoginModal
         open={loginModalOpen}
         onClose={closeLoginModal}
-        // Pass app if needed by modal internals, or let modal use context
       />
       <SignUpModal
         open={signUpModalOpen}
         onClose={closeSignUpModal}
-        // Pass app if needed by modal internals, or let modal use context
       />
     </div>
   );
@@ -293,7 +331,6 @@ function AppAppBar({ mode, toggleColorMode, app }) { // app might not be needed 
 AppAppBar.propTypes = {
   mode: PropTypes.oneOf(['dark', 'light']).isRequired,
   toggleColorMode: PropTypes.func.isRequired,
-  // app: PropTypes.object.isRequired, // app might become optional if context provides it
 };
 
 export default AppAppBar;
