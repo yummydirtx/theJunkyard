@@ -311,7 +311,7 @@ export default function Features() {
             ))}
           </Stack>
         </Grid>
-        <Grid item sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' } }}> {/* Use item prop */}
+        <Grid sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' } }}> {/* Use item prop */}
           <Card
             variant="outlined"
             sx={{
