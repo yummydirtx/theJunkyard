@@ -43,6 +43,7 @@ import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
 import Menu from '@mui/material/Menu'; // Import Menu
 import Collapse from '@mui/material/Collapse'; // Import Collapse
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'; // Optional: Icon for dropdown
+import LaunchIcon from '@mui/icons-material/Launch'; // Import Launch icon
 
 const logoStyle = {
   width: '150px',
@@ -177,6 +178,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     Expense Report (beta)
                   </Typography>
                 </MenuItem>
+                <MenuItem onClick={() => window.open("https://anteaterfind.com", "_blank")} sx={{ py: '6px', px: '12px' }}>
+                  <Typography variant="body2" color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+                    AnteaterFind <LaunchIcon sx={{ ml: 0.5, fontSize: 'inherit' }} />
+                  </Typography>
+                </MenuItem>
                 <Button
                   id="more-button"
                   aria-controls={openMoreMenu ? 'more-menu' : undefined}
@@ -217,6 +223,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                       YTThumb
                     </Typography>
                   </MenuItem>
+                  {/* <MenuItem onClick={() => { handleMoreMenuClose(); window.open("https://anteaterfind.com", "_blank"); }} sx={{ py: '6px', px: '12px' }}>
+                    <Typography variant="body2" color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+                      AnteaterFind <LaunchIcon sx={{ ml: 0.5, fontSize: 'inherit' }} />
+                    </Typography>
+                  </MenuItem> */}
                 </Menu>
               </Box>
             </Box>
@@ -290,6 +301,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
           <MenuItem onClick={() => window.open("/expensereport", "_self")}>
             Expense Report (beta)
           </MenuItem>
+          <MenuItem onClick={() => window.open("https://anteaterfind.com", "_blank")}>
+            AnteaterFind <LaunchIcon sx={{ fontSize: 'inherit', verticalAlign: 'middle', ml: 0.5 }} />
+          </MenuItem>
           <MenuItem onClick={handleMobileMoreToggle}>
             More <KeyboardArrowDownIcon sx={{ transform: mobileMoreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
           </MenuItem>
@@ -301,6 +315,9 @@ function AppAppBar({ mode, toggleColorMode, app }) {
               <MenuItem onClick={() => { toggleDrawer(false)(); window.open("/ytthumb", "_self"); }}>
                 YTThumb
               </MenuItem>
+              {/* <MenuItem onClick={() => { toggleDrawer(false)(); window.open("https://anteaterfind.com", "_blank"); }}>
+                AnteaterFind <LaunchIcon sx={{ fontSize: 'inherit', verticalAlign: 'middle', ml: 0.5 }} />
+              </MenuItem> */}
             </Box>
           </Collapse>
           <Divider />
