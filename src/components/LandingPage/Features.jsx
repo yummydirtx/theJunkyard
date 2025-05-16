@@ -42,7 +42,7 @@ const items = [
   {
     icon: <SearchIcon />,
     title: 'AnteaterFind',
-    demoLink: 'https://ics.uci.edu/~afrutkin',
+    demoLink: 'https://anteaterfind.com', // Link to the AnteaterFind demo
     githubLink: 'https://github.com/yummydirtx/AnteaterFind',
     description:
       'AnteaterFind is a full stack web application and search engine, written using Python and React. It was written from the ground up, and is capable of handling over fifty thousand web pages, with a query response time under 300ms.',
