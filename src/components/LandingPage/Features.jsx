@@ -275,7 +275,7 @@ export default function Features() {
                             '&:hover > svg': { transform: 'translateX(2px)' },
                           }}
                           onClick={(event) => {
-                            window.open(githubLink, '_blank'); // Use destructured variable
+                            window.open(githubLink, '_blank');
                             event.stopPropagation();
                           }}
                         >
@@ -283,7 +283,7 @@ export default function Features() {
                           <span>View Source on GitHub</span>
                         </Link>
                       )}
-                      {demoLink && ( // Use destructured variable
+                      {demoLink && (
                         <Link
                           color="primary"
                           variant="body2"
@@ -311,7 +311,7 @@ export default function Features() {
             ))}
           </Stack>
         </Grid>
-        <Grid sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' } }}> {/* Use item prop */}
+        <Grid sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' } }}>
           <Card
             variant="outlined"
             sx={{
