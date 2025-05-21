@@ -23,7 +23,6 @@ import MenuItem from '@mui/material/MenuItem';
 import InfoIcon from '@mui/icons-material/Info';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-// Import icons for status changes
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -48,7 +47,7 @@ export default function ExpenseActionMenu({
     menuExpenseId,
     expenses,
     onClose,
-    onExited, // Accept the new prop
+    onExited,
     onViewItems,
     onEdit,
     onDelete,
@@ -103,7 +102,7 @@ export default function ExpenseActionMenu({
         );
     }
 
-    // --- Add Status Change Options ---
+    // --- Status Change Options ---
     if (onUpdateStatus && currentExpense) {
         if (currentExpense.status === 'pending') {
             menuItems.push(
