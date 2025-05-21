@@ -42,17 +42,36 @@ import {
 import Footer from '../components/Footer';
 import { useTitle } from '../components/useTitle';
 
+/**
+ * YTThumb component allows users to fetch and download YouTube video thumbnails.
+ * @param {object} props - The component's props.
+ * @param {function} props.setMode - Function to toggle the color mode (light/dark).
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {object} props.app - Firebase app instance (currently unused in this component directly).
+ */
 export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');
   const defaultTheme = createTheme({ palette: { mode } });
 
+  /** @state {string} url - The YouTube URL input by the user. */
   const [url, setUrl] = React.useState('');
+  /** @state {string} thumbnailUrl - The URL of the currently displayed thumbnail. */
   const [thumbnailUrl, setThumbnailUrl] = React.useState('');
+  /** @state {number} thumbnailIndex - The index of the current thumbnail URL being tried from thumbnailSizesRef. */
   const [thumbnailIndex, setThumbnailIndex] = React.useState(0);
+  /** @state {boolean} loading - Indicates if a thumbnail is currently being fetched. */
   const [loading, setLoading] = React.useState(false);
+  /** @state {string|null} error - Stores error messages, if any. */
   const [error, setError] = React.useState(null);
+  /** @ref {Array<string>} thumbnailSizesRef - Holds an array of potential thumbnail URLs in descending order of quality. */
   const thumbnailSizesRef = React.useRef([]);
 
+  /**
+   * Extracts the YouTube video ID from a given URL.
+   * Supports standard YouTube watch URLs and shortened youtu.be URLs.
+   * @param {string} inputUrl - The YouTube URL.
+   * @returns {string} The extracted video ID, or an empty string if extraction fails.
+   */
   const extractVideoId = (inputUrl) => {
     try {
       const url = new URL(inputUrl);
@@ -69,6 +88,11 @@ export default function YTThumb({ setMode, mode, app }) {
     }
   };
 
+  /**
+   * Fetches the YouTube video thumbnail.
+   * It extracts the video ID, constructs a list of potential thumbnail URLs,
+   * and attempts to load the highest quality one first.
+   */
   const fetchThumbnail = () => {
     setLoading(true);
     setError(null);
@@ -97,6 +121,11 @@ export default function YTThumb({ setMode, mode, app }) {
     setLoading(false);
   };
 
+  /**
+   * Handles errors when loading a thumbnail image.
+   * If a thumbnail fails to load, it tries the next available size from `thumbnailSizesRef`.
+   * If all sizes fail, it sets an error message.
+   */
   const handleImageError = () => {
     // Try the next thumbnail URL in the array
     if (thumbnailIndex < thumbnailSizesRef.current.length - 1) {
@@ -109,6 +138,9 @@ export default function YTThumb({ setMode, mode, app }) {
     }
   };
 
+  /**
+   * Initiates the download of the currently displayed thumbnail image.
+   */
   const handleDownload = () => {
     if (thumbnailUrl) {
       const link = document.createElement('a');
@@ -120,6 +152,9 @@ export default function YTThumb({ setMode, mode, app }) {
     }
   };
 
+  /**
+   * Clears the error message, typically used when the error Snackbar is closed.
+   */
   const handleCloseError = () => {
     setError(null);
   };
@@ -262,4 +297,6 @@ export default function YTThumb({ setMode, mode, app }) {
 YTThumb.propTypes = {
   setMode: PropTypes.func.isRequired,
   mode: PropTypes.string.isRequired,
+  /** Firebase app instance, passed but not directly utilized in this component's core logic. */
+  app: PropTypes.object, // Firebase app object, can be marked as not required if truly optional
 };

@@ -82,6 +82,14 @@ const modalStyle = {
     overflowY: 'auto',
 };
 
+/**
+ * SharedExpenseReport component displays a list of expenses from a shared report.
+ * It allows users with the link to view expenses and, if they have appropriate permissions (handled server-side),
+ * mark expenses as reimbursed or denied.
+ * @param {object} props - The component's props.
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {function} props.setMode - Function to toggle the color mode.
+ */
 export default function SharedExpenseReport({ mode, setMode }) {
     useTitle('theJunkyard: Shared Expense Report');
     const { shareId } = useParams();
@@ -109,31 +117,45 @@ export default function SharedExpenseReport({ mode, setMode }) {
         displayedTotalAmount
     } = useSharedExpenses(shareId, functions);
 
+    /** @state {boolean} modalOpen - Controls the visibility of the expense items modal. */
     const [modalOpen, setModalOpen] = useState(false);
+    /** @state {Array<object>} selectedExpenseItems - Stores the items of an expense selected for viewing in the modal. */
     const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
 
+    /**
+     * Opens the modal to display the detailed items of a selected expense.
+     * @param {Array<object>} items - The list of items for the selected expense.
+     */
     const handleOpenItemsModal = (items) => {
         setSelectedExpenseItems(items || []);
         setModalOpen(true);
     };
 
+    /**
+     * Closes the expense items modal and clears the selected items.
+     */
     const handleCloseItemsModal = () => {
         setModalOpen(false);
         setSelectedExpenseItems([]);
     };
 
+    // Memoized value to determine if all pending expenses are currently selected.
+    // Used for the "select all" checkbox state.
     const allPendingSelected = useMemo(() =>
         pendingExpenses.length > 0 && pendingExpenses.every(exp => selectedExpenses.has(exp.id)),
         [pendingExpenses, selectedExpenses]
     );
+    // Memoized value to determine if some (but not all) pending expenses are selected.
+    // Used for the "select all" checkbox indeterminate state.
     const somePendingSelected = useMemo(() =>
-        pendingExpenses.some(exp => selectedExpenses.has(exp.id)),
-        [pendingExpenses, selectedExpenses]
+        pendingExpenses.some(exp => selectedExpenses.has(exp.id)) && !allPendingSelected,
+        [pendingExpenses, selectedExpenses, allPendingSelected] // Added allPendingSelected to dependency array
     );
 
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
+            {/* AppAppBar is configured not to show authentication buttons for this public shared view. */}
             <AppAppBar mode={mode} toggleColorMode={setMode || (() => { })} showAuthButtons={false} />
             <Box
                 sx={(theme) => ({
@@ -179,7 +201,9 @@ export default function SharedExpenseReport({ mode, setMode }) {
                             <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
                                     <Checkbox
-                                        indeterminate={somePendingSelected && !allPendingSelected}
+                                        // Checkbox is indeterminate if some (but not all) pending items are selected.
+                                        indeterminate={somePendingSelected}
+                                        // Checkbox is checked if all pending items are selected.
                                         checked={allPendingSelected}
                                         onChange={handleSelectAllPending}
                                         disabled={updating || pendingExpenses.length === 0}
@@ -202,6 +226,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                             };
                                             const isSelected = selectedExpenses.has(expense.id);
 
+                                            // Encapsulates the main content of a list item for reusability.
                                             const listItemContent = (
                                                 <>
                                                     <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1, pt: 1.5 }}>
@@ -228,6 +253,8 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                             <IconButton
                                                                 edge="end"
                                                                 aria-label="view items"
+                                                                // Stop propagation to prevent the ListItemButton's onClick from firing
+                                                                // when only the icon button is clicked.
                                                                 onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }}
                                                                 sx={{ ml: 'auto' }}
                                                                 disabled={updating}
@@ -239,6 +266,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                 </>
                                             );
 
+                                            // Render pending expenses as interactive ListItemButtons.
                                             return expense.status === 'pending' ? (
                                                 <ListItemButton
                                                     key={expense.id}
@@ -250,6 +278,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                     {listItemContent}
                                                 </ListItemButton>
                                             ) : (
+                                                // Render non-pending (e.g., reimbursed, denied) expenses as non-interactive ListItems with reduced opacity.
                                                 <ListItem
                                                     key={expense.id}
                                                     {...commonItemProps}

@@ -31,6 +31,14 @@ import Me from '../components/LandingPage/Me';
 import PastWebsites from '../components/LandingPage/PastWebsites';
 import { useTitle } from '../components/useTitle';
 
+/**
+ * LandingPage component serves as the main entry point or homepage of the application.
+ * It typically showcases features, testimonials, FAQs, and other introductory content.
+ * @param {object} props - The component's props.
+ * @param {function} props.setMode - Function to toggle the color mode (light/dark).
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {object} props.app - Firebase app instance, passed to AppAppBar.
+ */
 export default function LandingPage({ setMode, mode, app }) {
   useTitle('theJunkyard: Landing Page');
   const defaultTheme = createTheme({ palette: { mode } });

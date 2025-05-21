@@ -137,12 +137,11 @@ export default function ExpenseReport({ setMode, mode }) {
             // Prepare payload - clear denial reason if not denying
             const payload = {
                 status: newStatus,
-                denialReason: newStatus === 'denied' ? 'Manually Denied' : null, // Add a default reason or null
+                denialReason: newStatus === 'denied' ? 'Manually Denied' : null,
                 processedAt: newStatus !== 'pending' ? new Date() : null, // Set processed time if not pending
             };
             // Note: The updateExpense hook should handle setting updatedAt
             await updateExpense(expenseId, payload);
-            // Optionally add success feedback here if needed
         } catch (error) {
             console.error(`Failed to update status for expense ${expenseId}:`, error);
             setUpdateError(`Failed to update status: ${error.message}`);

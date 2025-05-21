@@ -282,7 +282,7 @@ export async function getCroppedImg(
 
       if (newWidth < minDimension || newHeight < minDimension) {
         console.warn(`Resizing stopped: New dimensions (${newWidth}x${newHeight}) below minimum (${minDimension}px). Rejecting.`);
-         return reject(new Error(`Image could not be resized below ${minDimension}px while staying under 1MB.`)); // Use return here
+         return reject(new Error(`Image could not be resized below ${minDimension}px while staying under 1MB.`));
       }
 
       // Reduce quality first before resizing if possible
@@ -302,7 +302,7 @@ export async function getCroppedImg(
       const tempCtx = tempCanvas.getContext('2d');
       if (!tempCtx) {
         console.error(`Attempt ${attempt + 1}: Failed to get context for resized canvas (${newWidth}x${newHeight})`);
-        return reject(new Error('Failed to get context for resized canvas.')); // Use return here
+        return reject(new Error('Failed to get context for resized canvas.'));
       }
       tempCtx.imageSmoothingQuality = 'medium'; // Use medium for resizing steps
       // console.log(`Attempt ${attempt + 1}: Drawing current canvas (${currentCanvas.width}x${currentCanvas.height}) onto temp canvas (${newWidth}x${newHeight})`);

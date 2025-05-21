@@ -24,7 +24,7 @@ import {
     Container,
     CircularProgress,
 } from '@mui/material';
-import { useState, useRef, useEffect, useCallback } from 'react'; // Added useCallback
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { alpha } from '@mui/material/styles';
 
 import AppAppBar from '../components/AppAppBar';
@@ -41,14 +41,23 @@ import AddEntryModal from '../components/ManualBudget/AddEntryModal';
 import EntryList from '../components/ManualBudget/EntryList';
 import BudgetGraphsModal from '../components/ManualBudget/BudgetGraphsModal';
 import MonthSelectorModal from '../components/ManualBudget/MonthSelectorModal';
-import BudgetPageHeader from '../components/ManualBudget/BudgetPageHeader'; // New
-import BudgetActionsBar from '../components/ManualBudget/BudgetActionsBar'; // New
-import NamePromptDialog from '../components/ManualBudget/NamePromptDialog'; // New
+import BudgetPageHeader from '../components/ManualBudget/BudgetPageHeader';
+import BudgetActionsBar from '../components/ManualBudget/BudgetActionsBar';
+import NamePromptDialog from '../components/ManualBudget/NamePromptDialog';
 
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * ManualBudget component provides a user interface for managing a personal budget.
+ * It allows users to create categories, add expense/income entries,
+ * view data in graphs, and manage data across different months.
+ * Authentication is required to access and save budget data.
+ * @param {object} props - The component's props.
+ * @param {function} props.setMode - Function to toggle the color mode (light/dark).
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ */
 export default function ManualBudget({ setMode, mode }) {
     useTitle('theJunkyard: Manual Budget');
     const defaultTheme = createTheme({ palette: { mode } });
@@ -74,7 +83,7 @@ export default function ManualBudget({ setMode, mode }) {
 
     const entryListRef = useRef(null);
 
-    // Modal states using useModal hook
+    // Modal states
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
     const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
@@ -92,7 +101,7 @@ export default function ManualBudget({ setMode, mode }) {
                 closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector,
             ];
             modalsToClose.forEach(closeModal => closeModal());
-            setSelectedOption(''); // Reset selection
+            setSelectedOption(''); // Reset selection if user logs out
         }
     }, [
         activeUser, authLoading, closeAddCategoryModal, closeAddEntryModal,
@@ -114,7 +123,7 @@ export default function ManualBudget({ setMode, mode }) {
 
     const handleCategoryAdded = useCallback((newCategory) => {
         updateCategories(prevCategories => [...prevCategories, newCategory]);
-        setSelectedOption(newCategory); // Optionally select the new category
+        setSelectedOption(newCategory);
         setShouldRefreshGraphs(true);
     }, [updateCategories]);
 
@@ -147,7 +156,7 @@ export default function ManualBudget({ setMode, mode }) {
         if (!nameInput.trim() || !activeUser) return;
         try {
             await createUserDocument(activeUser.uid, nameInput.trim());
-            // name state and needsNamePrompt will be updated by useManualBudgetData hook
+            // Name state and needsNamePrompt are updated by the useManualBudgetData hook
         } catch (error) {
             console.error("Error setting user name:", error);
         }
@@ -161,17 +170,17 @@ export default function ManualBudget({ setMode, mode }) {
     }, []);
 
     const handleMonthSelect = useCallback(async (month) => {
-        await setCurrentMonth(month); // setCurrentMonth now fetches categories
-        setSelectedOption(''); // Reset category selection
+        await setCurrentMonth(month); // setCurrentMonth also fetches categories for the new month
+        setSelectedOption(''); // Reset category selection for the new month
         setShouldRefreshGraphs(true);
     }, [setCurrentMonth]);
 
     const handleOpenGraphsModal = useCallback(() => {
-        setShouldRefreshGraphs(false); // Reset refresh flag before opening
+        setShouldRefreshGraphs(false); // Reset refresh flag before opening graphs
         openBudgetGraphsModal();
     }, [openBudgetGraphsModal]);
 
-    // Reset refresh flag when graphs modal is closed
+    // Reset refresh flag when graphs modal is closed to prevent unnecessary re-renders
     useEffect(() => {
         if (!budgetGraphsModalOpen) {
             setShouldRefreshGraphs(false);
@@ -194,7 +203,7 @@ export default function ManualBudget({ setMode, mode }) {
                 <LoginPrompt
                     openLoginModal={openLoginModal}
                     openSignUpModal={openSignUpModal}
-                    loading={authLoading} // Pass authLoading specifically for LoginPrompt
+                    loading={authLoading}
                     user={activeUser}
                     app_title="Manual Budget"
                 />
@@ -255,10 +264,10 @@ export default function ManualBudget({ setMode, mode }) {
             >
                 <Container maxWidth="lg" sx={{ 
                     pt: { xs: 12, sm: 15 }, 
-                    flexGrow: 1, // Make container grow
+                    flexGrow: 1, 
                     display: 'flex', 
                     flexDirection: 'column',
-                    overflow: 'hidden' // Prevent double scrollbars if content overflows
+                    overflow: 'hidden'
                 }}>
                     {!overallLoading && activeUser && !needsNamePrompt && (
                          <BudgetPageHeader
@@ -280,7 +289,7 @@ export default function ManualBudget({ setMode, mode }) {
                     nameInput={nameInput}
                     onNameInputChange={(e) => setNameInput(e.target.value)}
                     onSubmitName={handleNameSubmit}
-                    loading={dataLoading} // Use dataLoading for the prompt's internal loading state
+                    loading={dataLoading}
                 />
             )}
 
@@ -324,7 +333,7 @@ export default function ManualBudget({ setMode, mode }) {
                         currentMonth={currentMonth}
                         selectedCategory={selectedOption}
                         mode={mode}
-                        forceRefresh={shouldRefreshGraphs} // Pass as prop
+                        forceRefresh={shouldRefreshGraphs}
                     />
                     <MonthSelectorModal
                         open={monthSelectorOpen}

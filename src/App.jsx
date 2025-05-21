@@ -18,21 +18,16 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import { lazy, Suspense } from 'react'; // Import Suspense
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAnalytics } from "firebase/analytics";
-// Remove auth imports handled by context
-// import { getAuth, onAuthStateChanged } from "firebase/auth";
-// import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { AuthProvider } from './contexts/AuthContext'; // Import AuthProvider
-import CircularProgress from '@mui/material/CircularProgress'; // For Suspense fallback
-import Box from '@mui/material/Box'; // For Suspense fallback styling
+import { AuthProvider } from './contexts/AuthContext';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
   authDomain: "thejunkyard-b1858.firebaseapp.com",
@@ -43,36 +38,37 @@ const firebaseConfig = {
   measurementId: "G-HEJ6YMFJY6"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider( import.meta.env.VITE_RECAPTCHA_API_KEY ),
-  isTokenAutoRefreshEnabled: true // Set to true to automatically refresh the token
+  isTokenAutoRefreshEnabled: true // Enables automatic token refresh for Firebase App Check.
 });
 const analytics = getAnalytics(app);
 
-// Lazy load pages instead of direct imports
+// Lazy load pages for better initial load performance.
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const CalcBasic = lazy(() => import('./pages/CalcBasic'));
 const YTThumb = lazy(() => import('./pages/YTThumb'));
 const ManualBudget = lazy(() => import('./pages/ManualBudget'));
-const ExpenseReport = lazy(() => import('./pages/ExpenseReport')); // Add import for the new page
-const SharedExpenseReport = lazy(() => import('./pages/SharedExpenseReport')); // Import the new shared page
+const ExpenseReport = lazy(() => import('./pages/ExpenseReport'));
+const SharedExpenseReport = lazy(() => import('./pages/SharedExpenseReport'));
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
-    // Check localStorage first
+    // Attempt to retrieve the saved theme mode from localStorage.
     const localMode = localStorage.getItem('mode');
     if (localMode) return localMode;
-    // Default to system preference if no localStorage value
+    // If no mode is saved in localStorage, default to the user's system preference.
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
 
   const toggleColorMode = () => {
     setMode((prev) => {
       const newMode = prev === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('mode', newMode); // Save the new mode to localStorage
-      // Theme saving to Firestore is now handled in AppAppBar based on activeUser
+      // Persist the newly selected theme mode to localStorage.
+      localStorage.setItem('mode', newMode);
+      // Note: Saving the theme preference to Firestore for logged-in users
+      // is handled within the AppAppBar component, triggered by changes to activeUser.
       return newMode;
     });
   };
@@ -85,7 +81,7 @@ export default function App() {
   );
 
   return (
-    // Wrap the entire routing structure with AuthProvider
+    // Wrap the entire routing structure with AuthProvider to make auth state available
     <AuthProvider app={app}>
       <BrowserRouter
         future={{
@@ -93,16 +89,14 @@ export default function App() {
           v7_relativeSplatPath: true
         }}
       >
-        {/* Use Suspense to handle lazy loading */}
+        {/* Use Suspense to handle lazy loading of route components */}
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            {/* Pass mode, toggleColorMode, but remove app prop where context is used */}
             <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
             <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} />} />
             <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} />} />
             <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} />} />
             <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode} mode={mode} />} />
-            {/* Add route for the shared expense report page */}
             <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode} />} />
           </Routes>
         </Suspense>

@@ -29,11 +29,23 @@ import { Container } from '@mui/material';
 import { CalcTitle, CalcForm, ResultsDisplay } from '../components/CalcBasic';
 import { useTitle } from '../components/useTitle';
 
+/**
+ * CalcBasic component provides a basic calculator interface.
+ * It allows users to input numbers and operations to perform calculations.
+ * This specific version seems to focus on finding the lowest number and its count.
+ * @param {object} props - The component's props.
+ * @param {function} props.setMode - Function to toggle the color mode (light/dark).
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {object} props.app - Firebase app instance (currently unused in this component directly).
+ */
 export default function CalcBasic({ setMode, mode, app }) {
   useTitle('theJunkyard: calcBasic');
+  /** @state {number} lowest - Stores the lowest number found from the input. */
   const [lowest, setLowest] = React.useState(0);
+  /** @state {number} numberOfLowest - Stores the count of occurrences of the lowest number. */
   const [numberOfLowest, setNumberOfLowest] = React.useState(0);
   const defaultTheme = createTheme({ palette: { mode } });
+  /** @state {string} plural - Determines if the word "time" should be pluralized in the results display. */
   const [plural, setPlural] = React.useState('s');
 
   return (
