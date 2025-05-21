@@ -19,6 +19,12 @@
 
 import { useEffect } from 'react';
 
+/**
+ * Custom hook to set the document title.
+ * When the component using this hook mounts, it sets the document title to the provided string.
+ * When the component unmounts, it restores the document title to what it was before mounting.
+ * @param {string} title - The string to set as the document title.
+ */
 export function useTitle(title) {
   useEffect(() => {
     const prevTitle = document.title

@@ -24,6 +24,13 @@ import Button from '@mui/material/Button';
 import WbSunnyRoundedIcon from '@mui/icons-material/WbSunnyRounded';
 import ModeNightRoundedIcon from '@mui/icons-material/ModeNightRounded';
 
+/**
+ * ToggleColorMode component provides a button to switch between light and dark themes.
+ * It displays a sun icon for dark mode (to switch to light) and a moon icon for light mode (to switch to dark).
+ * @param {object} props - The component's props.
+ * @param {('light' | 'dark')} props.mode - The current color mode.
+ * @param {function} props.toggleColorMode - Function to call when the button is clicked to toggle the mode.
+ */
 function ToggleColorMode({ mode, toggleColorMode }) {
   return (
     <Box sx={{ maxWidth: '32px' }}>
@@ -45,7 +52,9 @@ function ToggleColorMode({ mode, toggleColorMode }) {
 }
 
 ToggleColorMode.propTypes = {
+  /** The current color mode, either 'dark' or 'light'. */
   mode: PropTypes.oneOf(['dark', 'light']).isRequired,
+  /** Function to be called to toggle the color mode. */
   toggleColorMode: PropTypes.func.isRequired,
 };
 

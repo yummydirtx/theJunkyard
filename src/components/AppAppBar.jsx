@@ -17,9 +17,9 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useContext } from 'react'; // Import useContext
+import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-// Remove Firebase auth imports handled by context
+// Firebase services are used for saving user theme preferences.
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -38,12 +38,12 @@ import LoginModal from './Authentication/LoginModal';
 import SignUpModal from './Authentication/SignUpModal';
 import logo from '../assets/websitelogo.png';
 import useModal from '../hooks/useModal';
-import ProfileMenu from './ProfileMenu'; // Use the updated ProfileMenu
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
-import Menu from '@mui/material/Menu'; // Import Menu
-import Collapse from '@mui/material/Collapse'; // Import Collapse
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'; // Optional: Icon for dropdown
-import LaunchIcon from '@mui/icons-material/Launch'; // Import Launch icon
+import ProfileMenu from './ProfileMenu';
+import { useAuth } from '../contexts/AuthContext';
+import Menu from '@mui/material/Menu';
+import Collapse from '@mui/material/Collapse';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LaunchIcon from '@mui/icons-material/Launch';
 
 const logoStyle = {
   width: '150px',
@@ -51,44 +51,71 @@ const logoStyle = {
   cursor: 'pointer',
 };
 
+/**
+ * AppAppBar component renders the main application navigation bar.
+ * It includes navigation links, theme toggling, and authentication actions (login/signup/profile).
+ * It adapts its layout for desktop and mobile views.
+ * @param {object} props - The component's props.
+ * @param {('light' | 'dark')} props.mode - The current color mode.
+ * @param {function} props.toggleColorMode - Function to toggle the color mode.
+ * @param {object} props.app - The initialized Firebase app instance (used by AuthContext, not directly here).
+ */
 function AppAppBar({ mode, toggleColorMode, app }) {
+  /** @state {boolean} open - Controls the visibility of the mobile navigation drawer. */
   const [open, setOpen] = useState(false);
-  const { activeUser, loading, db } = useAuth(); // Get user and loading state from context
-  // const db = getFirestore(app); // Get db from context if needed, or directly
+  const { activeUser, loading, db } = useAuth();
 
+  /** @state {boolean} loginModalOpen - Controls visibility of the login modal. */
+  /** @function openLoginModal - Opens the login modal. */
+  /** @function closeLoginModal - Closes the login modal. */
   const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
+  /** @state {boolean} signUpModalOpen - Controls visibility of the sign-up modal. */
+  /** @function openSignUpModal - Opens the sign-up modal. */
+  /** @function closeSignUpModal - Closes the sign-up modal. */
   const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
   // State for Desktop "More" Menu
+  /** @state {HTMLElement|null} anchorEl - The anchor element for the desktop "More" menu. */
   const [anchorEl, setAnchorEl] = useState(null);
   const openMoreMenu = Boolean(anchorEl);
+  /** Handles clicking the "More" button to open the dropdown menu. */
   const handleMoreMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+  /** Closes the "More" dropdown menu. */
   const handleMoreMenuClose = () => {
     setAnchorEl(null);
   };
 
   // State for Mobile "More" Collapse
+  /** @state {boolean} mobileMoreOpen - Controls the visibility of the collapsible "More" section in the mobile drawer. */
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  /** Toggles the collapsible "More" section in the mobile drawer. */
   const handleMobileMoreToggle = () => {
     setMobileMoreOpen(!mobileMoreOpen);
   };
 
+  /**
+   * Toggles the mobile navigation drawer.
+   * @param {boolean} newOpen - The desired state of the drawer (true for open, false for closed).
+   * @returns {function} Event handler function.
+   */
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
     if (!newOpen) {
-        setMobileMoreOpen(false); // Close mobile more section when drawer closes
+        setMobileMoreOpen(false); // Ensure mobile "More" section is closed when drawer closes.
     }
   };
 
+  /**
+   * Handles theme change: toggles the color mode and saves the preference to Firestore if a user is logged in.
+   * @async
+   */
   const handleThemeChange = async () => {
     toggleColorMode();
-    // Use activeUser from context
     if (activeUser) {
       try {
         const newMode = mode === 'light' ? 'dark' : 'light';
-        // Ensure db is available from context or props
         if (db) {
             await setDoc(doc(db, 'userPreferences', activeUser.uid), {
               theme: newMode
@@ -102,11 +129,13 @@ function AppAppBar({ mode, toggleColorMode, app }) {
     }
   };
 
+  /** Opens the login modal and closes the mobile drawer if it's open. */
   const handleOpenLoginModal = () => {
     openLoginModal();
     if (open) setOpen(false); // Close drawer if open
   };
 
+  /** Opens the sign-up modal and closes the mobile drawer if it's open. */
   const handleOpenSignUpModal = () => {
     openSignUpModal();
     if (open) setOpen(false); // Close drawer if open
@@ -183,6 +212,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     AnteaterFind <LaunchIcon sx={{ ml: 0.5, fontSize: 'inherit' }} />
                   </Typography>
                 </MenuItem>
+                {/* Desktop "More" dropdown button */}
                 <Button
                   id="more-button"
                   aria-controls={openMoreMenu ? 'more-menu' : undefined}
@@ -196,6 +226,7 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                     More
                   </Typography>
                 </Button>
+                {/* Desktop "More" dropdown menu */}
                 <Menu
                   id="more-menu"
                   anchorEl={anchorEl}
@@ -230,7 +261,8 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                       YTThumb
                     </Typography>
                   </MenuItem>
-                  {/* <MenuItem onClick={() => { handleMoreMenuClose(); window.open("https://anteaterfind.com", "_blank"); }} sx={{ py: '6px', px: '12px' }}>
+                  {/* Example of an external link within the "More" menu, currently commented out.
+                  <MenuItem onClick={() => { handleMoreMenuClose(); window.open("https://anteaterfind.com", "_blank"); }} sx={{ py: '6px', px: '12px' }}>
                     <Typography variant="body2" color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
                       AnteaterFind <LaunchIcon sx={{ ml: 0.5, fontSize: 'inherit' }} />
                     </Typography>
@@ -311,9 +343,11 @@ function AppAppBar({ mode, toggleColorMode, app }) {
           <MenuItem onClick={() => window.open("https://anteaterfind.com", "_blank")}>
             AnteaterFind <LaunchIcon sx={{ fontSize: 'inherit', verticalAlign: 'middle', ml: 0.5 }} />
           </MenuItem>
+          {/* Mobile "More" collapsible section trigger */}
           <MenuItem onClick={handleMobileMoreToggle}>
             More <KeyboardArrowDownIcon sx={{ transform: mobileMoreOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
           </MenuItem>
+          {/* Mobile "More" collapsible content */}
           <Collapse in={mobileMoreOpen} timeout="auto" unmountOnExit>
             <Box sx={{ pl: 2 }}>
               <MenuItem onClick={() => { toggleDrawer(false)(); window.open("/calcbasic-web", "_self"); }}>
@@ -322,7 +356,8 @@ function AppAppBar({ mode, toggleColorMode, app }) {
               <MenuItem onClick={() => { toggleDrawer(false)(); window.open("/ytthumb", "_self"); }}>
                 YTThumb
               </MenuItem>
-              {/* <MenuItem onClick={() => { toggleDrawer(false)(); window.open("https://anteaterfind.com", "_blank"); }}>
+              {/* Example of an external link within the mobile "More" section, currently commented out.
+              <MenuItem onClick={() => { toggleDrawer(false)(); window.open("https://anteaterfind.com", "_blank"); }}>
                 AnteaterFind <LaunchIcon sx={{ fontSize: 'inherit', verticalAlign: 'middle', ml: 0.5 }} />
               </MenuItem> */}
             </Box>
@@ -353,8 +388,12 @@ function AppAppBar({ mode, toggleColorMode, app }) {
 }
 
 AppAppBar.propTypes = {
+  /** Current color mode ('light' or 'dark'). */
   mode: PropTypes.oneOf(['dark', 'light']).isRequired,
+  /** Function to toggle the color mode. */
   toggleColorMode: PropTypes.func.isRequired,
+  /** The initialized Firebase app instance. Passed to AuthProvider, not directly used here often. */
+  app: PropTypes.object,
 };
 
 export default AppAppBar;

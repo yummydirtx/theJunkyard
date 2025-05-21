@@ -34,6 +34,9 @@ const logoStyle = {
   height: 'auto',
 };
 
+/**
+ * Copyright component displays the copyright information.
+ */
 function Copyright() {
   return (
     <Typography variant="body2" color="text.secondary" mt={1}>
@@ -44,11 +47,22 @@ function Copyright() {
   );
 }
 
+/**
+ * Footer component displays site navigation links, social media icons, and copyright information.
+ * It includes a function to scroll to specific sections on the landing page.
+ */
 export default function Footer() {
+  /** @state {boolean} open - State to potentially control a mobile menu or similar, currently unused in the scroll logic directly. */
   const [open, setOpen] = React.useState(false);
+
+  /**
+   * Scrolls to a specific section on the page by its ID.
+   * If the section is not found, it navigates to the home page.
+   * @param {string} sectionId - The ID of the HTML element to scroll to.
+   */
   const scrollToSection = (sectionId) => {
     const sectionElement = document.getElementById(sectionId);
-    const offset = 128;
+    const offset = 128; // Offset to account for fixed headers or other UI elements.
     if (sectionElement) {
       const targetScroll = sectionElement.offsetTop - offset;
       sectionElement.scrollIntoView({ behavior: 'smooth' });
@@ -56,9 +70,9 @@ export default function Footer() {
         top: targetScroll,
         behavior: 'smooth',
       });
-      setOpen(false);
+      setOpen(false); // Closes a potential mobile menu, though 'open' state is not directly tied to menu visibility here.
     } else {
-      window.open("/", "_self")
+      window.open("/", "_self") // Fallback to home page if section not found.
     }
   };
 

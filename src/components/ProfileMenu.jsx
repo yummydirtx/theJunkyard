@@ -24,44 +24,60 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
-// Removed ListItemText, AddCircleOutlineIcon
 import LogoutIcon from '@mui/icons-material/Logout';
-import SettingsIcon from '@mui/icons-material/Settings'; // For Account Settings
-import AccountSettingsModal from './AccountSettingsModal'; // Keep for settings modal
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import SettingsIcon from '@mui/icons-material/Settings';
+import AccountSettingsModal from './AccountSettingsModal';
+import { useAuth } from '../contexts/AuthContext';
 
-// Removed openLoginModal, openSignUpModal props
+/**
+ * ProfileMenu component displays an avatar icon button that, when clicked,
+ * opens a menu with options for account settings and signing out.
+ * It relies on `AuthContext` to get the active user's information and sign-out functionality.
+ * @param {object} props - The component's props.
+ * @param {object} [props.sx={}] - Custom styles to be applied to the IconButton.
+ */
 export default function ProfileMenu({ sx = {} }) {
+    /** @state {HTMLElement|null} anchorEl - The DOM element that the menu is anchored to. */
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
+    /** @state {boolean} accountSettingsOpen - Controls the visibility of the AccountSettingsModal. */
     const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
 
-    // Get state and the single signOut function from context
-    // Removed loggedInUsers, switchActiveUser, signOutUser, signOutAll
     const { activeUser, signOut, loading } = useAuth();
 
+    /**
+     * Handles the click event on the avatar button to open the profile menu.
+     * @param {React.MouseEvent<HTMLElement>} event - The click event.
+     */
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
 
+    /**
+     * Handles closing the profile menu.
+     */
     const handleClose = () => {
         setAnchorEl(null);
     };
 
-    // Removed handleSwitchAccount, handleAddAccount, handleSignOutCurrent, handleSignOutAll
-
-    // Simplified sign out handler
+    /**
+     * Handles the sign-out action. It calls the `signOut` function from `AuthContext`
+     * and closes the profile menu.
+     */
     const handleSignOut = () => {
-        signOut(); // Call the signOut function from context
+        signOut();
         handleClose();
     };
 
+    /**
+     * Opens the Account Settings modal and closes the profile menu.
+     */
     const openAccountSettings = () => {
         setAccountSettingsOpen(true);
         handleClose();
     };
 
-    // Don't render the button if loading or no active user
+    // Do not render the menu if authentication is loading or no user is active.
     if (loading || !activeUser) {
         return null;
     }
@@ -71,18 +87,17 @@ export default function ProfileMenu({ sx = {} }) {
             <IconButton
                 onClick={handleClick}
                 size="small"
-                sx={{ ...sx, ml: 1, mr: 1 }} // Apply sx props, ensure some margin if needed
+                sx={{ ...sx, ml: 1, mr: 1 }}
                 aria-controls={open ? 'account-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
             >
-                {/* ... Avatar rendering ... */}
                 <Avatar
                     src={activeUser.photoURL || undefined}
                     alt={activeUser.displayName || activeUser.email || 'User'}
                     sx={{ width: 32, height: 32 }}
                 >
-                    {/* Fallback initial */}
+                    {/* Fallback to the first letter of the email if no photoURL is available. */}
                     {!activeUser.photoURL && activeUser.email ? activeUser.email[0].toUpperCase() : ''}
                 </Avatar>
             </IconButton>
@@ -91,20 +106,17 @@ export default function ProfileMenu({ sx = {} }) {
                 id="account-menu"
                 open={open}
                 onClose={handleClose}
-                // onClick={handleClose} // Might close menu prematurely when clicking items
-                // Replace PaperProps with slotProps.paper
                 slotProps={{
                     paper: {
                         elevation: 0,
-                        sx: (theme) => ({ // Use theme function for access to palette
+                        sx: (theme) => ({
                             overflow: 'visible',
                             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                             mt: 1.5,
-                            minWidth: 180, // Adjusted width
-                            borderRadius: '8px', // Keep border radius
-                            border: '1px solid', // Add border
-                            borderColor: theme.palette.divider, // Use theme divider color
-                            // ... other PaperProps sx ...
+                            minWidth: 180,
+                            borderRadius: '8px',
+                            border: '1px solid',
+                            borderColor: theme.palette.divider,
                             '& .MuiAvatar-root': {
                                 width: 32,
                                 height: 32,
@@ -133,8 +145,7 @@ export default function ProfileMenu({ sx = {} }) {
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-                {/* Removed logged-in users list */}
-                {/* Display current user info (optional) */}
+                 {/* Displays the current active user's avatar and email/name. This item is disabled. */}
                  <MenuItem disabled sx={{ opacity: '1 !important' }}>
                      <ListItemIcon>
                          <Avatar src={activeUser.photoURL || undefined} sx={{ width: 28, height: 28 }}>
@@ -145,15 +156,12 @@ export default function ProfileMenu({ sx = {} }) {
                  </MenuItem>
                  <Divider sx={{ my: 0.5 }} />
 
-                {/* Simplified Actions */}
-                {/* Removed Add Account */}
                 <MenuItem onClick={openAccountSettings}>
                     <ListItemIcon>
                         <SettingsIcon fontSize="small" />
                     </ListItemIcon>
                     Account Settings
                 </MenuItem>
-                 {/* Removed Sign out current and Sign out all */}
                  <MenuItem onClick={handleSignOut}>
                     <ListItemIcon>
                         <LogoutIcon fontSize="small" />
@@ -162,13 +170,10 @@ export default function ProfileMenu({ sx = {} }) {
                 </MenuItem>
             </Menu>
 
-            {/* Account Settings Modal */}
-            {/* ... AccountSettingsModal rendering ... */}
             <AccountSettingsModal
                 open={accountSettingsOpen}
                 onClose={() => setAccountSettingsOpen(false)}
-                user={activeUser} // Pass the currently active user to the settings modal
-                // Pass app or db if the modal needs them directly
+                user={activeUser} // Pass the activeUser to ensure settings are for the correct user.
             />
         </>
     );

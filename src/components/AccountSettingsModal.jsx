@@ -33,13 +33,13 @@ import { getStorage } from "firebase/storage";
 import ConfirmationDialog from './ConfirmationDialog';
 import 'react-image-crop/dist/ReactCrop.css';
 
-// Import Sub-components
+// Sub-components for different sections of the modal
 import DisplayNameSection from './AccountSettings/DisplayNameSection';
 import ProfilePictureSection from './AccountSettings/ProfilePictureSection';
 import ImageCropperView from './AccountSettings/ImageCropperView';
 import AccountActionsSection from './AccountSettings/AccountActionsSection';
 
-// Import Handler Functions
+// Handler functions for account actions
 import {
   handleResetPassword,
   handleDeleteAccount,
@@ -50,30 +50,44 @@ import {
   handleCancelCrop
 } from './AccountSettings/accountSettingsHandlers';
 
-// --- Main Modal Component ---
-
+/**
+ * AccountSettingsModal provides a dialog for users to manage their account settings,
+ * including display name, profile picture, password reset, and account deletion.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ */
 export default function AccountSettingsModal({ open, onClose }) {
   const { activeUser, auth, app, updateActiveUser } = useAuth();
   const storage = getStorage(app);
 
+  /** @state {{type: string, text: string}} message - Holds messages (e.g., success, error) to display to the user. */
   const [message, setMessage] = useState({ type: '', text: '' });
+  /** @state {object} loading - Tracks loading states for various asynchronous actions. */
   const [loading, setLoading] = useState({
     resetPassword: false,
     deleteAccount: false,
     uploadPic: false,
     updateName: false,
   });
+  /** @state {boolean} deleteConfirmOpen - Controls the visibility of the account deletion confirmation dialog. */
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  // Cropping State
+  // State for image cropping functionality
+  /** @state {string} imageSrc - Base64 source of the image selected for cropping. */
   const [imageSrc, setImageSrc] = useState('');
+  /** @state {object} crop - Current crop selection parameters. */
   const [crop, setCrop] = useState();
+  /** @state {object} completedCrop - Final crop parameters after user interaction. */
   const [completedCrop, setCompletedCrop] = useState();
+  /** @state {number} aspect - Aspect ratio for the crop (e.g., 1/1 for square). */
   const [aspect, setAspect] = useState(1 / 1);
+  /** @ref {object} imgRef - Reference to the image element used in the cropper. */
   const imgRef = useRef(null);
+  /** @state {File|null} originalFile - The original file object selected by the user. */
   const [originalFile, setOriginalFile] = useState(null);
 
-  // Reset state when modal opens
+  // Effect to reset modal-specific state when the modal is opened.
   useEffect(() => {
     if (open) {
         setMessage({ type: '', text: '' });
@@ -91,14 +105,15 @@ export default function AccountSettingsModal({ open, onClose }) {
     }
   }, [open]);
 
-  // Effect to clear message when user changes while modal is open
+  // Effect to clear any displayed messages if the active user changes while the modal is open.
+  // This prevents showing messages relevant to a previous user session.
   useEffect(() => {
       if (open) {
           setMessage({ type: '', text: '' });
       }
   }, [activeUser, open]);
 
-  // Prepare arguments object for handlers
+  // Consolidates arguments passed to handler functions for cleaner invocation.
   const handlerArgs = {
     auth,
     activeUser,
@@ -119,10 +134,16 @@ export default function AccountSettingsModal({ open, onClose }) {
     originalFile,
   };
 
+  // Determines if any loading operation is currently in progress.
   const anyLoading = Object.values(loading).some(Boolean);
+  // Determines if action buttons should be disabled (e.g., no user, or an operation is loading).
   const isActionDisabled = !activeUser || !auth?.currentUser || anyLoading;
+  // Determines if the close button should be disabled (e.g., during critical operations or when cropper is active).
   const isCloseDisabled = loading.deleteAccount || loading.uploadPic || !!imageSrc || loading.updateName;
 
+  /**
+   * Handles closing the modal, but only if no critical operations are in progress.
+   */
   const handleCloseModal = () => {
       if (!isCloseDisabled) {
           onClose();

@@ -26,7 +26,16 @@ import {
   Typography
 } from '@mui/material';
 
-// Simple Confirmation Dialog Component
+/**
+ * A reusable confirmation dialog component.
+ * It prompts the user with a message and provides "Cancel" and "Confirm" actions.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {function} props.onClose - Callback function invoked when the dialog is closed (either by cancel or confirm).
+ * @param {function} props.onConfirm - Callback function invoked when the confirm button is clicked.
+ * @param {string} props.title - The title of the confirmation dialog.
+ * @param {string} props.message - The message/question to display to the user.
+ */
 export default function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
   return (
     <Dialog open={open} onClose={() => onClose(false)}>
