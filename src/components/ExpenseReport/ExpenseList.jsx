@@ -24,11 +24,9 @@ import ListItem from '@mui/material/ListItem';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-// Import the new components
 import ExpenseItemsModal from './ExpenseList/ExpenseItemsModal';
 import ExpenseActionMenu from './ExpenseList/ExpenseActionMenu';
 import ExpenseAccordion from './ExpenseList/ExpenseAccordion';
-// Keep ExpenseListItemContent import as it's used within renderListItem
 import ExpenseListItemContent from './ExpenseListItemContent';
 
 /**
