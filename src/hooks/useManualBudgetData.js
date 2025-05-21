@@ -24,31 +24,56 @@ import { getFirestore, doc, getDoc, getDocs, collection, setDoc } from 'firebase
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 
 /**
- * Custom hook for managing data fetching in ManualBudget using AuthContext
- * @returns {Object} - Object containing user data, loading state, and budget data
+ * Custom hook for managing manual budget data for the authenticated user.
+ * It handles fetching user's name, budget categories for the current month,
+ * creating new months, and managing the "name prompt" state for new users.
+ * Relies on `useAuth` for user authentication state and Firebase instances.
+ *
+ * @returns {object} An object containing:
+ *  - `loading` {boolean}: Combined loading state (auth and data fetching).
+ *  - `name` {string}: The user's name associated with the budget.
+ *  - `categories` {Array<string>}: List of category names for the current month.
+ *  - `currentMonth` {string}: The currently active budget month (YYYY-MM format).
+ *  - `updateCategories` {function}: Function to manually update the local `categories` state.
+ *  - `needsNamePrompt` {boolean}: True if the user needs to provide a name for their budget.
+ *  - `createUserDocument` {function}: Async function to create the initial user budget document.
+ *  - `setCurrentMonth` {function}: Async function to change the active budget month and fetch its data.
+ *  - `addNewMonth` {function}: Async function to create a new budget month, copying data from the previous one.
  */
-export default function useManualBudgetData() { // Remove app parameter
-    const { activeUser, db, loading: authLoading } = useAuth(); // Get user, db, and loading state from context
-    // const auth = getAuth(app); // Remove internal auth
-    // const db = getFirestore(app); // Get db from context
-    // const [user, setUser] = useState(auth.currentUser); // Remove internal user state
-    const [dataLoading, setDataLoading] = useState(true); // Rename internal loading state
+export default function useManualBudgetData() {
+    const { activeUser, db, loading: authLoading } = useAuth();
+    const [dataLoading, setDataLoading] = useState(true);
+    /** @state {string} name - The name associated with the user's budget. */
     const [name, setName] = useState('');
+    /** @state {Array<string>} categories - List of category names for the `currentMonth`. */
     const [categories, setCategories] = useState([]);
+    /** @state {string} currentMonth - The active month for budgeting (e.g., "2023-10"). */
     const [currentMonth, setCurrentMonthState] = useState('');
+    /** @state {boolean} needsNamePrompt - True if the user has not yet set a name for their budget. */
     const [needsNamePrompt, setNeedsNamePrompt] = useState(false);
 
-    const loading = authLoading || dataLoading; // Combine loading states
+    const loading = authLoading || dataLoading;
 
-    // Get current month in YYYY-MM format
+    /**
+     * Returns the current month in YYYY-MM format.
+     * @returns {string} The current month string.
+     */
     const getCurrentMonth = useCallback(() => {
         const today = new Date();
         return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     }, []);
 
-    // Create a new month by copying categories and goals from the most recent previous month
+    /**
+     * Creates a new month document in Firestore for the given user.
+     * If previous months exist, it copies categories and their goals (but not totals)
+     * from the most recent previous month. Otherwise, it creates an empty month.
+     * @async
+     * @param {string} userId - The UID of the user.
+     * @param {string} newMonth - The month to create (YYYY-MM format).
+     * @returns {Promise<Array<string>>} A promise that resolves to the list of copied/created category names.
+     */
     const createMonthFromPrevious = useCallback(async (userId, newMonth) => {
-        if (!userId || !db) return []; // Check passed userId
+        if (!userId || !db) return [];
 
         try {
             // console.log(`Creating new month ${newMonth} for user ${userId} based on previous month data`);
@@ -126,9 +151,16 @@ export default function useManualBudgetData() { // Remove app parameter
         }
     }, [db]); // Depend only on db, userId is passed in
 
-    // Fetch categories for a given month
+    /**
+     * Fetches the list of category names for a given user and month from Firestore.
+     * Updates the `categories` state with the fetched list.
+     * @async
+     * @param {string} userId - The UID of the user.
+     * @param {string} month - The month to fetch categories for (YYYY-MM format).
+     * @returns {Promise<Array<string>>} A promise that resolves to the list of category names.
+     */
     const fetchCategories = useCallback(async (userId, month) => {
-        if (!userId || !month || !db) { // Check passed userId
+        if (!userId || !month || !db) {
             setCategories([]);
             return [];
         }
@@ -148,7 +180,9 @@ export default function useManualBudgetData() { // Remove app parameter
         }
     }, [db]); // Depend only on db, userId is passed in
 
-    // Effect to handle initial data load and user changes
+    // Effect to handle initial data loading when the user logs in or auth state changes.
+    // It fetches the user's budget name and categories for the current calendar month.
+    // If the user or month document doesn't exist, it initializes them.
     useEffect(() => {
         // console.log(`[processUser Effect Trigger] authLoading: ${authLoading}, activeUser?.uid: ${activeUser?.uid}`); // Log on trigger
 
@@ -259,13 +293,23 @@ export default function useManualBudgetData() { // Remove app parameter
 
     }, [activeUser, db, authLoading, getCurrentMonth, createMonthFromPrevious, fetchCategories]); // Add authLoading and other dependencies
 
-    // Function to update local categories state (e.g., after adding/removing)
+    /**
+     * Updates the local `categories` state.
+     * @param {Array<string>|function} newCategories - The new list of categories or a function to update the existing list.
+     */
     const updateCategories = useCallback((newCategories) => {
         setCategories(newCategories);
     }, []);
 
-    // Function to create the initial user document in 'manualBudget' collection
-    const createUserDocument = useCallback(async (userId, userName) => { // Receive userId explicitly
+    /**
+     * Creates the initial user document in the 'manualBudget' collection in Firestore,
+     * including their chosen budget name and an initial document for the current month.
+     * @async
+     * @param {string} userId - The UID of the user.
+     * @param {string} userName - The name chosen by the user for their budget.
+     * @returns {Promise<void>}
+     */
+    const createUserDocument = useCallback(async (userId, userName) => {
         if (!userId || !db) return;
 
         try {
@@ -292,7 +336,12 @@ export default function useManualBudgetData() { // Remove app parameter
         }
     }, [db, getCurrentMonth, fetchCategories]); // fetchCategories depends on activeUser/db
 
-    // Function to set the current month state locally
+    /**
+     * Sets the current active budget month and fetches its categories.
+     * @async
+     * @param {string} month - The month to set as current (YYYY-MM format).
+     * @returns {Promise<void>}
+     */
     const setCurrentMonth = useCallback(async (month) => {
         // Check activeUser *here* before fetching
         if (!activeUser) {
@@ -306,7 +355,14 @@ export default function useManualBudgetData() { // Remove app parameter
         await fetchCategories(activeUser.uid, month);
     }, [activeUser, fetchCategories]); // Add activeUser dependency
 
-    // Function to add a new month document (called from MonthSelectorModal)
+    /**
+     * Adds a new month document to Firestore for the authenticated user.
+     * If the month doesn't exist, it's created using `createMonthFromPrevious`.
+     * Then, it sets this new month as the `currentMonth` and fetches its categories.
+     * @async
+     * @param {string} newMonth - The month to add (YYYY-MM format).
+     * @returns {Promise<boolean>} True if the month was successfully added/set, false otherwise.
+     */
     const addNewMonth = useCallback(async (newMonth) => {
         if (!activeUser || !db) return false; // Use activeUser
 
@@ -338,9 +394,12 @@ export default function useManualBudgetData() { // Remove app parameter
         }
     }, [activeUser, db, createMonthFromPrevious, fetchCategories]); // Add dependencies
 
-    // Effect to check and fix months without categories
+    // Effect to check if the current month has categories; if not, it attempts to
+    // copy them from the most recent previous month that does have categories.
+    // This acts as a self-healing mechanism for months that might have been created
+    // without categories due to race conditions or errors.
     useEffect(() => {
-        let timerId; // Declare timerId for cleanup
+        let timerId;
 
         // Log state when this effect triggers
         // console.log(`[checkAndFix Effect Trigger] loading: ${loading}, activeUser?.uid: ${activeUser?.uid}, currentMonth: ${currentMonth}, db: ${!!db}`);
@@ -454,20 +513,18 @@ export default function useManualBudgetData() { // Remove app parameter
             clearTimeout(timerId);
         }
 
-    }, [activeUser, currentMonth, db, loading, fetchCategories]); // Add loading, db, fetchCategories
+    }, [activeUser, currentMonth, db, loading, fetchCategories]);
 
 
     return {
-        // user, // Remove: Consuming components get activeUser from useAuth()
-        loading, // Return combined loading state
+        loading,
         name,
         categories,
         currentMonth,
-        // db, // Remove: Consuming components get db from useAuth()
-        updateCategories, // Keep: Function to update local state
+        updateCategories,
         needsNamePrompt,
-        createUserDocument, // Keep: Action function
-        setCurrentMonth, // Keep: Action function
-        addNewMonth // Keep: Action function
+        createUserDocument,
+        setCurrentMonth,
+        addNewMonth
     };
 }

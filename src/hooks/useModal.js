@@ -20,9 +20,14 @@
 import { useState } from 'react';
 
 /**
- * Custom hook for modal state management
- * @param {boolean} initialState - Initial state of the modal
- * @returns {Array} - Array containing [isOpen, open, close] values
+ * Custom hook for managing the state of a modal (open/closed).
+ * Provides a boolean state and functions to open and close the modal.
+ *
+ * @param {boolean} [initialState=false] - The initial state of the modal (whether it's open or closed).
+ * @returns {[boolean, function, function]} A tuple containing:
+ *  - `isOpen` {boolean}: The current open/closed state of the modal.
+ *  - `open` {function}: Function to set the modal state to open (true).
+ *  - `close` {function}: Function to set the modal state to closed (false).
  */
 export default function useModal(initialState = false) {
     const [isOpen, setIsOpen] = useState(initialState);

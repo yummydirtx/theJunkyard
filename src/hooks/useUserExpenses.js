@@ -22,16 +22,33 @@ import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, o
 import { getStorage, ref, deleteObject } from "firebase/storage";
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * Custom hook to manage user expenses.
+ * It handles fetching, adding, deleting, and updating expenses for the authenticated user.
+ * It also calculates the total amount of pending expenses.
+ *
+ * @returns {object} An object containing:
+ *  - `expenses` {Array<object>}: The list of user's expenses.
+ *  - `loadingExpenses` {boolean}: Loading state for fetching expenses.
+ *  - `addExpense` {function}: Function to add a new expense.
+ *  - `deleteExpense` {function}: Function to delete an expense.
+ *  - `updateExpense` {function}: Function to update an existing expense.
+ *  - `deleteStorageFile` {function}: Helper function to delete a file from Firebase Storage.
+ *  - `totalPendingAmount` {number}: The total sum of amounts for expenses with 'pending' status.
+ */
 export function useUserExpenses() {
     const { activeUser, app } = useAuth();
     const db = getFirestore(app);
     const storage = getStorage(app);
 
+    /** @state {Array<object>} expenses - List of expenses for the current user. */
     const [expenses, setExpenses] = useState([]);
+    /** @state {boolean} loadingExpenses - True if expenses are currently being fetched. */
     const [loadingExpenses, setLoadingExpenses] = useState(false);
+    /** @state {number} totalPendingAmount - Sum of amounts for all pending expenses. */
     const [totalPendingAmount, setTotalPendingAmount] = useState(0);
 
-    // Fetch expenses
+    // Effect to fetch expenses when the active user or database instance changes.
     useEffect(() => {
         if (activeUser && db) {
             setLoadingExpenses(true);
@@ -63,7 +80,7 @@ export function useUserExpenses() {
         }
     }, [activeUser, db]);
 
-    // Calculate pending total
+    // Effect to recalculate the total pending amount whenever the expenses list changes.
     useEffect(() => {
         const pendingTotal = expenses
             .filter(exp => exp.status === 'pending')
@@ -71,7 +88,12 @@ export function useUserExpenses() {
         setTotalPendingAmount(pendingTotal);
     }, [expenses]);
 
-    // Delete storage file (helper)
+    /**
+     * Deletes a file from Firebase Storage given its GS URI.
+     * @async
+     * @param {string} gsUri - The GS URI of the file to delete (e.g., gs://bucket/path/to/file).
+     * @returns {Promise<void>}
+     */
     const deleteStorageFile = useCallback(async (gsUri) => {
         if (!gsUri || !storage) {
             console.log("No URI or storage, skipping deletion.");
@@ -92,7 +114,17 @@ export function useUserExpenses() {
         }
     }, [storage]);
 
-    // Add expense
+    /**
+     * Adds a new expense document to Firestore for the authenticated user.
+     * @async
+     * @param {object} newExpense - The expense object to add.
+     * @param {string} newExpense.description - Description of the expense.
+     * @param {number} newExpense.amount - Amount of the expense.
+     * @param {string} [newExpense.receiptUri] - Optional GS URI of the uploaded receipt.
+     * @param {Array<object>} [newExpense.items] - Optional list of itemized details for the expense.
+     * @returns {Promise<void>}
+     * @throws {Error} If user is not authenticated or if there's an error adding the document.
+     */
     const addExpense = useCallback(async (newExpense) => {
         if (!activeUser || !db) {
             throw new Error("User not authenticated or database unavailable.");
@@ -116,7 +148,12 @@ export function useUserExpenses() {
         }
     }, [activeUser, db]);
 
-    // Delete expense
+    /**
+     * Deletes an expense document from Firestore and its associated receipt from Storage (if any).
+     * @async
+     * @param {string} expenseId - The ID of the expense document to delete.
+     * @returns {Promise<void>}
+     */
     const deleteExpense = useCallback(async (expenseId) => {
         if (!activeUser || !db || !storage) {
             console.error("User not logged in or Firebase services not initialized.");
@@ -143,9 +180,16 @@ export function useUserExpenses() {
             console.error("Error deleting expense document: ", firestoreError);
             // Handle Firestore deletion error
         }
-    }, [activeUser, db, storage, expenses, deleteStorageFile]); // Include deleteStorageFile in dependencies
+    }, [activeUser, db, storage, expenses, deleteStorageFile]);
 
-    // Update expense
+    /**
+     * Updates an existing expense document in Firestore.
+     * @async
+     * @param {string} expenseId - The ID of the expense document to update.
+     * @param {object} updatedData - An object containing the fields to update.
+     * @returns {Promise<void>}
+     * @throws {Error} If user is not authenticated, database is unavailable, or input is invalid.
+     */
     const updateExpense = useCallback(async (expenseId, updatedData) => {
         if (!activeUser || !db) {
             throw new Error("User not authenticated or database unavailable.");
@@ -174,7 +218,7 @@ export function useUserExpenses() {
         loadingExpenses,
         addExpense,
         deleteExpense,
-        updateExpense, // Expose the new function
+        updateExpense,
         deleteStorageFile,
         totalPendingAmount
     };

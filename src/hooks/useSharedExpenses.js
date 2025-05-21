@@ -20,17 +20,57 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
 
+/**
+ * Custom hook to manage expenses for a shared expense report.
+ * It fetches expenses using a shareId and Firebase Functions, and allows for
+ * updating the status of these expenses (e.g., marking as reimbursed or denied).
+ *
+ * @param {string} shareId - The unique identifier for the shared expense report.
+ * @param {object} functions - Firebase Functions instance.
+ * @returns {object} An object containing:
+ *  - `expenses` {Array<object>}: The list of expenses for the shared report.
+ *  - `loading` {boolean}: Loading state for fetching expenses.
+ *  - `error` {string}: Error message if fetching fails.
+ *  - `selectedExpenses` {Set<string>}: A Set of IDs of the currently selected expenses.
+ *  - `handleSelect` {function}: Function to toggle the selection of an expense.
+ *  - `pendingExpenses` {Array<object>}: A memoized list of expenses with 'pending' status.
+ *  - `handleSelectAllPending` {function}: Function to select or deselect all pending expenses.
+ *  - `updating` {boolean}: Loading state for when an update operation is in progress.
+ *  - `updateError` {string}: Error message if an update operation fails.
+ *  - `updateSuccess` {string}: Success message after an update operation.
+ *  - `markReimbursed` {function}: Function to mark selected expenses as reimbursed.
+ *  - `openDenialModal` {function}: Function to open the modal for entering a denial reason.
+ *  - `denialReasonModalOpen` {boolean}: State of the denial reason modal (open/closed).
+ *  - `denialReason` {string}: The reason for denial entered by the user.
+ *  - `setDenialReason` {function}: Function to update the denialReason state.
+ *  - `confirmDenial` {function}: Function to confirm and mark selected expenses as denied with the given reason.
+ *  - `closeDenialModal` {function}: Function to close the denial reason modal.
+ *  - `displayedTotalAmount` {number}: The total sum of amounts for all displayed expenses in the shared report.
+ */
 export function useSharedExpenses(shareId, functions) {
+    /** @state {Array<object>} expenses - List of expenses fetched for the shared report. */
     const [expenses, setExpenses] = useState([]);
+    /** @state {boolean} loading - True if shared expenses are currently being fetched. */
     const [loading, setLoading] = useState(true);
+    /** @state {string} error - Stores error messages related to fetching shared expenses. */
     const [error, setError] = useState('');
+    /** @state {Set<string>} selectedExpenses - A Set containing the IDs of expenses selected by the user. */
     const [selectedExpenses, setSelectedExpenses] = useState(new Set());
+    /** @state {boolean} updating - True if an update operation (reimburse/deny) is in progress. */
     const [updating, setUpdating] = useState(false);
+    /** @state {string} updateError - Stores error messages related to updating expense statuses. */
     const [updateError, setUpdateError] = useState('');
+    /** @state {string} updateSuccess - Stores success messages after updating expense statuses. */
     const [updateSuccess, setUpdateSuccess] = useState('');
+    /** @state {boolean} denialReasonModalOpen - Controls the visibility of the denial reason input modal. */
     const [denialReasonModalOpen, setDenialReasonModalOpen] = useState(false);
+    /** @state {string} denialReason - The reason provided when denying an expense. */
     const [denialReason, setDenialReason] = useState('');
 
+    /**
+     * Fetches expenses associated with the given shareId using a Firebase Function.
+     * @async
+     */
     const fetchExpenses = useCallback(async () => {
         if (!shareId || !functions) {
             setError("Invalid share link or functions not initialized.");
@@ -61,8 +101,13 @@ export function useSharedExpenses(shareId, functions) {
 
     useEffect(() => {
         fetchExpenses();
-    }, [fetchExpenses]); // fetchExpenses includes shareId and functions dependencies
+    }, [fetchExpenses]);
 
+    /**
+     * Toggles the selection state of an expense.
+     * Adds the expenseId to `selectedExpenses` if not present, removes it otherwise.
+     * @param {string} expenseId - The ID of the expense to select/deselect.
+     */
     const handleSelect = useCallback((expenseId) => {
         setSelectedExpenses(prevSelected => {
             const newSelected = new Set(prevSelected);
@@ -75,8 +120,13 @@ export function useSharedExpenses(shareId, functions) {
         });
     }, []);
 
+    /** @type {Array<object>} Memoized list of expenses that have a status of 'pending'. */
     const pendingExpenses = useMemo(() => expenses.filter(exp => exp.status === 'pending'), [expenses]);
 
+    /**
+     * Selects all pending expenses if not all are currently selected,
+     * or deselects all if all pending expenses are already selected.
+     */
     const handleSelectAllPending = useCallback(() => {
         const pendingIds = pendingExpenses.map(exp => exp.id);
         const allPendingSelected = pendingIds.length > 0 && pendingIds.every(id => selectedExpenses.has(id));
@@ -88,6 +138,13 @@ export function useSharedExpenses(shareId, functions) {
         }
     }, [pendingExpenses, selectedExpenses]);
 
+    /**
+     * Performs an update action (reimburse or deny) on the selected expenses
+     * by calling a Firebase Function.
+     * @async
+     * @param {('reimburse'|'deny')} action - The action to perform.
+     * @param {string|null} [reason=null] - The reason for denial, if action is 'deny'.
+     */
     const performUpdate = useCallback(async (action, reason = null) => {
         if (selectedExpenses.size === 0) {
             setUpdateError("Please select at least one expense.");
@@ -134,10 +191,17 @@ export function useSharedExpenses(shareId, functions) {
         }
     }, [selectedExpenses, functions, shareId, fetchExpenses]);
 
+    /**
+     * Marks all currently selected expenses as 'reimbursed'.
+     */
     const markReimbursed = useCallback(() => {
         performUpdate('reimburse');
     }, [performUpdate]);
 
+    /**
+     * Opens the modal for entering a reason when denying expenses.
+     * Sets an error if no expenses are selected.
+     */
     const openDenialModal = useCallback(() => {
         if (selectedExpenses.size === 0) {
             setUpdateError("Please select at least one expense.");
@@ -146,15 +210,22 @@ export function useSharedExpenses(shareId, functions) {
         setDenialReasonModalOpen(true);
     }, [selectedExpenses]);
 
+    /**
+     * Confirms the denial of selected expenses with the currently set `denialReason`.
+     */
     const confirmDenial = useCallback(() => {
         performUpdate('deny', denialReason);
     }, [performUpdate, denialReason]);
 
+    /**
+     * Closes the denial reason modal and clears the `denialReason` state.
+     */
     const closeDenialModal = useCallback(() => {
         setDenialReasonModalOpen(false);
         setDenialReason('');
     }, []);
 
+    /** @type {number} Memoized total amount of all expenses in the shared report. */
     const displayedTotalAmount = useMemo(() =>
         expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0),
         [expenses]
