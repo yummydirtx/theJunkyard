@@ -21,7 +21,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
+// Typography is now only used by sub-components or for adornments
+// import Typography from '@mui/material/Typography'; 
 import ReceiptUpload from './ReceiptUpload';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
@@ -75,6 +76,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
         parsingError, // Error from parsing process
         parsingInfo,  // Info from parsing process
         handleReceiptUploadAndParse,
+        resetParsingState, // Import reset function
     } = useReceiptProcessor(
         app,
         onDeleteStorageFile,
@@ -168,6 +170,56 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
             setIsSubmitting(false);
         }
     };
+
+    /**
+     * Handles cancellation of the form input.
+     * Deletes any unsubmitted uploaded receipt and its pending Firestore document.
+     * Resets all form fields and relevant state.
+     */
+    const handleCancel = async () => {
+        console.log("Cancel clicked.");
+        // 1. Delete GCS file if an unsubmitted one exists
+        const uriToDelete = unsubmittedReceiptUriRef.current;
+        if (uriToDelete && onDeleteStorageFile) {
+            console.log("Cancelling: Deleting unsubmitted GCS file:", uriToDelete);
+            try {
+                await onDeleteStorageFile(uriToDelete);
+            } catch (error) {
+                console.error("Error deleting GCS file on cancel:", error);
+                // Potentially set an error message for the user, though typically cancel should just reset
+            }
+        }
+
+        // 2. Delete pending Firestore document if one exists
+        const docIdToDelete = pendingReceiptDocIdRef.current;
+        if (docIdToDelete) {
+            console.log("Cancelling: Deleting pending Firestore doc:", docIdToDelete);
+            await deletePendingReceiptDoc(docIdToDelete); // This also clears pendingReceiptDocIdRef.current
+        }
+
+        // 3. Reset form fields state
+        setDescription('');
+        setAmount('');
+        setItems([]);
+        setReceiptGsUri('');
+
+        // 4. Reset general error/info messages for the form
+        setError('');
+        setInfo('');
+
+        // 5. Reset tracking state in usePendingReceiptManagement hook and local ref
+        setHookUnsubmittedReceiptUri(null);
+        unsubmittedReceiptUriRef.current = null; // Explicitly clear the ref
+
+        // 6. Reset parsing specific state via useReceiptProcessor hook
+        resetParsingState();
+
+        // 7. Force ReceiptUpload component to reset by changing its key
+        setReceiptUploadKey(prevKey => prevKey + 1);
+
+        console.log("Form cancelled and reset.");
+    };
+
 
     /** Toggles the visibility of the main form content area. */
     const toggleExpand = () => {
@@ -278,16 +330,24 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                     <Alert severity="success" sx={{ mt: 1, mb: 1 }}>{info}</Alert>
                 )}
 
-
-                <Button
-                    variant="contained"
-                    onClick={handleAdd}
-                    sx={{ mt: 2 }}
-                    disabled={isProcessing || !amount || !description.trim()}
-                >
-                    {/* Show spinner during submission, otherwise show text */}
-                    {isSubmitting ? <CircularProgress size={24} /> : 'Add Expense'}
-                </Button>
+                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleAdd}
+                        // Disable button if processing, or if required fields are empty/invalid
+                        disabled={isProcessing || !amount || !description.trim()}
+                    >
+                        {/* Show spinner during submission, otherwise show text */}
+                        {isSubmitting ? <CircularProgress size={24} /> : 'Add Expense'}
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        onClick={handleCancel}
+                        disabled={isSubmitting} // Only disable cancel during actual submission
+                    >
+                        Cancel
+                    </Button>
+                </Box>
             </Collapse>
         </Box>
     );

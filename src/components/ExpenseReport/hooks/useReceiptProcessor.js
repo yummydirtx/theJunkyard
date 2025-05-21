@@ -51,6 +51,12 @@ export function useReceiptProcessor(
     const [parsingError, setParsingError] = useState('');
     const [parsingInfo, setParsingInfo] = useState('');
 
+    const resetParsingState = () => {
+        setParsingReceipt(false);
+        setParsingError('');
+        setParsingInfo('');
+    };
+
     const handleReceiptUploadAndParse = async (newGsUri, mimeType) => {
         // 1. Delete previous unsubmitted receipt file AND pending doc
         const oldUnsubmittedUri = unsubmittedReceiptUriRef.current;
@@ -202,5 +208,5 @@ export function useReceiptProcessor(
         }
     };
 
-    return { parsingReceipt, parsingError, parsingInfo, handleReceiptUploadAndParse };
+    return { parsingReceipt, parsingError, parsingInfo, handleReceiptUploadAndParse, resetParsingState };
 }
