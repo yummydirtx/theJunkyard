@@ -140,11 +140,13 @@ export default function ExpenseActionMenu({
             anchorEl={anchorEl}
             open={Boolean(anchorEl && menuExpenseId)}
             onClose={onClose}
-            TransitionProps={{
-                onExited: onExited, // Call the handler when the transition finishes
-            }}
-            MenuListProps={{
-                'aria-labelledby': 'actions-button',
+            slotProps={{
+                transition: {
+                    onExited: onExited, // Call the handler when the transition finishes
+                },
+                list: {
+                    'aria-labelledby': 'actions-button',
+                }
             }}
         >
             {menuItems.length > 0 ? menuItems : <MenuItem disabled>No actions available</MenuItem>}

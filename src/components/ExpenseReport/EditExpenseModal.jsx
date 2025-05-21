@@ -106,9 +106,11 @@ export default function EditExpenseModal({ open, onClose, expense, onSave }) {
                         variant="outlined"
                         value={amount}
                         onChange={handleAmountChange}
-                        InputProps={{
-                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                            inputMode: 'decimal', // Hint for mobile keyboards
+                        slotProps={{
+                            input: {
+                                inputMode: 'decimal', // Hint for mobile keyboards
+                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                            }
                         }}
                     />
                 </Box>

@@ -201,8 +201,15 @@ function AppAppBar({ mode, toggleColorMode, app }) {
                   anchorEl={anchorEl}
                   open={openMoreMenu}
                   onClose={handleMoreMenuClose}
-                  MenuListProps={{
-                    'aria-labelledby': 'more-button',
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        // Add any specific paper styles here if needed
+                      },
+                    },
+                    list: {
+                      'aria-labelledby': 'more-button',
+                    }
                   }}
                   anchorOrigin={{
                     vertical: 'bottom',

@@ -603,9 +603,13 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                                                     value={item.price !== undefined ? item.price.toString() : ''}
                                                     onChange={(e) => handleItemChange(index, 'price', e.target.value)}
                                                     disabled={isProcessing}
-                                                    inputProps={{ step: "0.01", min: "0" }}
-                                                    InputProps={{
-                                                        startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography>,
+                                                    slotProps={{
+                                                        input: { // For InputBase props like startAdornment
+                                                            startAdornment: <Typography sx={{ mr: 0.5 }}>$</Typography>,
+                                                        },
+                                                        htmlInput: { // For HTML input element attributes
+                                                            step: "0.01", min: "0"
+                                                        }
                                                     }}
                                                 />
                                             </Grid>
@@ -623,7 +627,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                                             </Grid>
                                         </Grid> {/* End Grid container */}
                                     </ListItem>
-                                    {index < items.length - 1 && <Divider component="li" light sx={{ my: 0.5 }} />}
+                                    {index < items.length - 1 && <Divider component="li" sx={{ opacity: 0.6, my: 0.5 }} />}
                                 </React.Fragment>
                             ))}
                         </List>
@@ -667,7 +671,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                     sx={{ mb: 2 }}
                     disabled={isProcessing} // Disable while processing
                     required // HTML5 required attribute
-                    inputProps={{ step: "0.01", min: "0.01" }} // Allow decimals, enforce positive value
+                    slotProps={{ htmlInput: { step: "0.01", min: "0.01" } }} // Allow decimals, enforce positive value
                     helperText="Total amount. Will be auto-filled from receipt if possible."
                 />
 

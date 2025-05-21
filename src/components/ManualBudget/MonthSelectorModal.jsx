@@ -128,11 +128,13 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
             open={open}
             onClose={onClose}
             aria-labelledby="month-selector-modal-title"
-            BackdropProps={{
-                sx: {
-                    backgroundColor: mode === 'light'
-                        ? 'rgba(0, 0, 0, 0.5)'
-                        : 'rgba(0, 0, 0, 0.7)'
+            slotProps={{
+                backdrop: {
+                    sx: {
+                        backgroundColor: mode === 'light'
+                            ? 'rgba(0, 0, 0, 0.5)'
+                            : 'rgba(0, 0, 0, 0.7)'
+                    }
                 }
             }}
         >
