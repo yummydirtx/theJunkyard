@@ -21,15 +21,51 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import { getAuth, onAuthStateChanged, signOut as firebaseSignOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
+/**
+ * @typedef {object} UserProfile
+ * @property {string} uid - The user's unique ID.
+ * @property {string|null} email - The user's email address.
+ * @property {string|null} displayName - The user's display name.
+ * @property {string|null} photoURL - URL of the user's profile picture.
+ * @property {string|null} theme - The user's preferred theme (e.g., 'light', 'dark').
+ */
+
+/**
+ * @typedef {object} AuthContextType
+ * @property {UserProfile|null} activeUser - The currently authenticated user's profile, or null if not authenticated.
+ * @property {boolean} loading - True if the authentication state is currently being determined.
+ * @property {function} handleGoogleSignIn - Function to initiate sign-in with Google.
+ * @property {function} handleEmailPasswordSignUp - Function to sign up with email and password.
+ * @property {function} handleEmailPasswordLogin - Function to log in with email and password.
+ * @property {function} signOut - Function to sign out the current user.
+ * @property {function} updateActiveUser - Function to manually update parts of the activeUser state.
+ * @property {object} db - Firestore database instance.
+ * @property {object} auth - Firebase Auth instance.
+ * @property {object} app - Firebase App instance.
+ */
+
+/**
+ * React Context for authentication state.
+ * @type {React.Context<AuthContextType|null>}
+ */
 export const AuthContext = createContext(null);
 
+/**
+ * Provides authentication state and methods to its children components.
+ * Manages the `activeUser` and `loading` state based on Firebase Auth.
+ * @param {object} props - The component's props.
+ * @param {React.ReactNode} props.children - The child components that can access the context.
+ * @param {object} props.app - The initialized Firebase app instance.
+ */
 export const AuthProvider = ({ children, app }) => {
-    const [activeUser, setActiveUser] = useState(null); // Represents Firebase's current user
+    /** @state {UserProfile|null} activeUser - The currently authenticated user object or null. */
+    const [activeUser, setActiveUser] = useState(null);
+    /** @state {boolean} loading - Indicates if the authentication state is currently being resolved. */
     const [loading, setLoading] = useState(true);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Listen to Firebase Auth state changes
+    // Listen to Firebase Auth state changes and update activeUser and loading states.
     useEffect(() => {
         setLoading(true);
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -46,8 +82,7 @@ export const AuthProvider = ({ children, app }) => {
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
-                    theme: userData.theme || null, // Include theme if stored
-                    // Add other relevant fields from user object or Firestore doc
+                    theme: userData.theme || null,
                 });
             } else {
                 // User is signed out
@@ -62,9 +97,12 @@ export const AuthProvider = ({ children, app }) => {
             // console.log('[AuthContext] Cleaning up onAuthStateChanged listener.');
             unsubscribe();
         }
-    }, [auth, db]); // Add db dependency for fetching user prefs
+    }, [auth, db]); // db dependency for fetching user prefs
 
-    // Function to manually update parts of the activeUser state
+    /**
+     * Callback function to manually update properties of the `activeUser` state.
+     * @param {Partial<UserProfile>} updates - An object containing the properties of `activeUser` to update.
+     */
     const updateActiveUser = useCallback((updates) => {
         setActiveUser(prevUser => {
             if (!prevUser) return null; // Should not happen if called correctly, but safe check
@@ -72,9 +110,12 @@ export const AuthProvider = ({ children, app }) => {
         });
     }, []);
 
-    // --- Authentication Methods ---
-    // These now just perform the Firebase action. onAuthStateChanged handles state updates.
-
+    /**
+     * Handles sign-in with Google.
+     * @async
+     * @returns {Promise<object|null>} Firebase user object on success, null on failure.
+     * @throws {Error} If sign-in fails.
+     */
     const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
         try {
@@ -93,6 +134,14 @@ export const AuthProvider = ({ children, app }) => {
         }
     };
 
+    /**
+     * Handles user sign-up with email and password.
+     * @async
+     * @param {string} email - The user's email.
+     * @param {string} password - The user's password.
+     * @returns {Promise<object|null>} Firebase user object on success, null on failure.
+     * @throws {Error} If sign-up fails.
+     */
     const handleEmailPasswordSignUp = async (email, password) => {
         try {
             // createUserWithEmailAndPassword will trigger onAuthStateChanged
@@ -110,6 +159,14 @@ export const AuthProvider = ({ children, app }) => {
         }
     };
 
+    /**
+     * Handles user login with email and password.
+     * @async
+     * @param {string} email - The user's email.
+     * @param {string} password - The user's password.
+     * @returns {Promise<object|null>} Firebase user object on success, null on failure.
+     * @throws {Error} If login fails.
+     */
     const handleEmailPasswordLogin = async (email, password) => {
         try {
             // signInWithEmailAndPassword will trigger onAuthStateChanged
@@ -121,7 +178,10 @@ export const AuthProvider = ({ children, app }) => {
         }
     };
 
-    // Simplified Sign Out
+    /**
+     * Signs out the currently authenticated user.
+     * @async
+     */
     const signOut = useCallback(async () => {
         try {
             await firebaseSignOut(auth); // This triggers onAuthStateChanged
@@ -132,25 +192,30 @@ export const AuthProvider = ({ children, app }) => {
 
 
     const value = {
-        activeUser, // This is now directly from onAuthStateChanged
+        activeUser,
         loading,
-        // Auth methods
         handleGoogleSignIn,
         handleEmailPasswordSignUp,
         handleEmailPasswordLogin,
-        signOut, // Provide the single sign out function
-        // Manual update function
-        updateActiveUser, // Add the new function here
-        // Pass db and auth if needed by consumers
+        signOut,
+        updateActiveUser,
         db,
         auth,
-        app // Ensure app is exported
+        app
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use the auth context
+/**
+ * Custom hook to easily access the AuthContext.
+ * @returns {AuthContextType} The authentication context value.
+ * @throws {Error} If used outside of an AuthProvider.
+ */
 export const useAuth = () => {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (context === undefined || context === null) { // Check for null as well
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };
