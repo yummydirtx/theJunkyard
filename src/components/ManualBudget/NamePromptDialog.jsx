@@ -28,6 +28,16 @@ import {
     Typography
 } from '@mui/material';
 
+/**
+ * NamePromptDialog is a modal dialog that prompts new users to enter their name
+ * when they first access the Manual Budget feature.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {string} props.nameInput - The current value of the name input field.
+ * @param {function} props.onNameInputChange - Callback function to handle changes to the name input.
+ * @param {function} props.onSubmitName - Callback function to handle the submission of the name.
+ * @param {boolean} props.loading - Indicates if the name submission is in progress.
+ */
 export default function NamePromptDialog({
     open,
     nameInput,
@@ -36,7 +46,7 @@ export default function NamePromptDialog({
     loading
 }) {
     return (
-        <Dialog open={open} onClose={() => { /* Prevent closing by backdrop click */ }}>
+        <Dialog open={open} onClose={() => { /* Prevent closing by backdrop click or Escape key */ }}>
             <DialogTitle>Welcome to Manual Budget</DialogTitle>
             <DialogContent>
                 <Typography gutterBottom>

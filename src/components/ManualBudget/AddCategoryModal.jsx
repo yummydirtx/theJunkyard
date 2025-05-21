@@ -33,19 +33,49 @@ import ColorPicker, { categoryColors } from './shared/ColorPicker';
 import MoneyInput from './shared/MoneyInput';
 import { parseAmount } from './utils/budgetUtils';
 
+/**
+ * AddCategoryModal provides a form for users to add a new budget category.
+ * It allows setting the category name, an optional spending goal, and a color.
+ * On submission, it creates the category in Firestore and updates relevant month totals.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM) to which the category will be added.
+ * @param {function} props.onCategoryAdded - Callback function invoked after a new category is successfully added.
+ */
 export default function AddCategoryModal({ open, onClose, db, user, currentMonth, onCategoryAdded }) {
+    /** @state {string} newCategoryName - The name for the new category. */
     const [newCategoryName, setNewCategoryName] = useState('');
+    /** @state {string} spendingGoal - The spending goal for the new category (as a string for input). */
     const [spendingGoal, setSpendingGoal] = useState('');
+    /** @state {string} selectedColor - The hex value of the selected color for the new category. */
     const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
 
+    /**
+     * Handles changes to the category name input field.
+     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     */
     const handleCategoryNameChange = (event) => {
         setNewCategoryName(event.target.value);
     };
 
+    /**
+     * Handles changes to the selected color.
+     * @param {string} color - The new hex color value.
+     */
     const handleColorChange = (color) => {
         setSelectedColor(color);
     };
 
+    /**
+     * Handles the submission of the add category form.
+     * Creates the new category in Firestore, updates the month's total goal,
+     * and calls `onCategoryAdded`.
+     * @async
+     * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+     */
     const handleAddCategory = async (event) => {
         event.preventDefault();
         if (!newCategoryName.trim() || !user) return;
@@ -90,6 +120,9 @@ export default function AddCategoryModal({ open, onClose, db, user, currentMonth
         }
     };
 
+    /**
+     * Handles closing the modal. Resets form fields and calls `onClose`.
+     */
     const handleClose = () => {
         setNewCategoryName('');
         setSpendingGoal('');

@@ -35,19 +35,49 @@ import {
 import { PieTooltip } from './CustomTooltips';
 import { formatCurrency } from './utils';
 
+/**
+ * CategoriesTab component displays a pie chart showing the spending distribution
+ * across different budget categories. It allows users to see how much was spent
+ * in each category relative to the total and to their individual budget goals.
+ * On mobile, tapping a pie slice shows detailed information for that category.
+ * @param {object} props - The component's props.
+ * @param {object} props.budgetData - Data object containing budget information.
+ * @param {Array<object>} props.budgetData.categoriesData - Array of category data objects.
+ * @param {string} props.budgetData.categoriesData[].name - Name of the category.
+ * @param {number} props.budgetData.categoriesData[].value - Amount spent in the category.
+ * @param {number} props.budgetData.categoriesData[].budget - Budget goal for the category.
+ * @param {number} props.budgetData.totalSpent - Total amount spent across all categories.
+ * @param {object} props.legendProps - Props to be passed to the Recharts Legend component.
+ * @param {string} props.chartTextColor - Color for the text elements within the chart (labels).
+ * @param {object} props.categoryColors - An object mapping category names to their hex color codes.
+ */
 const CategoriesTab = ({ budgetData, legendProps, chartTextColor, categoryColors }) => {
+    /** @state {number|null} selectedPieIndex - Index of the currently selected pie slice. Null if no slice is selected. Used for mobile interaction. */
     const [selectedPieIndex, setSelectedPieIndex] = useState(null);
+    /** @ref {object} categoryChartRef - Ref for the chart container Box element. */
     const categoryChartRef = useRef(null);
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+    /**
+     * Handles clicks on the pie slices of the category chart.
+     * On mobile, it toggles the selection of a slice to display its details.
+     * @param {object} data - The data associated with the clicked pie slice.
+     * @param {number} index - The index of the clicked pie slice.
+     */
     const handlePieClick = (data, index) => {
         if (isMobile) {
             setSelectedPieIndex(selectedPieIndex === index ? null : index);
         }
     };
 
+    /**
+     * Renders detailed information about the selected category (pie slice).
+     * This includes amount spent, budget goal, percentage of total spending, and budget status.
+     * This is primarily used on mobile devices when a pie slice is tapped.
+     * @returns {JSX.Element|null} A Box component with details, or null if no slice is selected or data is invalid.
+     */
     const renderCategoryDetails = () => {
         if (selectedPieIndex === null) return null;
         

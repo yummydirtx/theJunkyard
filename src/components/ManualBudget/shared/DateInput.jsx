@@ -21,29 +21,45 @@ import { forwardRef, useState, useEffect, useRef } from 'react';
 import { TextField, InputAdornment } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-// A custom date input component that overlays a native date picker over a styled TextField.
+/**
+ * DateInput is a custom component that provides a user-friendly date input field.
+ * It displays the date in MM/DD/YYYY format but uses an underlying native HTML5
+ * date input (type="date") for the actual date picking, which expects YYYY-MM-DD format.
+ * This approach combines a consistent visual style with native date picker functionality.
+ * The component is forwardRef-enabled to allow parent components to interact with the underlying native input.
+ * @param {object} props - The component's props.
+ * @param {string} props.value - The date value in 'YYYY-MM-DD' format.
+ * @param {function} props.onChange - Callback function invoked when the date changes. Receives the change event from the native input.
+ * @param {string} [props.label="Date"] - The label for the TextField.
+ * @param {boolean} [props.required=false] - If true, the input is marked as required.
+ * @param {boolean} [props.disabled=false] - If true, the input is disabled.
+ * @param {string} [props.mode='light'] - The current theme mode ('light' or 'dark'), used for icon coloring.
+ * @param {function} [props.onCalendarClick] - Optional callback for when the calendar icon is clicked.
+ * @param {boolean} [props.fullWidth=true] - If true, the component takes up the full width of its container.
+ * @param {React.Ref} ref - Forwarded ref to the underlying native date input element.
+ */
 const DateInput = forwardRef(({ 
-    value,          // The date value in 'YYYY-MM-DD' format
-    onChange,       // Callback function when the date changes
+    value,
+    onChange,
     label = "Date", 
     required = false,
     disabled = false,
     mode = 'light', // Theme mode for icon color
     onCalendarClick,// Optional callback for calendar icon click
     fullWidth = true,
-    ...props        // Other TextField props
+    ...props
 }, ref) => {
-    // Use internal ref if no external ref is provided
+    // Use internal ref if no external ref is provided for the hidden native input
     const innerRef = useRef(null);
-    const actualRef = ref || innerRef; // This ref points to the hidden native input
+    const actualRef = ref || innerRef;
     
-    // State to hold the formatted date string for display (e.g., MM/DD/YYYY)
+    /** @state {string} displayValue - Formatted date string for display (e.g., MM/DD/YYYY). */
     const [displayValue, setDisplayValue] = useState('');
     
-    // Update the display value whenever the 'YYYY-MM-DD' value prop changes
+    // Effect to update the displayValue whenever the 'YYYY-MM-DD' value prop changes.
+    // It parses 'YYYY-MM-DD' and formats it to 'MM/DD/YYYY' for the visible TextField.
     useEffect(() => {
         if (value) {
-            // Attempt to parse 'YYYY-MM-DD' and format as 'MM/DD/YYYY'
             const parts = value.split('-');
             if (parts.length === 3) {
                 const year = parseInt(parts[0], 10);
@@ -71,20 +87,22 @@ const DateInput = forwardRef(({
         }
     }, [value]);
     
-    // Handles clicks on the calendar icon/adornment to trigger the native date picker
+    /**
+     * Handles clicks on the calendar icon or the TextField itself.
+     * It programmatically focuses and attempts to open the native date picker
+     * of the hidden input element.
+     * @param {React.MouseEvent} [e] - The click event.
+     */
     const handleCalendarClick = (e) => {
         if (e) {
-            e.stopPropagation(); // Prevent event bubbling
+            e.stopPropagation();
         }
         if (actualRef && actualRef.current) {
-            // Focus the hidden native input
             actualRef.current.focus();
-            // Attempt to programmatically open the date picker
             try {
                  if (typeof actualRef.current.showPicker === 'function') {
                     actualRef.current.showPicker();
                  }
-                 // If showPicker isn't supported, focusing is the best fallback
             } catch (error) {
                 console.error("Could not call showPicker():", error);
             }
@@ -92,13 +110,15 @@ const DateInput = forwardRef(({
             console.error("DateInput ref is not set correctly");
         }
         
-        // Call the optional external click handler
         if (onCalendarClick) {
             onCalendarClick(e);
         }
     };
 
-    // Passes the change event from the hidden native input to the parent component
+    /**
+     * Passes the change event from the hidden native date input to the parent component's onChange handler.
+     * @param {React.ChangeEvent<HTMLInputElement>} e - The change event from the native date input.
+     */
     const handleDateChange = (e) => {
         if (onChange) {
             onChange(e);
@@ -106,9 +126,8 @@ const DateInput = forwardRef(({
     };
 
     return (
-        // Relative container for positioning the hidden input over the TextField
         <div style={{ position: 'relative', width: fullWidth ? '100%' : 'auto' }}>
-            {/* The visible TextField showing the formatted date */}
+            {/* The visible TextField showing the formatted date. This field is read-only. */}
             <TextField
                 fullWidth={fullWidth}
                 label={label}
@@ -140,7 +159,8 @@ const DateInput = forwardRef(({
                 {...props} // Pass down other TextField props
             />
             
-            {/* The hidden native date input that provides the actual functionality */}
+            {/* The hidden native date input that provides the actual date picking functionality.
+                It is positioned over the TextField and made invisible. */}
             <input
                 type="date"
                 ref={actualRef} // Attach the ref here

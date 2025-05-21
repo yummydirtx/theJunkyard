@@ -19,6 +19,19 @@
 
 import { TextField, InputAdornment } from '@mui/material';
 
+/**
+ * MoneyInput is a TextField specialized for currency input.
+ * It includes a '$' start adornment and basic validation to allow only numbers and a decimal point.
+ * @param {object} props - The component's props.
+ * @param {string|number} props.value - The current value of the input.
+ * @param {function} props.onChange - Callback function invoked when the input value changes. Receives the sanitized string value.
+ * @param {string} [props.label="Amount"] - The label for the input field.
+ * @param {string} [props.placeholder="0.00"] - The placeholder text for the input field.
+ * @param {string} [props.helperText=""] - Helper text displayed below the input field.
+ * @param {boolean} [props.required=false] - If true, the input is marked as required.
+ * @param {boolean} [props.disabled=false] - If true, the input is disabled.
+ * @param {boolean} [props.fullWidth=true] - If true, the component takes up the full width of its container.
+ */
 export default function MoneyInput({ 
     value, 
     onChange, 
@@ -30,13 +43,16 @@ export default function MoneyInput({
     fullWidth = true,
     ...props 
 }) {
-    // Handle money input validation
+    /**
+     * Handles changes to the input field.
+     * Sanitizes the input to allow only numbers and a single decimal point.
+     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     */
     const handleMoneyChange = (event) => {
-        // Only allow numbers and decimal points
-        const value = event.target.value.replace(/[^0-9.]/g, '');
-        
-        // Only call onChange if the validation passed
-        onChange(value);
+        // Allow only numbers and a single decimal point.
+        const sanitizedValue = event.target.value.replace(/[^0-9.]/g, '');
+        // Further validation could be added here (e.g., only one decimal point).
+        onChange(sanitizedValue);
     };
 
     return (

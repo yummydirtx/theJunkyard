@@ -41,7 +41,12 @@ import MoneyInput from './shared/MoneyInput';
 import DateInput from './shared/DateInput';
 import { parseAmount } from './utils/budgetUtils';
 
-// Helper function to get YYYY-MM-DD from a Date object using local timezone
+/**
+ * Helper function to get a date string in YYYY-MM-DD format from a Date object,
+ * respecting the local timezone.
+ * @param {Date} [date=new Date()] - The date object to format.
+ * @returns {string} The formatted date string.
+ */
 const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth is 0-indexed
@@ -49,6 +54,22 @@ const getLocalDateString = (date = new Date()) => {
     return `${year}-${month}-${day}`;
 };
 
+/**
+ * EntryMenu provides an options menu (edit, delete) for a budget entry.
+ * It includes modals for editing an entry and confirming deletion.
+ * @param {object} props - The component's props.
+ * @param {object} props.entry - The budget entry object.
+ * @param {string} props.entry.id - The ID of the entry.
+ * @param {number} props.entry.amount - The amount of the entry.
+ * @param {Date|string} props.entry.date - The date of the entry.
+ * @param {string} [props.entry.description] - The description of the entry.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {string} props.selectedCategory - The name of the category the entry belongs to.
+ * @param {function} props.onEntryUpdated - Callback function invoked after an entry is updated or deleted.
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ */
 export default function EntryMenu({
   entry,
   db,
@@ -58,45 +79,55 @@ export default function EntryMenu({
   onEntryUpdated,
   mode
 }) {
-  // State for the anchor element of the options menu
+  /** @state {HTMLElement|null} anchorEl - Anchor element for the entry options menu. */
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // State for the edit entry modal
+  /** @state {boolean} editModalOpen - Controls visibility of the edit entry modal. */
   const [editModalOpen, setEditModalOpen] = useState(false);
+  /** @state {string} editAmount - Current value of the amount input in the edit modal. */
   const [editAmount, setEditAmount] = useState('');
+  /** @state {string} editDate - Current value of the date input (YYYY-MM-DD) in the edit modal. */
   const [editDate, setEditDate] = useState('');
+  /** @state {string} editDescription - Current value of the description input in the edit modal. */
   const [editDescription, setEditDescription] = useState('');
-  const dateInputRef = useRef(null); // Ref for the date input in the edit modal
+  /** @ref {object} dateInputRef - Reference to the date input field in the edit modal. */
+  const dateInputRef = useRef(null);
 
-  // State for the delete confirmation dialog
+  /** @state {boolean} deleteDialogOpen - Controls visibility of the delete confirmation dialog. */
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // --- Menu Handlers ---
+  /** Opens the entry options menu. */
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
+  /** Closes the entry options menu. */
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
 
-  // --- Edit Handlers ---
-  // Opens the edit modal and pre-populates fields with current entry data
+  /** Opens the edit modal and pre-populates fields with the current entry's data. */
   const handleEditClick = () => {
     handleMenuClose();
     setEditAmount(entry.amount.toString());
+    // Ensure entry.date is a Date object before formatting
     const entryDateObject = entry.date instanceof Date ? entry.date : new Date(entry.date);
-    setEditDate(getLocalDateString(entryDateObject)); // Format date for input
+    setEditDate(getLocalDateString(entryDateObject));
     setEditDescription(entry.description || '');
     setEditModalOpen(true);
   };
 
-  // Closes the edit modal
+  /** Closes the edit entry modal. */
   const handleEditModalClose = () => {
     setEditModalOpen(false);
   };
 
-  // Handles the submission of the edited entry
+  /**
+   * Handles the submission of the edited entry.
+   * Updates the entry in Firestore and adjusts category/month totals if the amount changed.
+   * @async
+   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   */
   const handleEditSubmit = async (event) => {
     event.preventDefault();
     if (!editAmount || !editDate) return; // Basic validation
@@ -142,19 +173,22 @@ export default function EntryMenu({
     }
   };
 
-  // --- Delete Handlers ---
-  // Opens the delete confirmation dialog
+  /** Opens the delete confirmation dialog. */
   const handleDeleteClick = () => {
     handleMenuClose();
     setDeleteDialogOpen(true);
   };
 
-  // Closes the delete confirmation dialog
+  /** Closes the delete confirmation dialog. */
   const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
   };
 
-  // Handles the confirmation of entry deletion
+  /**
+   * Handles the confirmation of entry deletion.
+   * Deletes the entry from Firestore and updates category/month totals.
+   * @async
+   */
   const handleDeleteConfirm = async () => {
     try {
       // Delete the entry document from Firestore

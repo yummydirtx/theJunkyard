@@ -18,7 +18,10 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 /**
- * Generates a random color in HSL format
+ * Generates a random color in HSL format.
+ * The saturation is kept between 60-100% and lightness between 40-70%
+ * to ensure reasonably vibrant and visible colors.
+ * @returns {string} A string representing an HSL color (e.g., "hsl(120, 70%, 50%)").
  */
 export const generateRandomColor = () => {
     const h = Math.floor(Math.random() * 360);
@@ -28,7 +31,9 @@ export const generateRandomColor = () => {
 };
 
 /**
- * Formats a number as USD currency
+ * Formats a numeric value as a USD currency string.
+ * @param {number} value - The numeric value to format.
+ * @returns {string} A string representing the value formatted as USD currency (e.g., "$1,234.56").
  */
 export const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
@@ -39,7 +44,9 @@ export const formatCurrency = (value) => {
 };
 
 /**
- * Validates if a string is in YYYY-MM format
+ * Validates if a given string is in the 'YYYY-MM' format.
+ * @param {string} month - The string to validate.
+ * @returns {boolean} True if the string matches the 'YYYY-MM' format, false otherwise.
  */
 export const isValidMonth = (month) => {
     return month && /^\d{4}-\d{2}$/.test(month);

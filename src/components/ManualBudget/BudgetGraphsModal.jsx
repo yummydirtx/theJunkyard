@@ -39,9 +39,30 @@ import CategoriesTab from './BudgetGraphs/CategoriesTab';
 import SpecificCategoryTab from './BudgetGraphs/SpecificCategoryTab';
 import { generateRandomColor, isValidMonth } from './BudgetGraphs/utils';
 
+/**
+ * BudgetGraphsModal displays various budget-related graphs (total budget, categories, specific category)
+ * in a tabbed interface within a modal.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM) for which to display data.
+ * @param {string} [props.selectedCategory] - The currently selected category, if any, for detailed view.
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ */
 export default function BudgetGraphsModal({ open, onClose, db, user, currentMonth, selectedCategory, mode }) {
+    /** @state {number} tabValue - The index of the currently active tab. */
     const [tabValue, setTabValue] = useState(0);
+    /** @state {boolean} loading - Indicates if budget data is currently being fetched. */
     const [loading, setLoading] = useState(true);
+    /** @state {object} budgetData - Stores the fetched budget data for graphs.
+     * @property {number} totalSpent - Overall total amount spent in the current month.
+     * @property {number} totalGoal - Overall total budget goal for the current month.
+     * @property {number} categorySpent - Total amount spent in the `selectedCategory`.
+     * @property {number} categoryGoal - Budget goal for the `selectedCategory`.
+     * @property {Array<object>} categoriesData - Array of objects, each representing a category's data.
+     */
     const [budgetData, setBudgetData] = useState({
         totalSpent: 0,
         totalGoal: 0,
@@ -53,6 +74,7 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+    // Memoized object mapping category names to their colors (either user-defined or randomly generated).
     const categoryColors = useMemo(() => {
         const colors = {};
         budgetData.categoriesData.forEach(category => {
@@ -64,8 +86,10 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         return colors;
     }, [budgetData.categoriesData]);
 
+    // Determines the text color for chart elements based on the current theme mode.
     const chartTextColor = theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined;
 
+    // Memoized legend properties for charts, adapting to mobile view.
     const legendProps = useMemo(() => ({
         wrapperStyle: { color: chartTextColor },
         layout: isMobile ? 'horizontal' : 'vertical',
@@ -74,12 +98,18 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         ...(isMobile && { margin: { top: 10, bottom: 0 } })
     }), [isMobile, chartTextColor]);
 
+    // Effect to fetch budget data when the modal is opened or relevant props change.
     useEffect(() => {
         if (open && user && isValidMonth(currentMonth)) {
             fetchBudgetData();
         }
-    }, [open, user, currentMonth, selectedCategory]);
+    }, [open, user, currentMonth, selectedCategory]); // selectedCategory dependency ensures re-fetch if it changes while modal is open.
 
+    /**
+     * Fetches budget data for the current month from Firestore.
+     * This includes overall totals and data for each category.
+     * @async
+     */
     const fetchBudgetData = async () => {
         setLoading(true);
 
@@ -143,6 +173,11 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
         }
     };
 
+    /**
+     * Handles changing the active tab in the modal.
+     * @param {React.SyntheticEvent} event - The event source of the callback.
+     * @param {number} newValue - The index of the new tab.
+     */
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
     };

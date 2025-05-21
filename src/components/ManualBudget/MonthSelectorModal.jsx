@@ -37,14 +37,34 @@ import {
 import { collection, getDocs } from 'firebase/firestore';
 import AddIcon from '@mui/icons-material/Add';
 
+/**
+ * MonthSelectorModal allows users to select a budget month from a list of existing months
+ * or add the current calendar month if it doesn't exist.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The currently active budget month (YYYY-MM).
+ * @param {function} props.onMonthSelect - Callback function invoked when a month is selected.
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {function} props.addNewMonth - Function to add a new month to the budget.
+ */
 export default function MonthSelectorModal({ open, onClose, db, user, currentMonth, onMonthSelect, mode, addNewMonth }) {
+    /** @state {Array<string>} months - List of available budget months (YYYY-MM format). */
     const [months, setMonths] = useState([]);
+    /** @state {boolean} loading - Indicates if the months list is currently being fetched. */
     const [loading, setLoading] = useState(true);
+    /** @state {string} currentCalendarMonth - The current calendar month in YYYY-MM format. */
     const [currentCalendarMonth, setCurrentCalendarMonth] = useState('');
+    /** @state {string} error - Stores error messages, if any, during month fetching or adding. */
     const [error, setError] = useState('');
     const theme = useTheme();
 
-    // Get current month in YYYY-MM format
+    /**
+     * Gets the current calendar month in YYYY-MM format.
+     * @returns {string} The current month string.
+     */
     const getCurrentMonth = () => {
         const today = new Date();
         return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -58,6 +78,10 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
         }
     }, [open, user]);
 
+    /**
+     * Fetches the list of available budget months for the current user from Firestore.
+     * @async
+     */
     const fetchMonths = async () => {
         setLoading(true);
         setError('');
@@ -84,11 +108,20 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
         }
     };
 
+    /**
+     * Handles the selection of a month from the list.
+     * @param {string} month - The selected month (YYYY-MM).
+     */
     const handleMonthSelect = (month) => {
         onMonthSelect(month);
         onClose();
     };
 
+    /**
+     * Handles adding the current calendar month to the budget.
+     * It calls the `addNewMonth` prop function and then selects the newly added month.
+     * @async
+     */
     const handleAddCurrentMonth = async () => {
         setLoading(true);
         setError('');
@@ -110,7 +143,11 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
         }
     };
 
-    // Format month string for display (YYYY-MM to Month YYYY)
+    /**
+     * Formats a month string from YYYY-MM to "Month YYYY" for display.
+     * @param {string} monthStr - The month string in YYYY-MM format.
+     * @returns {string} The formatted month string.
+     */
     const formatMonth = (monthStr) => {
         try {
             const [year, month] = monthStr.split('-');
@@ -121,6 +158,7 @@ export default function MonthSelectorModal({ open, onClose, db, user, currentMon
         }
     };
 
+    // Determines if the current calendar month is missing from the list of fetched budget months.
     const isCurrentMonthMissing = !months.includes(currentCalendarMonth);
 
     return (

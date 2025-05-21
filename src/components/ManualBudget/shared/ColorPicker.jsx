@@ -28,7 +28,16 @@ import {
 } from '@mui/material';
 import { HexColorPicker } from 'react-colorful';
 
-// Predefined colors for categories
+/**
+ * @typedef {object} CategoryColor
+ * @property {string} name - The display name of the color.
+ * @property {string} value - The hex value of the color.
+ */
+
+/**
+ * A predefined array of color options for budget categories.
+ * @type {Array<CategoryColor>}
+ */
 export const categoryColors = [
     { name: 'Blue', value: '#1976d2' },
     { name: 'Green', value: '#2e7d32' },
@@ -41,21 +50,45 @@ export const categoryColors = [
     { name: 'Amber', value: '#ff8f00' },
 ];
 
+/**
+ * ColorPicker component allows users to select a color from a predefined palette
+ * or choose a custom color using a hex color picker.
+ * @param {object} props - The component's props.
+ * @param {string} props.selectedColor - The currently selected hex color value.
+ * @param {function} props.onChange - Callback function invoked when a color is selected. Receives the new hex color value.
+ * @param {boolean} [props.disabled=false] - If true, the color picker is disabled.
+ */
 export default function ColorPicker({ selectedColor, onChange, disabled = false }) {
+    /** @state {HTMLElement|null} colorPickerAnchor - Anchor element for the custom color picker popover. */
     const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
 
+    /**
+     * Handles selection of a predefined color.
+     * @param {string} color - The hex value of the selected predefined color.
+     */
     const handleColorSelect = (color) => {
         onChange(color);
     };
 
+    /**
+     * Opens the custom color picker popover.
+     * @param {React.MouseEvent<HTMLElement>} event - The click event.
+     */
     const handleOpenColorPicker = (event) => {
         setColorPickerAnchor(event.currentTarget);
     };
 
+    /**
+     * Closes the custom color picker popover.
+     */
     const handleCloseColorPicker = () => {
         setColorPickerAnchor(null);
     };
 
+    /**
+     * Handles selection of a color from the custom hex color picker.
+     * @param {string} color - The hex value of the selected custom color.
+     */
     const handleCustomColorSelect = (color) => {
         onChange(color);
     };

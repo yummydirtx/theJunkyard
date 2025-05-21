@@ -27,6 +27,19 @@ import {
 } from '@mui/material';
 import { doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 
+/**
+ * RemoveCategoryDialog is a confirmation dialog for deleting a budget category.
+ * It handles the deletion of the category and its associated data from Firestore,
+ * and updates the overall month totals.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the dialog.
+ * @param {function} props.onClose - Callback function to close the dialog.
+ * @param {string} props.categoryName - The name of the category to be removed.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {function} props.onCategoryRemoved - Callback function invoked after successful category removal.
+ */
 export default function RemoveCategoryDialog({
     open,
     onClose,
@@ -36,6 +49,11 @@ export default function RemoveCategoryDialog({
     currentMonth,
     onCategoryRemoved
 }) {
+    /**
+     * Handles the confirmation of category removal.
+     * It deletes the category document and updates the month's total goal and spent amounts in Firestore.
+     * @async
+     */
     const confirmRemoveCategory = async () => {
         if (!categoryName || !user) return;
 

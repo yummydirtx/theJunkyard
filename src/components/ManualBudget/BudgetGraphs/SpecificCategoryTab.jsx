@@ -37,20 +37,46 @@ import {
 import { CustomTooltip } from './CustomTooltips';
 import { formatCurrency } from './utils';
 
+/**
+ * SpecificCategoryTab component displays a bar chart comparing spending vs. budget goal
+ * for a single selected category. It also provides detailed information about the
+ * selected category's spending and budget, especially on mobile devices where
+ * users can tap bars for more details.
+ * @param {object} props - The component's props.
+ * @param {object} props.budgetData - Data object containing budget information.
+ * @param {number} props.budgetData.categorySpent - Amount spent in the selected category.
+ * @param {number} props.budgetData.categoryGoal - Budget goal for the selected category.
+ * @param {string} props.selectedCategory - The name of the category being displayed.
+ * @param {object} props.legendProps - Props to be passed to the Recharts Legend component.
+ * @param {string} props.chartTextColor - Color for the text elements within the chart (axes, labels).
+ */
 const SpecificCategoryTab = ({ budgetData, selectedCategory, legendProps, chartTextColor }) => {
+    /** @state {number|null} selectedCategoryBarIndex - Index of the currently selected bar in the chart (0 for 'Spent', 1 for 'Budget'). Null if no bar is selected. Used for mobile interaction. */
     const [selectedCategoryBarIndex, setSelectedCategoryBarIndex] = useState(null);
+    /** @ref {object} specificCategoryChartRef - Ref for the chart container Box element. */
     const specificCategoryChartRef = useRef(null);
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const barFillSecondary = theme.palette.mode === 'dark' ? '#bb86fc' : theme.palette.secondary.main;
 
+    /**
+     * Handles clicks on the bars of the category chart.
+     * On mobile, it toggles the selection of a bar to display its details.
+     * @param {object} data - The data associated with the clicked bar.
+     * @param {number} index - The index of the clicked bar.
+     */
     const handleCategoryBarClick = (data, index) => {
         if (isMobile) {
             setSelectedCategoryBarIndex(selectedCategoryBarIndex === index ? null : index);
         }
     };
 
+    /**
+     * Renders detailed information about the selected bar (Spent or Budget) for the category.
+     * This is primarily used on mobile devices when a bar is tapped.
+     * @returns {JSX.Element|null} A Box component with details, or null if no bar is selected.
+     */
     const renderSpecificCategoryDetails = () => {
         if (selectedCategoryBarIndex === null) return null;
         

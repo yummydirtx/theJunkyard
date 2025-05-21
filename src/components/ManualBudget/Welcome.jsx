@@ -26,24 +26,31 @@ import {
 } from '@mui/material';
 import Stack from '@mui/material/Stack';
 
+/**
+ * Welcome component displays a greeting message to the user in the Manual Budget page.
+ * It initially shows a personalized welcome, then transitions to a prompt to select or create a category.
+ * @param {object} props - The component's props.
+ * @param {string} props.name - The name of the user to be displayed in the welcome message.
+ */
 export default function Welcome({ name }) {
+    /** @state {boolean} visible - Controls the visibility of the initial "Hello {name}" message. */
     const [visible, setVisible] = useState(true);
+    /** @state {boolean} showCategoryText - Controls the visibility of the "Please select or create a category" message. */
     const [showCategoryText, setShowCategoryText] = useState(false);
 
     useEffect(() => {
-        // Set timeout to hide the welcome message after 2 seconds
+        // Hide the initial welcome message after a delay.
         const welcomeTimer = setTimeout(() => {
             setVisible(false);
             
-            // Add 500ms delay before showing the category selection text
+            // After the welcome message fades, show the category prompt message after another delay.
             const categoryTimer = setTimeout(() => {
                 setShowCategoryText(true);
-            }, 1000);
+            }, 1000); // Delay for the category prompt to appear after welcome message starts fading.
             
             return () => clearTimeout(categoryTimer);
-        }, 2000);
+        }, 2000); // Duration the welcome message is visible.
 
-        // Clean up the timer if component unmounts
         return () => clearTimeout(welcomeTimer);
     }, []);
 

@@ -21,16 +21,30 @@ import React from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
+/**
+ * Formats a month string from YYYY-MM to "Month YYYY" for display.
+ * @param {string} monthStr - The month string in YYYY-MM format.
+ * @returns {string} The formatted month string, or the original string if formatting fails.
+ */
 const formatMonth = (monthStr) => {
     try {
         const [year, month] = monthStr.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1);
         return date.toLocaleString('default', { month: 'long', year: 'numeric' });
     } catch (e) {
-        return monthStr; // Fallback
+        return monthStr; // Fallback in case of an error
     }
 };
 
+/**
+ * BudgetPageHeader displays the main title for the Manual Budget page
+ * and a chip to select/display the current budget month.
+ * @param {object} props - The component's props.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {function} props.onMonthChipClick - Callback function invoked when the month chip is clicked.
+ * @param {boolean} props.loading - Indicates if essential data (like auth state) is loading.
+ * @param {object} props.activeUser - The authenticated user object.
+ */
 export default function BudgetPageHeader({ currentMonth, onMonthChipClick, loading, activeUser }) {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', mb: 2 }}>

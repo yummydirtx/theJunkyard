@@ -30,7 +30,17 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 
 /**
- * Component for selecting, adding, and removing budget categories
+ * CategorySelector provides a dropdown menu for selecting a budget category.
+ * It also includes an edit button for the currently selected category.
+ * Note: Add and Remove buttons were previously part of this component but have been
+ * moved to BudgetActionsBar for a more centralized action area.
+ * @param {object} props - The component's props.
+ * @param {Array<string>} props.categories - An array of category names to display in the selector.
+ * @param {string} props.selectedOption - The currently selected category name.
+ * @param {function} props.onCategoryChange - Callback function invoked when a category is selected.
+ * @param {function} props.onAddCategory - Callback function to open the add category modal (currently unused here, handled by BudgetActionsBar).
+ * @param {function} props.onRemoveCategory - Callback function to open the remove category dialog (currently unused here, handled by BudgetActionsBar).
+ * @param {function} props.onEditCategory - Callback function invoked when the edit button for the selected category is clicked.
  */
 export default function CategorySelector({
     categories,

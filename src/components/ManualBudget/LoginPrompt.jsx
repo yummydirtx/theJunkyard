@@ -25,6 +25,16 @@ import {
 } from '@mui/material';
 import Stack from '@mui/material/Stack';
 
+/**
+ * LoginPrompt component displays a message and buttons prompting the user to log in or sign up.
+ * It is typically shown when a feature requires authentication and the user is not logged in.
+ * @param {object} props - The component's props.
+ * @param {function} props.openLoginModal - Function to open the login modal.
+ * @param {function} props.openSignUpModal - Function to open the sign-up modal.
+ * @param {boolean} props.loading - Indicates if authentication state is currently loading.
+ * @param {object|null} props.user - The current user object (null if not logged in).
+ * @param {string} props.app_title - The title of the application or feature requiring login.
+ */
 export default function LoginPrompt({ openLoginModal, openSignUpModal, loading, user, app_title }) {
     return (
         <Box sx={{

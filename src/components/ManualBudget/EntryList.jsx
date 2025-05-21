@@ -31,10 +31,29 @@ import {
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import EntryMenu from './EntryMenu';
 
+/**
+ * EntryList component displays a list of budget entries for a selected category and month.
+ * It allows fetching, displaying, and managing (via EntryMenu) individual entries.
+ * It is a forwardRef component to allow parent components to trigger a refresh of entries.
+ * @param {object} props - The component's props.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {string} props.selectedCategory - The name of the currently selected category.
+ * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {React.Ref} ref - Forwarded ref to expose `refreshEntries` method.
+ */
 const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }, ref) => {
+    /** @state {Array<object>} entries - List of budget entries for the selected category. */
     const [entries, setEntries] = useState([]);
+    /** @state {boolean} loading - Indicates if entries are currently being fetched. */
     const [loading, setLoading] = useState(false);
 
+    /**
+     * Fetches budget entries from Firestore for the selected category and month.
+     * Orders entries by date and then by creation timestamp, both in descending order.
+     * @async
+     */
     const fetchEntries = async () => {
         if (!selectedCategory || !user || !db) return;
 
@@ -64,32 +83,40 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
         }
     };
 
-    // Expose the refresh function via ref
+    // Expose the refreshEntries function to parent components via ref.
     useImperativeHandle(ref, () => ({
         refreshEntries: fetchEntries
     }));
 
     useEffect(() => {
-        // Reset entries when category changes
+        // Reset entries when category changes to avoid showing stale data.
         setEntries([]);
 
-        // Only fetch if we have a selected category
         if (!selectedCategory || !user || !db) return;
 
         fetchEntries();
     }, [db, user, currentMonth, selectedCategory]);
 
-    // Format date for display
+    /**
+     * Formats a date object or string into a localized date string.
+     * @param {Date|string} date - The date to format.
+     * @returns {string} Formatted date string.
+     */
     const formatDate = (date) => {
         return new Date(date).toLocaleDateString();
     };
 
-    // Format amount for display with dollar sign
+    /**
+     * Formats a numerical amount into a currency string (e.g., $1,234.56).
+     * @param {number} amount - The amount to format.
+     * @returns {string} Formatted currency string.
+     */
     const formatAmount = (amount) => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     if (!selectedCategory) {
+        // If no category is selected, don't render anything.
         return null;
     }
 

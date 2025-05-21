@@ -34,6 +34,20 @@ import ColorPicker, { categoryColors } from './shared/ColorPicker';
 import MoneyInput from './shared/MoneyInput';
 import { parseAmount, getCategoryData } from './utils/budgetUtils';
 
+/**
+ * EditCategoryModal allows users to modify an existing budget category's name,
+ * spending goal, and color. It handles data updates in Firestore, including
+ * transferring entries if the category name changes.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {string} props.selectedCategory - The name of the category being edited.
+ * @param {function} props.onCategoryUpdated - Callback invoked after the category is successfully updated.
+ *                                            It receives the new category name and old category name.
+ */
 export default function EditCategoryModal({
     open,
     onClose,
@@ -43,14 +57,20 @@ export default function EditCategoryModal({
     selectedCategory,
     onCategoryUpdated
 }) {
+    /** @state {string} categoryName - The name of the category being edited. */
     const [categoryName, setCategoryName] = useState('');
+    /** @state {string} spendingGoal - The spending goal for the category (as a string for input). */
     const [spendingGoal, setSpendingGoal] = useState('');
+    /** @state {number} originalGoal - The original spending goal, used to calculate differences for month totals. */
     const [originalGoal, setOriginalGoal] = useState(0);
+    /** @state {string} selectedColor - The hex value of the selected color for the category. */
     const [selectedColor, setSelectedColor] = useState(categoryColors[0].value);
+    /** @state {boolean} loading - Indicates if category data is being fetched or updated. */
     const [loading, setLoading] = useState(true);
+    /** @state {string} error - Stores error messages, if any, during fetching or updating. */
     const [error, setError] = useState('');
 
-    // Fetch current category data when modal opens
+    // Effect to fetch and populate category data when the modal opens or the selected category changes.
     useEffect(() => {
         if (open && selectedCategory) {
             setLoading(true);
@@ -82,14 +102,29 @@ export default function EditCategoryModal({
         }
     }, [open, selectedCategory, db, user, currentMonth]);
 
+    /**
+     * Handles changes to the category name input field.
+     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     */
     const handleCategoryNameChange = (event) => {
         setCategoryName(event.target.value);
     };
 
+    /**
+     * Handles changes to the selected color.
+     * @param {string} color - The new hex color value.
+     */
     const handleColorChange = (color) => {
         setSelectedColor(color);
     };
 
+    /**
+     * Handles the submission of the edited category form.
+     * Updates the category in Firestore. If the name changed, it creates a new category,
+     * transfers entries, and deletes the old one. Updates month totals accordingly.
+     * @async
+     * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+     */
     const handleUpdateCategory = async (event) => {
         event.preventDefault();
         if (!categoryName.trim() || !user) return;
@@ -185,6 +220,9 @@ export default function EditCategoryModal({
         }
     };
 
+    /**
+     * Handles closing the modal. Resets all local state.
+     */
     const handleClose = () => {
         setCategoryName('');
         setSpendingGoal('');

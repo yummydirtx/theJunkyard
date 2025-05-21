@@ -37,8 +37,21 @@ import {
 import { CustomTooltip } from './CustomTooltips';
 import { formatCurrency } from './utils';
 
+/**
+ * TotalBudgetTab component displays a bar chart comparing total spending against the total budget goal.
+ * It provides an overview of the overall budget performance for a selected period.
+ * On mobile, users can tap bars for more detailed information.
+ * @param {object} props - The component's props.
+ * @param {object} props.budgetData - Data object containing overall budget information.
+ * @param {number} props.budgetData.totalSpent - Total amount spent across all categories.
+ * @param {number} props.budgetData.totalGoal - Total budget goal across all categories.
+ * @param {object} props.legendProps - Props to be passed to the Recharts Legend component.
+ * @param {string} props.chartTextColor - Color for the text elements within the chart (axes, labels).
+ */
 const TotalBudgetTab = ({ budgetData, legendProps, chartTextColor }) => {
+    /** @state {number|null} selectedBarIndex - Index of the currently selected bar in the chart (0 for 'Spent', 1 for 'Budget'). Null if no bar is selected. Used for mobile interaction. */
     const [selectedBarIndex, setSelectedBarIndex] = useState(null);
+    /** @ref {object} totalChartRef - Ref for the chart container Box element. */
     const totalChartRef = useRef(null);
     
     const theme = useTheme();
@@ -46,12 +59,23 @@ const TotalBudgetTab = ({ budgetData, legendProps, chartTextColor }) => {
     const barFillPrimary = theme.palette.mode === 'dark' ? '#71b7ff' : theme.palette.primary.main;
     const barFillSecondary = theme.palette.mode === 'dark' ? '#bb86fc' : theme.palette.secondary.main;
 
+    /**
+     * Handles clicks on the bars of the total budget chart.
+     * On mobile, it toggles the selection of a bar to display its details.
+     * @param {object} data - The data associated with the clicked bar.
+     * @param {number} index - The index of the clicked bar.
+     */
     const handleTotalBarClick = (data, index) => {
         if (isMobile) {
             setSelectedBarIndex(selectedBarIndex === index ? null : index);
         }
     };
 
+    /**
+     * Renders detailed information about the selected bar (Total Spent or Total Budget).
+     * This is primarily used on mobile devices when a bar is tapped.
+     * @returns {JSX.Element|null} A Box component with details, or null if no bar is selected.
+     */
     const renderTotalBudgetDetails = () => {
         if (selectedBarIndex === null) return null;
         

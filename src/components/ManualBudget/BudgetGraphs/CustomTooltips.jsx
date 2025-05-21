@@ -20,6 +20,15 @@
 import { Box, Typography } from '@mui/material';
 import { formatCurrency } from './utils';
 
+/**
+ * CustomTooltip component for Recharts, typically used with BarChart or LineChart.
+ * Displays the name and value of the hovered data point.
+ * @param {object} props - The component's props, passed by Recharts.
+ * @param {boolean} props.active - True if the tooltip is active (mouse is over a data point).
+ * @param {Array<object>} props.payload - Array containing the data of the hovered element.
+ * @param {string|number} props.label - The label of the hovered data point (e.g., XAxis value).
+ * @returns {JSX.Element|null} A Box component with tooltip content, or null if not active.
+ */
 export const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
@@ -40,6 +49,17 @@ export const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
+/**
+ * PieTooltip component for Recharts, specifically designed for PieChart.
+ * Displays the name, amount, and percentage of the total for the hovered pie slice.
+ * @param {object} props - The component's props, passed by Recharts.
+ * @param {boolean} props.active - True if the tooltip is active (mouse is over a pie slice).
+ * @param {Array<object>} props.payload - Array containing the data of the hovered pie slice.
+ * @param {string} props.payload[0].name - Name of the category for the slice.
+ * @param {number} props.payload[0].value - Value (amount) of the slice.
+ * @param {number} props.totalSpent - The total amount spent across all categories, used to calculate percentage.
+ * @returns {JSX.Element|null} A Box component with tooltip content, or null if not active.
+ */
 export const PieTooltip = ({ active, payload, totalSpent }) => {
     if (active && payload && payload.length) {
         return (

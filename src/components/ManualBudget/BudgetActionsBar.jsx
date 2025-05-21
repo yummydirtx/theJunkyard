@@ -25,6 +25,20 @@ import AddIcon from '@mui/icons-material/Add';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CategorySelector from './CategorySelector';
 
+/**
+ * BudgetActionsBar provides a set of actions for managing a budget,
+ * including category selection, adding/removing categories, adding entries,
+ * and viewing budget graphs.
+ * @param {object} props - The component's props.
+ * @param {Array<string>} props.categories - List of available category names.
+ * @param {string} props.selectedOption - The currently selected category name.
+ * @param {function} props.onCategoryChange - Callback for when the selected category changes.
+ * @param {function} props.onEditCategory - Callback to open the edit category modal.
+ * @param {function} props.onOpenAddCategoryModal - Callback to open the add category modal.
+ * @param {function} props.onRemoveCategory - Callback to initiate removing the selected category.
+ * @param {function} props.onOpenAddEntryModal - Callback to open the add entry modal.
+ * @param {function} props.onOpenGraphsModal - Callback to open the budget graphs modal.
+ */
 export default function BudgetActionsBar({
     categories,
     selectedOption,
@@ -37,7 +51,7 @@ export default function BudgetActionsBar({
 }) {
     return (
         <Grid container spacing={2} sx={{ mb: 2, mt: 1 }} alignItems="center">
-            {/* Use size prop for Grid v2 responsive behavior */}
+            {/* CategorySelector component for choosing a budget category. */}
             <Grid item size={{ xs: 12, sm: 'auto' }}>
                 <CategorySelector
                     categories={categories}
@@ -46,7 +60,7 @@ export default function BudgetActionsBar({
                     onEditCategory={onEditCategory}
                 />
             </Grid>
-            {/* Use size prop for Grid v2 responsive behavior, 'true' allows it to take remaining space */}
+            {/* Container for action buttons related to budget management. */}
             <Grid item size={{ xs: 12, sm: true }}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                     <Button

@@ -33,7 +33,12 @@ import MoneyInput from './shared/MoneyInput';
 import DateInput from './shared/DateInput';
 import { parseAmount } from './utils/budgetUtils';
 
-// Helper function to get YYYY-MM-DD from a Date object using local timezone
+/**
+ * Helper function to get a date string in YYYY-MM-DD format from a Date object,
+ * respecting the local timezone.
+ * @param {Date} [date=new Date()] - The date object to format. Defaults to the current date.
+ * @returns {string} The formatted date string.
+ */
 const getLocalDateString = (date = new Date()) => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0'); // getMonth is 0-indexed
@@ -41,7 +46,20 @@ const getLocalDateString = (date = new Date()) => {
     return `${year}-${month}-${day}`;
 };
 
-// Modal component for adding a new spending entry.
+/**
+ * AddEntryModal provides a form for users to add a new spending entry to a selected category.
+ * It allows input for amount, date, and an optional description.
+ * On submission, it adds the entry to Firestore and updates category/month totals.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.open - Controls the visibility of the modal.
+ * @param {function} props.onClose - Callback function to close the modal.
+ * @param {object} props.db - Firestore database instance.
+ * @param {object} props.user - The authenticated user object.
+ * @param {string} props.currentMonth - The current budget month (YYYY-MM).
+ * @param {string} props.selectedCategory - The name of the category to which the entry will be added.
+ * @param {function} props.onEntryAdded - Callback function invoked after a new entry is successfully added.
+ * @param {string} props.mode - The current color mode ('light' or 'dark'), passed to DateInput.
+ */
 export default function AddEntryModal({ 
     open, 
     onClose, 
@@ -52,23 +70,38 @@ export default function AddEntryModal({
     onEntryAdded, 
     mode 
 }) {
-    // State for the form fields
+    /** @state {string} amount - The amount of the new entry (as a string for input). */
     const [amount, setAmount] = useState('');
-    const [entryDate, setEntryDate] = useState(getLocalDateString()); // Default to today's date
+    /** @state {string} entryDate - The date of the new entry (YYYY-MM-DD format). */
+    const [entryDate, setEntryDate] = useState(getLocalDateString());
+    /** @state {string} description - The optional description for the new entry. */
     const [description, setDescription] = useState('');
-    const dateInputRef = useRef(null); // Ref for the DateInput component
+    /** @ref {object} dateInputRef - Reference to the DateInput component. */
+    const dateInputRef = useRef(null);
 
-    // Update state when the date input changes
+    /**
+     * Handles changes to the date input field.
+     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     */
     const handleDateChange = (event) => {
         setEntryDate(event.target.value);
     };
 
-    // Update state when the description input changes
+    /**
+     * Handles changes to the description input field.
+     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     */
     const handleDescriptionChange = (event) => {
         setDescription(event.target.value);
     };
 
-    // Handles the form submission to add the new entry
+    /**
+     * Handles the submission of the add entry form.
+     * Adds the new entry to Firestore, updates category and month totals,
+     * and calls `onEntryAdded`.
+     * @async
+     * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+     */
     const handleAddEntry = async (event) => {
         event.preventDefault();
         // Basic validation
@@ -127,14 +160,18 @@ export default function AddEntryModal({
         }
     };
 
-    // Resets the form fields to their initial state
+    /**
+     * Resets the form fields to their initial/default states.
+     */
     const resetForm = () => {
         setAmount('');
-        setEntryDate(getLocalDateString()); // Reset date to today
+        setEntryDate(getLocalDateString());
         setDescription('');
     };
 
-    // Handles closing the modal, ensuring the form is reset
+    /**
+     * Handles closing the modal. Ensures the form is reset before calling `onClose`.
+     */
     const handleClose = () => {
         resetForm();
         onClose();

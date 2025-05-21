@@ -19,6 +19,18 @@
 
 import { Box } from '@mui/material';
 
+/**
+ * TabPanel is a helper component used with MUI Tabs to display the content
+ * of a specific tab. It conditionally renders its children based on whether
+ * its `index` matches the currently active `value` (selected tab).
+ * It also sets appropriate ARIA attributes for accessibility.
+ * @param {object} props - The component's props.
+ * @param {React.ReactNode} props.children - The content to be displayed within the tab panel.
+ * @param {number} props.value - The index of the currently selected tab.
+ * @param {number} props.index - The index of this specific tab panel.
+ * @param {object} [props.other] - Any other props to be spread onto the root div element.
+ * @returns {JSX.Element} The TabPanel component.
+ */
 function TabPanel({ children, value, index, ...other }) {
     return (
         <div
