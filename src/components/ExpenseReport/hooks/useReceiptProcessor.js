@@ -1,5 +1,21 @@
 // Copyright (c) 2025 Alex Frutkin
-// ... (license details) ...
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (theJunkyard), to deal in
+// theJunkyard without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
+// subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of theJunkyard.
+// 
+// THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useState } from 'react';
 import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
@@ -33,19 +49,19 @@ const receiptSchema = {
 };
 
 export function useReceiptProcessor(
-    app, // Firebase app instance
+    app,
     onDeleteStorageFile,
     // From usePendingReceiptManagement hook
     pendingReceiptDocIdRef,
     unsubmittedReceiptUriRef,
-    hookSetUnsubmittedReceiptUri, // Renamed to avoid conflict
+    hookSetUnsubmittedReceiptUri,
     createPendingReceiptDoc,
     deletePendingReceiptDoc,
     // Callbacks to update ExpenseForm state
-    setFormReceiptGsUri, // Renamed
-    setFormDescription,  // Renamed
-    setFormAmount,       // Renamed
-    setFormItems         // Renamed
+    setFormReceiptGsUri,
+    setFormDescription,
+    setFormAmount,
+    setFormItems
 ) {
     const [parsingReceipt, setParsingReceipt] = useState(false);
     const [parsingError, setParsingError] = useState('');
@@ -192,7 +208,8 @@ export function useReceiptProcessor(
             const docIdToDelete = pendingReceiptDocIdRef.current;
             if (gsUri && onDeleteStorageFile) {
                 console.log("Processor: Parsing failed, attempting to delete uploaded receipt file:", gsUri);
-                await onDeleteStorageFile(gsUri); // No need to clear unsubmittedReceiptUriRef here, as it's the one that failed
+                // No need to clear unsubmittedReceiptUriRef here, as it's the one that failed
+                await onDeleteStorageFile(gsUri);
             }
             if (docIdToDelete) {
                 console.log("Processor: Parsing failed, attempting to delete pending receipt doc:", docIdToDelete);
