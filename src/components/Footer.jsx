@@ -78,75 +78,17 @@ export default function Footer() {
 
   return (
     <>
-      <Divider sx={{ pt: { sm: 8 }, display: { xs: 'none', sm: 'inherit' } }} />
       <Container
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: { xs: 4, sm: 8 },
-          py: { xs: 8, sm: 10 },
+          pt: { xs: 4, sm: 8 },
+          pb: { xs: 8, sm: 10 },
           textAlign: { sm: 'center', md: 'left' },
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            width: '100%',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-              minWidth: { xs: '100%', sm: '60%' },
-            }}
-          >
-          </Box>
-          <Box
-            sx={{
-              display: { xs: 'none', sm: 'flex' },
-              flexDirection: 'column',
-              gap: 1,
-            }}
-          >
-            <Typography variant="body2" fontWeight={600}>
-              Landing Page
-            </Typography>
-            <Link color="text.secondary" onClick={() => scrollToSection('features')}>
-              Features
-            </Link>
-            <Link color="text.secondary" onClick={() => scrollToSection('testimonials')}>
-              Testimonials
-            </Link>
-            <Link color="text.secondary" onClick={() => scrollToSection('highlights')}>
-              Highlights
-            </Link>
-            <Link color="text.secondary" onClick={() => scrollToSection('faqs')}>
-              FAQs
-            </Link>
-          </Box>
-          <Box
-            sx={{
-              display: { xs: 'none', sm: 'flex' },
-              flexDirection: 'column',
-              gap: 1,
-            }}
-          >
-            <Typography variant="body2" fontWeight={600}>
-              theJunkyard
-            </Typography>
-            <Link color="text.secondary" href="/calcbasic-web">
-              calcBasic
-            </Link>
-            <Link color="text.secondary" href="/ytthumb">
-              YTThumb
-            </Link>
-          </Box>
-        </Box>
         <Box
           sx={{
             display: 'flex',
