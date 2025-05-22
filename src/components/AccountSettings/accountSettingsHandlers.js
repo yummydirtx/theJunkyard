@@ -19,7 +19,7 @@
 
 import { sendPasswordResetEmail, updateProfile, deleteUser } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getCroppedImg, centerAspectCrop } from '../../utils/imageUtils'; // Assuming imageUtils are in src/utils
+import { getCroppedImg, centerAspectCrop } from '../../utils/imageUtils';
 
 // --- Handler Functions ---
 
@@ -73,9 +73,7 @@ export const handleSaveName = async ({ newName, auth, activeUser, updateActiveUs
     return;
   }
   if (newName === (activeUser?.displayName || '')) {
-    // Optionally add an info message if desired
-    // setMessage({ type: 'info', text: 'Display name is already set to this value.' });
-    return; // No change
+    return;
   }
 
   setLoading(prev => ({ ...prev, updateName: true }));
@@ -83,7 +81,7 @@ export const handleSaveName = async ({ newName, auth, activeUser, updateActiveUs
 
   try {
     await updateProfile(auth.currentUser, { displayName: newName });
-    updateActiveUser({ displayName: newName }); // Update context state
+    updateActiveUser({ displayName: newName });
     setMessage({ type: 'success', text: 'Display name updated.' });
   } catch (error) {
     console.error("Update Name Error:", error);
