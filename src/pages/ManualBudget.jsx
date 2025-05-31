@@ -17,18 +17,14 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {
     Box,
-    CssBaseline,
     Container,
     CircularProgress,
 } from '@mui/material';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { alpha } from '@mui/material/styles';
 
-import AppAppBar from '../components/AppAppBar';
-import Footer from '../components/Footer';
+import PageLayout from '../components/PageLayout';
 import LoginModal from '../components/Authentication/LoginModal';
 import SignUpModal from '../components/Authentication/SignUpModal';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt';
@@ -60,7 +56,6 @@ import { useAuth } from '../contexts/AuthContext';
  */
 export default function ManualBudget({ setMode, mode }) {
     useTitle('theJunkyard: Manual Budget');
-    const defaultTheme = createTheme({ palette: { mode } });
     const { activeUser, loading: authLoading, db } = useAuth();
 
     const {
@@ -245,44 +240,26 @@ export default function ManualBudget({ setMode, mode }) {
     };
 
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <CssBaseline />
-            <AppAppBar mode={mode} toggleColorMode={setMode} />
-            <Box
-                sx={(theme) => ({
-                    width: '100%',
-                    backgroundImage:
-                        theme.palette.mode === 'light'
-                            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-                            : `linear-gradient(#02294F, ${alpha(theme.palette.background.default, 0.0)})`,
-                    backgroundSize: '100% 10%', // Adjusted for visual preference
-                    backgroundRepeat: 'no-repeat',
-                    minHeight: '100vh', // Ensure it covers viewport height
-                    display: 'flex',
-                    flexDirection: 'column'
-                })}
-            >
-                <Container maxWidth="lg" sx={{ 
-                    pt: { xs: 12, sm: 15 }, 
-                    flexGrow: 1, 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    overflow: 'hidden'
-                }}>
-                    {!overallLoading && activeUser && !needsNamePrompt && (
-                         <BudgetPageHeader
-                            currentMonth={currentMonth}
-                            onMonthChipClick={openMonthSelector}
-                            loading={overallLoading}
-                            activeUser={activeUser}
-                        />
-                    )}
-                    {renderContent()}
-                </Container>
-                <Footer />
-            </Box>
+        <PageLayout mode={mode} setMode={setMode}>
+            <Container maxWidth="lg" sx={{ 
+                pt: { xs: 12, sm: 15 }, 
+                flexGrow: 1, 
+                display: 'flex', 
+                flexDirection: 'column',
+                overflow: 'hidden' // Keep this if necessary for content scrolling
+            }}>
+                {!overallLoading && activeUser && !needsNamePrompt && (
+                     <BudgetPageHeader
+                        currentMonth={currentMonth}
+                        onMonthChipClick={openMonthSelector}
+                        loading={overallLoading}
+                        activeUser={activeUser}
+                    />
+                )}
+                {renderContent()}
+            </Container>
 
-            {/* Modals */}
+            {/* Modals remain at this level to be managed by PageLayout's ThemeProvider */}
             {!overallLoading && activeUser && needsNamePrompt && (
                 <NamePromptDialog
                     open={needsNamePrompt}
@@ -356,6 +333,6 @@ export default function ManualBudget({ setMode, mode }) {
                     />
                 </>
             )}
-        </ThemeProvider>
+        </PageLayout>
     );
 }

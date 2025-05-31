@@ -18,15 +18,12 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from '../components/AppAppBar';
+import PageLayout from '../components/PageLayout'; // Import PageLayout
 import Features from '../components/LandingPage/Features';
 import Testimonials from '../components/LandingPage/Testimonials';
 import FAQ from '../components/LandingPage/FAQ';
-import Footer from '../components/Footer';
 import Me from '../components/LandingPage/Me';
 import PastWebsites from '../components/LandingPage/PastWebsites';
 import { useTitle } from '../components/useTitle';
@@ -37,27 +34,21 @@ import { useTitle } from '../components/useTitle';
  * @param {object} props - The component's props.
  * @param {function} props.setMode - Function to toggle the color mode (light/dark).
  * @param {string} props.mode - The current color mode ('light' or 'dark').
- * @param {object} props.app - Firebase app instance, passed to AppAppBar.
  */
-export default function LandingPage({ setMode, mode, app }) {
+export default function LandingPage({ setMode, mode }) {
   useTitle('theJunkyard: Landing Page');
-  const defaultTheme = createTheme({ palette: { mode } });
 
   return (
-    <ThemeProvider theme={defaultTheme}>
-      <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} app={app} />
+    <PageLayout mode={mode} setMode={setMode} sx={{ bgcolor: 'background.default' }}>
       <Me />
-      <Box sx={{ bgcolor: 'background.default' }}>
-        <Features />
-        <Divider />
-        <Testimonials />
-        <Divider />
-        <FAQ />
-        <Divider />
-        <PastWebsites />
-        <Footer />
-      </Box>
-    </ThemeProvider>
+      {/* Box with bgcolor is now part of PageLayout's sx prop or a nested Box if specific styling is needed */}
+      <Features />
+      <Divider />
+      <Testimonials />
+      <Divider />
+      <FAQ />
+      <Divider />
+      <PastWebsites />
+    </PageLayout>
   );
 }

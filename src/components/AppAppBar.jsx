@@ -58,9 +58,8 @@ const logoStyle = {
  * @param {object} props - The component's props.
  * @param {('light' | 'dark')} props.mode - The current color mode.
  * @param {function} props.toggleColorMode - Function to toggle the color mode.
- * @param {object} props.app - The initialized Firebase app instance (used by AuthContext, not directly here).
  */
-function AppAppBar({ mode, toggleColorMode, app }) {
+function AppAppBar({ mode, toggleColorMode }) {
   /** @state {boolean} open - Controls the visibility of the mobile navigation drawer. */
   const [open, setOpen] = useState(false);
   const { activeUser, loading, db } = useAuth();

@@ -18,14 +18,10 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
-import { alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from '../components/AppAppBar';
-import Footer from '../components/Footer';
 import { Container } from '@mui/material';
+import PageLayout from '../components/PageLayout'; // Import PageLayout
 import { CalcTitle, CalcForm, ResultsDisplay } from '../components/CalcBasic';
 import { useTitle } from '../components/useTitle';
 
@@ -38,67 +34,51 @@ import { useTitle } from '../components/useTitle';
  * @param {string} props.mode - The current color mode ('light' or 'dark').
  * @param {object} props.app - Firebase app instance (currently unused in this component directly).
  */
-export default function CalcBasic({ setMode, mode, app }) {
+export default function CalcBasic({ setMode, mode }) {
   useTitle('theJunkyard: calcBasic');
   /** @state {number} lowest - Stores the lowest number found from the input. */
   const [lowest, setLowest] = React.useState(0);
   /** @state {number} numberOfLowest - Stores the count of occurrences of the lowest number. */
   const [numberOfLowest, setNumberOfLowest] = React.useState(0);
-  const defaultTheme = createTheme({ palette: { mode } });
   /** @state {string} plural - Determines if the word "time" should be pluralized in the results display. */
   const [plural, setPlural] = React.useState('s');
 
   return (
-    <ThemeProvider theme={defaultTheme}>
-      <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} />
-      <Box
-        sx={(theme) => ({
-          width: '100%',
-          backgroundImage:
-            theme.palette.mode === 'light'
-              ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-              : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-          backgroundSize: '100% 20%',
-          backgroundRepeat: 'no-repeat',
-        })}
-      >
-        <Box sx={{
-          position: 'relative',
-          display: 'flex',
-          width: '100%',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: { xs: 3, sm: 6 },
-          pt: { xs: 12, sm: 15 },
-          px: { xs: 2 },
-          useFlexGap: true,
-        }}>
-          <Container maxWidth="lg">
-            <Grid container spacing={3} sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              width: '100%',
-            }}>
-              <CalcTitle />
-              
-              <CalcForm 
-                setLowest={setLowest}
-                setNumberOfLowest={setNumberOfLowest}
-                setPlural={setPlural}
-              />
-              
-              <ResultsDisplay 
-                lowest={lowest}
-                numberOfLowest={numberOfLowest}
-                plural={plural}
-              />
-            </Grid>
-          </Container>
-        </Box>
+    <PageLayout mode={mode} setMode={setMode}>
+      <Box sx={{
+        position: 'relative',
+        display: 'flex',
+        width: '100%',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: { xs: 3, sm: 6 },
+        pt: { xs: 12, sm: 15 },
+        px: { xs: 2 },
+        useFlexGap: true,
+      }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={3} sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            width: '100%',
+          }}>
+            <CalcTitle />
+            
+            <CalcForm 
+              setLowest={setLowest}
+              setNumberOfLowest={setNumberOfLowest}
+              setPlural={setPlural}
+            />
+            
+            <ResultsDisplay 
+              lowest={lowest}
+              numberOfLowest={numberOfLowest}
+              plural={plural}
+            />
+          </Grid>
+        </Container>
       </Box>
-      <Footer />
-    </ThemeProvider>
+    </PageLayout>
   );
 }

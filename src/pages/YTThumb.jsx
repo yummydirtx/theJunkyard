@@ -19,13 +19,9 @@
 
 import * as React from 'react';
 import PropTypes from 'prop-types';
-import { alpha } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import Box from '@mui/material/Box';
+import PageLayout from '../components/PageLayout'; // Import PageLayout
+import { useTitle } from '../components/useTitle';
 import DOMPurify from 'dompurify';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from '../components/AppAppBar';
-import Grid from '@mui/material/Grid';
 import {
   Typography,
   FormControl,
@@ -33,14 +29,11 @@ import {
   InputAdornment,
   Input,
   Button,
-  Divider,
   Snackbar,
   Alert,
   CircularProgress,
   Container,
 } from '@mui/material';
-import Footer from '../components/Footer';
-import { useTitle } from '../components/useTitle';
 
 /**
  * YTThumb component allows users to fetch and download YouTube video thumbnails.
@@ -51,8 +44,7 @@ import { useTitle } from '../components/useTitle';
  */
 export default function YTThumb({ setMode, mode, app }) {
   useTitle('theJunkyard: YTThumb');
-  const defaultTheme = createTheme({ palette: { mode } });
-
+  
   /** @state {string} url - The YouTube URL input by the user. */
   const [url, setUrl] = React.useState('');
   /** @state {string} thumbnailUrl - The URL of the currently displayed thumbnail. */
@@ -160,125 +152,76 @@ export default function YTThumb({ setMode, mode, app }) {
   };
 
   return (
-    <ThemeProvider theme={defaultTheme}>
-      <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} />
-      <Box
-        sx={(theme) => ({
-          width: '100%',
-          backgroundImage:
-            theme.palette.mode === 'light'
-              ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-              : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-          backgroundSize: '100% 20%',
-          backgroundRepeat: 'no-repeat',
-        })}
-      >
-        <Box
+    <PageLayout mode={mode} setMode={setMode}>
+      <Container maxWidth="lg">
+        <Typography component="h1" variant="h3" sx={{
+          display: { xs: 'flex', sm: 'flex' },
+          flexDirection: { xs: 'column', md: 'row' },
+          alignSelf: 'left',
+          textAlign: 'left',
+          fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
+          fontWeight: 'bold',
+          pb: '0.25rem',
+          pt: { xs: 12, sm: 15 }
+        }}>
+          YouTube Thumbnail Downloader
+        </Typography>
+        <Typography variant="body1" color="text.secondary" component='p' sx={{ mb: 2 }}>
+          Input the URL of a YouTube video to get the highest quality available version of the thumbnail.
+        </Typography>
+        <FormControl sx={{ width: '100%', mb: 2 }}>
+          <InputLabel htmlFor="url">YouTube URL</InputLabel>
+          <Input
+            id="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            fullWidth
+            endAdornment={
+              loading ? (
+                <InputAdornment position="end">
+                  <CircularProgress size={20} />
+                </InputAdornment>
+              ) : null
+            }
+          />
+        </FormControl>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={fetchThumbnail}
+          disabled={!url || loading}
           sx={{
-            position: 'relative',
-            display: 'flex',
             width: '100%',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: { xs: 3, sm: 6 },
-            pt: { xs: 12, sm: 15 },
-            px: { xs: 2 },
+            mb: 3,
           }}
         >
-          <Container maxWidth="lg">
-            <Grid
-              container
-              spacing={3}
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                width: '100%',
-              }}
-            >
-              <Grid size={12}>
-                <Typography component="h1" variant="h3" sx={{
-                  display: { xs: 'flex', sm: 'flex' },
-                  flexDirection: { xs: 'column', md: 'row' },
-                  alignSelf: 'left',
-                  textAlign: 'left',
-                  fontSize: { xs: 'clamp(3.4rem, 10vw, 4rem)', sm: 'clamp(3.5rem, 10vw, 4rem)' },
-                  fontWeight: 'bold',
-                  pb: '0.25rem',
-                }}>
-                  YouTube Thumbnail Downloader
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  Input the URL of a YouTube video to get the highest quality available version of the thumbnail.
-                </Typography>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 8 }}>
-                <FormControl sx={{ width: '100%' }}>
-                  <InputLabel htmlFor="url">YouTube URL</InputLabel>
-                  <Input
-                    id="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    fullWidth
-                    endAdornment={
-                      loading ? (
-                        <InputAdornment position="end">
-                          <CircularProgress size={20} />
-                        </InputAdornment>
-                      ) : null
-                    }
-                  />
-                </FormControl>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={fetchThumbnail}
-                  disabled={!url || loading}
-                  sx={{
-                    width: '100%',
-                  }}
-                >
-                  Fetch Thumbnail
-                </Button>
-              </Grid>
+          Fetch Thumbnail
+        </Button>
 
-              {thumbnailUrl && (
-                <Grid
-                  size={12}
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <img
-                    src={DOMPurify.sanitize(thumbnailUrl)}
-                    alt="YouTube Video Thumbnail"
-                    onError={handleImageError}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '400px',
-                      objectFit: 'contain',
-                    }}
-                  />
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleDownload}
-                    sx={{ mt: 2 }}
-                  >
-                    Download Thumbnail
-                  </Button>
-                </Grid>
-              )}
-            </Grid>
-          </Container>
-        </Box>
-      </Box>
-      <Footer />
+        {thumbnailUrl && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img
+              src={DOMPurify.sanitize(thumbnailUrl)}
+              alt="YouTube Video Thumbnail"
+              onError={handleImageError}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '400px',
+                objectFit: 'contain',
+                marginBottom: '1rem',
+              }}
+            />
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleDownload}
+              sx={{ width: '100%' }}
+            >
+              Download Thumbnail
+            </Button>
+          </div>
+        )}
+      </Container>
 
       <Snackbar
         open={!!error}
@@ -290,7 +233,7 @@ export default function YTThumb({ setMode, mode, app }) {
           {error}
         </Alert>
       </Snackbar>
-    </ThemeProvider>
+    </PageLayout>
   );
 }
 

@@ -32,7 +32,6 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import IconButton from '@mui/material/IconButton';
-import AppAppBar from '../components/AppAppBar';
 import Footer from '../components/Footer';
 import ExpenseTotal from '../components/ExpenseReport/ExpenseTotal';
 import { useTitle } from '../components/useTitle';
@@ -50,6 +49,7 @@ import ListItemText from '@mui/material/ListItemText';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Collapse from '@mui/material/Collapse';
+import PageLayout from '../components/PageLayout'; // Import PageLayout
 
 const firebaseConfig = {
     apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
@@ -158,163 +158,145 @@ export default function SharedExpenseReport({ mode, setMode }) {
     );
 
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <CssBaseline />
-            {/* AppAppBar is configured not to show authentication buttons for this public shared view. */}
-            <AppAppBar mode={mode} toggleColorMode={setMode || (() => { })} showAuthButtons={false} />
-            <Box
-                sx={(theme) => ({
-                    width: '100%',
-                    backgroundImage:
-                        theme.palette.mode === 'light'
-                            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-                            : `linear-gradient(#02294F, ${alpha(theme.palette.background.default, 0.0)})`,
-                    backgroundSize: '100% 10%',
-                    backgroundRepeat: 'no-repeat',
-                    minHeight: '100vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                })}
-            >
-                <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, flexGrow: 1 }}>
-                    <Typography variant='h2'
-                        sx={{
-                            mb: 2,
-                            fontWeight: 'bold',
-                        }}>
-                        Shared Expense Report
-                    </Typography>
+        <PageLayout mode={mode} setMode={setMode} sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Container maxWidth="lg" sx={{ pt: { xs: 12, sm: 15 }, flexGrow: 1 }}>
+                <Typography variant='h2'
+                    sx={{
+                        mb: 2,
+                        fontWeight: 'bold',
+                    }}>
+                    Shared Expense Report
+                </Typography>
 
-                    {loading && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-                            <CircularProgress />
-                        </Box>
-                    )}
-                    {error && <Alert severity="error">{error}</Alert>}
+                {loading && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+                        <CircularProgress />
+                    </Box>
+                )}
+                {error && <Alert severity="error">{error}</Alert>}
 
-                    {!loading && !error && (
-                        <>
-                            <SharedExpenseActions
-                                updating={updating}
-                                updateError={updateError}
-                                updateSuccess={updateSuccess}
-                                onMarkReimbursed={markReimbursed}
-                                onOpenDenialModal={openDenialModal}
-                                selectedCount={selectedExpenses.size}
-                            />
+                {!loading && !error && (
+                    <>
+                        <SharedExpenseActions
+                            updating={updating}
+                            updateError={updateError}
+                            updateSuccess={updateSuccess}
+                            onMarkReimbursed={markReimbursed}
+                            onOpenDenialModal={openDenialModal}
+                            selectedCount={selectedExpenses.size}
+                        />
 
-                            <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
-                                    <Checkbox
-                                        // Checkbox is indeterminate if some (but not all) pending items are selected.
-                                        indeterminate={somePendingSelected}
-                                        // Checkbox is checked if all pending items are selected.
-                                        checked={allPendingSelected}
-                                        onChange={handleSelectAllPending}
-                                        disabled={updating || pendingExpenses.length === 0}
-                                        inputProps={{ 'aria-label': 'select all pending expenses' }}
-                                    />
-                                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                                        Expenses ({pendingExpenses.length} Pending)
-                                    </Typography>
-                                    <IconButton
-                                        onClick={() => setExpensesOpen(!expensesOpen)}
-                                        aria-label={expensesOpen ? 'collapse expenses' : 'expand expenses'}
-                                    >
-                                        {expensesOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                                    </IconButton>
-                                </Box>
-
-                                <Collapse in={expensesOpen} timeout="auto" unmountOnExit>
-                                    <>
-                                        {expenses.length === 0 ? (
-                                            <Typography>No expenses found for this report.</Typography>
-                                        ) : (
-                                            <List sx={{ p: 0 }}>
-                                                {expenses.map((expense) => {
-                                                    const commonItemProps = {
-                                                        disabled: updating,
-                                                        divider: true,
-                                                        sx: { p: 0, alignItems: 'flex-start' }
-                                                    };
-                                                    const isSelected = selectedExpenses.has(expense.id);
-
-                                                    // Encapsulates the main content of a list item for reusability.
-                                                    const listItemContent = (
-                                                        <>
-                                                            <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1, pt: 1.5 }}>
-                                                                {expense.status === 'pending' ? (
-                                                                    <Checkbox
-                                                                        edge="start"
-                                                                        checked={isSelected}
-                                                                        tabIndex={-1}
-                                                                        disableRipple
-                                                                        inputProps={{ 'aria-labelledby': `expense-label-${expense.id}` }}
-                                                                        disabled={updating}
-                                                                    />
-                                                                ) : (
-                                                                    <Box sx={{ width: 42, height: 42 }} />
-                                                                )}
-                                                            </ListItemIcon>
-                                                            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', pt: 1, pb: 1, pr: 1 }}>
-                                                                <ExpenseListItemContent
-                                                                    expense={expense}
-                                                                    showDenialReason={false}
-                                                                    isSharedView={true} // Explicitly pass true
-                                                                />
-                                                                {expense.items && expense.items.length > 0 && (
-                                                                    <IconButton
-                                                                        edge="end"
-                                                                        aria-label="view items"
-                                                                        // Stop propagation to prevent the ListItemButton's onClick from firing
-                                                                        // when only the icon button is clicked.
-                                                                        onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }}
-                                                                        sx={{ ml: 'auto' }}
-                                                                        disabled={updating}
-                                                                    >
-                                                                        <InfoIcon />
-                                                                    </IconButton>
-                                                                )}
-                                                            </Box>
-                                                        </>
-                                                    );
-
-                                                    // Render pending expenses as interactive ListItemButtons.
-                                                    return expense.status === 'pending' ? (
-                                                        <ListItemButton
-                                                            key={expense.id}
-                                                            {...commonItemProps}
-                                                            onClick={() => handleSelect(expense.id)}
-                                                            selected={isSelected}
-                                                            sx={{ ...commonItemProps.sx, display: 'flex' }}
-                                                        >
-                                                            {listItemContent}
-                                                        </ListItemButton>
-                                                    ) : (
-                                                        // Render non-pending (e.g., reimbursed, denied) expenses as non-interactive ListItems with reduced opacity.
-                                                        <ListItem
-                                                            key={expense.id}
-                                                            {...commonItemProps}
-                                                            sx={{ ...commonItemProps.sx, display: 'flex', opacity: 0.6 }}
-                                                        >
-                                                            {listItemContent}
-                                                        </ListItem>
-                                                    );
-                                                })}
-                                            </List>
-                                        )}
-                                    </>
-                                </Collapse>
+                        <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
+                                <Checkbox
+                                    // Checkbox is indeterminate if some (but not all) pending items are selected.
+                                    indeterminate={somePendingSelected}
+                                    // Checkbox is checked if all pending items are selected.
+                                    checked={allPendingSelected}
+                                    onChange={handleSelectAllPending}
+                                    disabled={updating || pendingExpenses.length === 0}
+                                    slotProps={{ input: { 'aria-label': 'select all pending expenses' } }}
+                                />
+                                <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                                    Expenses ({pendingExpenses.length} Pending)
+                                </Typography>
+                                <IconButton
+                                    onClick={() => setExpensesOpen(!expensesOpen)}
+                                    aria-label={expensesOpen ? 'collapse expenses' : 'expand expenses'}
+                                >
+                                    {expensesOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                </IconButton>
                             </Box>
 
-                            {expenses.length > 0 && (
-                                <ExpenseTotal totalAmount={displayedTotalAmount} />
-                            )}
-                        </>
-                    )}
-                </Container>
+                            <Collapse in={expensesOpen} timeout="auto" unmountOnExit>
+                                <>
+                                    {expenses.length === 0 ? (
+                                        <Typography>No expenses found for this report.</Typography>
+                                    ) : (
+                                        <List sx={{ p: 0 }}>
+                                            {expenses.map((expense) => {
+                                                const commonItemProps = {
+                                                    disabled: updating,
+                                                    divider: true,
+                                                    sx: { p: 0, alignItems: 'flex-start' }
+                                                };
+                                                const isSelected = selectedExpenses.has(expense.id);
+
+                                                // Encapsulates the main content of a list item for reusability.
+                                                const listItemContent = (
+                                                    <>
+                                                        <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1, pt: 1.5 }}>
+                                                            {expense.status === 'pending' ? (
+                                                                <Checkbox
+                                                                    edge="start"
+                                                                    checked={isSelected}
+                                                                    tabIndex={-1}
+                                                                    disableRipple
+                                                                    slotProps={{ input: { 'aria-labelledby': `expense-label-${expense.id}` } }}
+                                                                    disabled={updating}
+                                                                />
+                                                            ) : (
+                                                                <Box sx={{ width: 42, height: 42 }} />
+                                                            )}
+                                                        </ListItemIcon>
+                                                        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', pt: 1, pb: 1, pr: 1 }}>
+                                                            <ExpenseListItemContent
+                                                                expense={expense}
+                                                                showDenialReason={false}
+                                                                isSharedView={true} // Explicitly pass true
+                                                            />
+                                                            {expense.items && expense.items.length > 0 && (
+                                                                <IconButton
+                                                                    edge="end"
+                                                                    aria-label="view items"
+                                                                    // Stop propagation to prevent the ListItemButton's onClick from firing
+                                                                    // when only the icon button is clicked.
+                                                                    onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }}
+                                                                    sx={{ ml: 'auto' }}
+                                                                    disabled={updating}
+                                                                >
+                                                                    <InfoIcon />
+                                                                </IconButton>
+                                                            )}
+                                                        </Box>
+                                                    </>
+                                                );
+
+                                                // Render pending expenses as interactive ListItemButtons.
+                                                return expense.status === 'pending' ? (
+                                                    <ListItemButton
+                                                        key={expense.id}
+                                                        {...commonItemProps}
+                                                        onClick={() => handleSelect(expense.id)}
+                                                        selected={isSelected}
+                                                        sx={{ ...commonItemProps.sx, display: 'flex' }}
+                                                    >
+                                                        {listItemContent}
+                                                    </ListItemButton>
+                                                ) : (
+                                                    // Render non-pending (e.g., reimbursed, denied) expenses as non-interactive ListItems with reduced opacity.
+                                                    <ListItem
+                                                        key={expense.id}
+                                                        {...commonItemProps}
+                                                        sx={{ ...commonItemProps.sx, display: 'flex', opacity: 0.6 }}
+                                                    >
+                                                        {listItemContent}
+                                                    </ListItem>
+                                                );
+                                            })}
+                                        </List>
+                                    )}
+                                </>
+                            </Collapse>
+                        </Box>
+
+                        {expenses.length > 0 && (
+                            <ExpenseTotal totalAmount={displayedTotalAmount} />
+                        )}
+                    </>
+                )}
                 <Footer />
-            </Box>
+            </Container>
 
             <Modal
                 open={modalOpen}
@@ -360,6 +342,6 @@ export default function SharedExpenseReport({ mode, setMode }) {
                 onReasonChange={setDenialReason}
                 onConfirm={confirmDenial}
             />
-        </ThemeProvider>
+        </PageLayout>
     );
 }
