@@ -52,7 +52,7 @@ export default function BudgetActionsBar({
     return (
         <Grid container spacing={2} sx={{ mb: 2, mt: 1 }} alignItems="center">
             {/* CategorySelector component for choosing a budget category. */}
-            <Grid item size={{ xs: 12, sm: 'auto' }}>
+            <Grid size={{ xs: 12, sm: 'auto' }}>
                 <CategorySelector
                     categories={categories}
                     selectedOption={selectedOption}
@@ -61,7 +61,7 @@ export default function BudgetActionsBar({
                 />
             </Grid>
             {/* Container for action buttons related to budget management. */}
-            <Grid item size={{ xs: 12, sm: true }}>
+            <Grid size={{ xs: 12, sm: true }}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                     <Button
                         variant="contained"
