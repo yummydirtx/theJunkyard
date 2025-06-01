@@ -19,6 +19,7 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, Button, Grid } from '@mui/material';
@@ -98,6 +99,14 @@ export default function BudgetActionsBar({
                         sx={{ height: 'fit-content' }}
                     >
                         View Budget Graphs
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<AutorenewIcon />}
+                        sx={{ height: 'fit-content' }}
+                    >
+                        View Recurring Expenses
                     </Button>
                 </Box>
             </Grid>
