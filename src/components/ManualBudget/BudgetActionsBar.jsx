@@ -44,7 +44,7 @@ export default function BudgetActionsBar({
     onRemoveCategory,
     onOpenAddEntryModal,
     onOpenGraphsModal,
-    onOpenRecurringExpenseModal, // New prop
+    onOpenRecurringExpenseModal,
 }) {
     return (
         <Grid container spacing={2} sx={{ mb: 2, mt: 1 }} alignItems="center">
@@ -98,17 +98,15 @@ export default function BudgetActionsBar({
                     >
                         View Budget Graphs
                     </Button>
-                    {/* --- New Button for Recurring Expenses --- */}
                     <Button
                         variant="contained"
-                        color="info" // Using "info" color, adjust as needed
+                        color="info"
                         startIcon={<AutorenewIcon />}
-                        onClick={onOpenRecurringExpenseModal} // Use the new handler
+                        onClick={onOpenRecurringExpenseModal}
                         sx={{ height: 'fit-content' }}
                     >
                         Recurring Expenses
                     </Button>
-                    {/* --- End New Button --- */}
                 </Box>
             </Grid>
         </Grid>
