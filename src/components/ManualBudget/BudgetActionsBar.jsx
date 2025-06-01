@@ -16,7 +16,7 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import AutorenewIcon from '@mui/icons-material/Autorenew'; // For Recurring Expenses
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, Button, Grid } from '@mui/material';
