@@ -19,39 +19,19 @@
 
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import { getAnalytics } from "firebase/analytics";
-import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import * as React from 'react';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
-  authDomain: "thejunkyard-b1858.firebaseapp.com",
-  projectId: "thejunkyard-b1858",
-  storageBucket: "thejunkyard-b1858.firebasestorage.app",
-  messagingSenderId: "66694016123",
-  appId: "1:66694016123:web:1c659a2c06d31c5a7b86de",
-  measurementId: "G-HEJ6YMFJY6"
-};
-
-const app = initializeApp(firebaseConfig);
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider( import.meta.env.VITE_RECAPTCHA_API_KEY ),
-  isTokenAutoRefreshEnabled: true // Enables automatic token refresh for Firebase App Check.
-});
-const analytics = getAnalytics(app);
+import app from './services/firebase/config';
 
 // Lazy load pages for better initial load performance.
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const CalcBasic = lazy(() => import('./pages/CalcBasic'));
-const YTThumb = lazy(() => import('./pages/YTThumb'));
-const ManualBudget = lazy(() => import('./pages/ManualBudget'));
-const ExpenseReport = lazy(() => import('./pages/ExpenseReport'));
-const SharedExpenseReport = lazy(() => import('./pages/SharedExpenseReport'));
+const LandingPage = lazy(() => import('./features/landingPage/pages/LandingPage'));
+const CalcBasic = lazy(() => import('./features/calcBasic/pages/CalcBasic'));
+const YTThumb = lazy(() => import('./features/ytThumb/pages/YTThumb'));
+const ManualBudget = lazy(() => import('./features/manualBudget/pages/ManualBudget'));
+const ExpenseReport = lazy(() => import('./features/expenseReport/pages/ExpenseReport'));
+const SharedExpenseReport = lazy(() => import('./features/expenseReport/pages/SharedExpenseReport'));
 
 export default function App() {
   const [mode, setMode] = React.useState(() => {
