@@ -1,15 +1,12 @@
 // Copyright (c) 2025 Alex Frutkin
-// 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
 // theJunkyard without restriction, including without limitation the rights to
 // use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 // theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
 // subject to the following conditions:
-// 
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of theJunkyard.
-// 
 // THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 // FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -18,45 +15,33 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useState, useEffect, useCallback } from 'react';
-// Remove Firebase auth imports, use context instead
-// import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, setDoc } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth
+import {
+    doc, getDoc, getDocs, collection, setDoc, addDoc,
+    updateDoc, deleteDoc, serverTimestamp, writeBatch, query, orderBy // Added query, orderBy
+} from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Custom hook for managing manual budget data for the authenticated user.
- * It handles fetching user's name, budget categories for the current month,
- * creating new months, and managing the "name prompt" state for new users.
- * Relies on `useAuth` for user authentication state and Firebase instances.
- *
- * @returns {object} An object containing:
- *  - `loading` {boolean}: Combined loading state (auth and data fetching).
- *  - `name` {string}: The user's name associated with the budget.
- *  - `categories` {Array<string>}: List of category names for the current month.
- *  - `currentMonth` {string}: The currently active budget month (YYYY-MM format).
- *  - `updateCategories` {function}: Function to manually update the local `categories` state.
- *  - `needsNamePrompt` {boolean}: True if the user needs to provide a name for their budget.
- *  - `createUserDocument` {function}: Async function to create the initial user budget document.
- *  - `setCurrentMonth` {function}: Async function to change the active budget month and fetch its data.
- *  - `addNewMonth` {function}: Async function to create a new budget month, copying data from the previous one.
+ * Handles fetching user's name, budget categories, recurring expenses,
+ * creating new months (including generating recurring entries), and managing name prompts.
  */
 export default function useManualBudgetData() {
     const { activeUser, db, loading: authLoading } = useAuth();
     const [dataLoading, setDataLoading] = useState(true);
-    /** @state {string} name - The name associated with the user's budget. */
     const [name, setName] = useState('');
-    /** @state {Array<string>} categories - List of category names for the `currentMonth`. */
     const [categories, setCategories] = useState([]);
-    /** @state {string} currentMonth - The active month for budgeting (e.g., "2023-10"). */
     const [currentMonth, setCurrentMonthState] = useState('');
-    /** @state {boolean} needsNamePrompt - True if the user has not yet set a name for their budget. */
     const [needsNamePrompt, setNeedsNamePrompt] = useState(false);
+
+    // --- State for recurring expenses ---
+    const [recurringExpensesList, setRecurringExpensesList] = useState([]);
+    // --- End recurring expenses state ---
 
     const loading = authLoading || dataLoading;
 
     /**
      * Returns the current month in YYYY-MM format.
-     * @returns {string} The current month string.
      */
     const getCurrentMonth = useCallback(() => {
         const today = new Date();
@@ -64,113 +49,250 @@ export default function useManualBudgetData() {
     }, []);
 
     /**
-     * Creates a new month document in Firestore for the given user.
-     * If previous months exist, it copies categories and their goals (but not totals)
-     * from the most recent previous month. Otherwise, it creates an empty month.
-     * @async
-     * @param {string} userId - The UID of the user.
-     * @param {string} newMonth - The month to create (YYYY-MM format).
-     * @returns {Promise<Array<string>>} A promise that resolves to the list of copied/created category names.
+     * Fetches recurring expense definitions for the current user.
      */
-    const createMonthFromPrevious = useCallback(async (userId, newMonth) => {
-        if (!userId || !db) return [];
-
-        try {
-            // console.log(`Creating new month ${newMonth} for user ${userId} based on previous month data`);
-
-            // Get all existing months for the user
-            const monthsCollection = collection(db, `manualBudget/${userId}/months`); // Use passed userId
-            const monthsSnapshot = await getDocs(monthsCollection);
-            const monthsList = monthsSnapshot.docs.map(doc => doc.id);
-
-            // Sort months in descending order (newest first)
-            monthsList.sort((a, b) => b.localeCompare(a));
-
-            // Filter out the current month (which doesn't exist yet)
-            const previousMonths = monthsList.filter(month => month !== newMonth);
-
-            if (previousMonths.length === 0) {
-                // No previous months, create empty month document
-                // console.log(`No previous months found for ${userId}. Creating empty month ${newMonth}.`);
-                await setDoc(doc(db, `manualBudget/${userId}/months/${newMonth}`), {
-                    total: 0,
-                    createdAt: new Date()
-                });
-                return []; // Return empty categories array
-            }
-
-            // Get most recent month
-            const mostRecentMonth = previousMonths[0];
-            // console.log(`Using ${mostRecentMonth} as template for new month ${newMonth}`);
-
-            // Create the new month document
-            await setDoc(doc(db, `manualBudget/${userId}/months/${newMonth}`), {
-                total: 0, // Start with zero total
-                createdAt: new Date()
-            });
-
-            // Copy categories and goals from previous month
-            const prevCategoriesPath = `manualBudget/${userId}/months/${mostRecentMonth}/categories`;
-            const prevCategoriesSnapshot = await getDocs(collection(db, prevCategoriesPath));
-
-            const copiedCategories = [];
-
-            // Check if we have categories to copy
-            if (prevCategoriesSnapshot.empty) {
-                // console.log(`No categories found in previous month ${mostRecentMonth}`);
-                return [];
-            }
-
-            // Create the same categories with the same goals but zero totals
-            for (const categoryDoc of prevCategoriesSnapshot.docs) {
-                const categoryName = categoryDoc.id;
-                const categoryData = categoryDoc.data() || {};
-
-                copiedCategories.push(categoryName);
-
-                // Ensure we have a valid goal value
-                const goalValue = typeof categoryData.goal === 'number' ? categoryData.goal : 0;
-                const colorValue = categoryData.color || '#1976d2'; // Default color if missing
-
-                // Create the category document in the new month
-                await setDoc(doc(db, `manualBudget/${userId}/months/${newMonth}/categories/${categoryName}`), {
-                    goal: goalValue,
-                    total: 0, // Reset total for the new month
-                    createdAt: new Date(),
-                    color: colorValue
-                });
-                // console.log(`Copied category ${categoryName} to ${newMonth}`);
-            }
-
-            // console.log(`Finished copying ${copiedCategories.length} categories to ${newMonth}`);
-            return copiedCategories; // Return the list of copied category names
-
-        } catch (error) {
-            console.error(`Error creating month ${newMonth} from previous for user ${userId}:`, error);
-            return []; // Return empty array on error
+    const fetchRecurringExpenseDefinitions = useCallback(async () => {
+        if (!activeUser || !db) {
+            setRecurringExpensesList([]);
+            return [];
         }
-    }, [db]); // Depend only on db, userId is passed in
+        // console.log(`[useManualBudgetData] Fetching recurring expenses for user ${activeUser.uid}`);
+        try {
+            const recurringExpensesPath = `manualBudget/${activeUser.uid}/recurringExpenses`;
+            const q = query(collection(db, recurringExpensesPath), orderBy('description', 'asc'));
+            const snapshot = await getDocs(q);
+            const definitions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setRecurringExpensesList(definitions);
+            // console.log(`[useManualBudgetData] Fetched ${definitions.length} recurring expenses.`);
+            return definitions;
+        } catch (error) {
+            console.error("Error fetching recurring expense definitions:", error);
+            setRecurringExpensesList([]);
+            return [];
+        }
+    }, [activeUser, db]);
 
     /**
-     * Fetches the list of category names for a given user and month from Firestore.
-     * Updates the `categories` state with the fetched list.
-     * @async
-     * @param {string} userId - The UID of the user.
-     * @param {string} month - The month to fetch categories for (YYYY-MM format).
-     * @returns {Promise<Array<string>>} A promise that resolves to the list of category names.
+     * Adds or updates a recurring expense definition.
+     * @param {object} expenseData - The data for the recurring expense.
+     * @param {string|null} editingId - The ID of the expense if updating, null if adding.
+     */
+    const addRecurringExpenseDefinition = useCallback(async (expenseData, editingId = null) => {
+        if (!activeUser || !db) throw new Error("User not authenticated or DB unavailable.");
+        console.log(`[addRecurringExpenseDefinition] Called with expenseData:`, expenseData, `editingId: ${editingId}`);
+
+        const dataToSave = {
+            ...expenseData,
+            userId: activeUser.uid,
+            updatedAt: serverTimestamp(),
+        };
+
+        try {
+            const recurringExpensesColRef = collection(db, `manualBudget/${activeUser.uid}/recurringExpenses`);
+            if (editingId) {
+                console.log(`[addRecurringExpenseDefinition] Updating recurring expense ID: ${editingId} with data:`, dataToSave);
+                const docRef = doc(recurringExpensesColRef, editingId);
+                await updateDoc(docRef, dataToSave);
+                console.log(`[addRecurringExpenseDefinition] Successfully updated recurring expense ID: ${editingId}`);
+            } else {
+                dataToSave.createdAt = serverTimestamp();
+                console.log(`[addRecurringExpenseDefinition] Adding new recurring expense with data:`, dataToSave);
+                const docRef = await addDoc(recurringExpensesColRef, dataToSave);
+                console.log(`[addRecurringExpenseDefinition] Successfully added new recurring expense with ID: ${docRef.id}`);
+            }
+            console.log("[addRecurringExpenseDefinition] Refreshing recurring expense definitions list.");
+            await fetchRecurringExpenseDefinitions(); // Refresh the list
+        } catch (error) {
+            console.error("[addRecurringExpenseDefinition] Error saving recurring expense definition:", error);
+            throw error;
+        }
+    }, [activeUser, db, fetchRecurringExpenseDefinitions]);
+
+    /**
+     * Deletes a recurring expense definition.
+     * @param {string} expenseId - The ID of the recurring expense to delete.
+     */
+    const deleteRecurringExpenseDefinition = useCallback(async (expenseId) => {
+        if (!activeUser || !db) throw new Error("User not authenticated or DB unavailable.");
+        // console.log(`[useManualBudgetData] Deleting recurring expense ID: ${expenseId}`);
+        try {
+            const docRef = doc(db, `manualBudget/${activeUser.uid}/recurringExpenses`, expenseId);
+            await deleteDoc(docRef);
+            await fetchRecurringExpenseDefinitions(); // Refresh the list
+        } catch (error) {
+            console.error("Error deleting recurring expense definition:", error);
+            throw error;
+        }
+    }, [activeUser, db, fetchRecurringExpenseDefinitions]);
+
+
+    /**
+     * Creates a new month document, copying categories and goals from the most recent previous month.
+     * @param {string} userId - The user's ID.
+     * @param {string} newMonth - The month to create (YYYY-MM).
+     * @returns {Promise<{copiedCategories: Array<string>, newMonthTotalGoal: number}>}
+     */
+    const createMonthFromPrevious = useCallback(async (userId, newMonth) => {
+        if (!userId || !db) return { copiedCategories: [], newMonthTotalGoal: 0 };
+        // console.log(`[useManualBudgetData] createMonthFromPrevious for user ${userId}, newMonth ${newMonth}`);
+        let newMonthTotalGoal = 0;
+        const copiedCategories = [];
+
+        try {
+            const monthsCollectionRef = collection(db, `manualBudget/${userId}/months`);
+            const monthsSnapshot = await getDocs(monthsCollectionRef);
+            const monthsList = monthsSnapshot.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
+            const previousMonths = monthsList.filter(month => month < newMonth); // Ensure we only look at past months
+
+            const newMonthDocRef = doc(db, `manualBudget/${userId}/months/${newMonth}`);
+            // Initialize new month document with goal and total
+            await setDoc(newMonthDocRef, {
+                total: 0,
+                goal: 0,
+                createdAt: serverTimestamp()
+            });
+            // console.log(`[useManualBudgetData] Initialized new month doc for ${newMonth} with 0 goal and total.`);
+
+            if (previousMonths.length > 0) {
+                const mostRecentPreviousMonth = previousMonths[0];
+                // console.log(`[useManualBudgetData] Using ${mostRecentPreviousMonth} as template for ${newMonth}`);
+                const prevCategoriesPath = `manualBudget/${userId}/months/${mostRecentPreviousMonth}/categories`;
+                const prevCategoriesSnapshot = await getDocs(collection(db, prevCategoriesPath));
+
+                if (!prevCategoriesSnapshot.empty) {
+                    const batch = writeBatch(db);
+                    prevCategoriesSnapshot.forEach(categoryDoc => {
+                        const categoryName = categoryDoc.id;
+                        const categoryData = categoryDoc.data() || {};
+                        const goalValue = typeof categoryData.goal === 'number' ? categoryData.goal : 0;
+                        const colorValue = categoryData.color || '#1976d2'; // Default color
+
+                        copiedCategories.push(categoryName);
+                        newMonthTotalGoal += goalValue;
+
+                        const newCategoryDocRef = doc(db, `manualBudget/${userId}/months/${newMonth}/categories/${categoryName}`);
+                        batch.set(newCategoryDocRef, {
+                            goal: goalValue,
+                            total: 0, // Entries will update this
+                            createdAt: serverTimestamp(),
+                            color: colorValue
+                        });
+                    });
+                    await batch.commit();
+                    // console.log(`[useManualBudgetData] Copied ${copiedCategories.length} categories to ${newMonth}. Total goal from copied: ${newMonthTotalGoal}`);
+                } else {
+                    // console.log(`[useManualBudgetData] No categories in template month ${mostRecentPreviousMonth}.`);
+                }
+            } else {
+                // console.log(`[useManualBudgetData] No previous months to copy categories from for ${newMonth}.`);
+            }
+
+            // Update the new month's total goal based on copied categories
+            if (newMonthTotalGoal > 0) {
+                await updateDoc(newMonthDocRef, { goal: newMonthTotalGoal });
+                // console.log(`[useManualBudgetData] Updated ${newMonth} total goal to ${newMonthTotalGoal}`);
+            }
+            return { copiedCategories, newMonthTotalGoal };
+        } catch (error) {
+            console.error(`Error in createMonthFromPrevious for ${newMonth}:`, error);
+            return { copiedCategories: [], newMonthTotalGoal: 0 }; // Return default on error
+        }
+    }, [db]);
+
+
+    /**
+     * Applies recurring expense definitions to a given month.
+     * Creates entries and updates totals.
+     */
+    const applyRecurringExpensesToMonth = useCallback(async (userId, targetMonth, recurringDefs, monthCategoryNames) => {
+        if (!db || !userId || !targetMonth || !recurringDefs || recurringDefs.length === 0) {
+            //console.log('[applyRecurringExpensesToMonth] Missing parameters or no definitions, skipping.');
+            return { addedTotal: 0 };
+        }
+        //console.log(`[applyRecurringExpensesToMonth] Applying ${recurringDefs.length} recurring expenses to ${targetMonth} for user ${userId}`);
+
+        const batch = writeBatch(db);
+        const [year, monthIndexBase1] = targetMonth.split('-').map(Number);
+        const monthIndexBase0 = monthIndexBase1 - 1;
+        let addedRecurringExpensesTotalAmount = 0;
+        const categoryRecurringAmounts = {};
+
+        for (const def of recurringDefs) {
+            if (!monthCategoryNames.includes(def.categoryId)) {
+                //console.warn(`[applyRecurringExpensesToMonth] Recurring expense category "${def.categoryId}" not found in month "${targetMonth}". Skipping.`);
+                continue;
+            }
+
+            let expenseDate;
+            if (def.recurrenceType === 'lastDay') {
+                expenseDate = new Date(year, monthIndexBase0 + 1, 0); // JS Date: month is 0-indexed, day 0 of next month = last day of current
+            } else {
+                const lastDayOfMonth = new Date(year, monthIndexBase0 + 1, 0).getDate();
+                const day = Math.min(def.dayOfMonth, lastDayOfMonth);
+                expenseDate = new Date(year, monthIndexBase0, day);
+            }
+
+            const entryData = {
+                amount: def.amount,
+                date: expenseDate, // Firestore will convert to Timestamp
+                description: `Recurring: ${def.description}`,
+                createdAt: serverTimestamp(),
+                isRecurring: true,
+                recurringExpenseDefId: def.id
+            };
+
+            const entryRef = doc(collection(db, `manualBudget/${userId}/months/${targetMonth}/categories/${def.categoryId}/entries`));
+            batch.set(entryRef, entryData);
+            addedRecurringExpensesTotalAmount += def.amount;
+            categoryRecurringAmounts[def.categoryId] = (categoryRecurringAmounts[def.categoryId] || 0) + def.amount;
+            // console.log(`[applyRecurringExpensesToMonth] Queued recurring entry: ${entryData.description} for ${def.categoryId} on ${expenseDate.toLocaleDateString()}`);
+        }
+
+        if (addedRecurringExpensesTotalAmount > 0) {
+            await batch.commit();
+            // console.log(`[applyRecurringExpensesToMonth] Committed batch of recurring entries for ${targetMonth}. Total amount: ${addedRecurringExpensesTotalAmount}`);
+
+            const categoryUpdatePromises = [];
+            for (const categoryId in categoryRecurringAmounts) {
+                const amountToAdd = categoryRecurringAmounts[categoryId];
+                const categoryDocRef = doc(db, `manualBudget/${userId}/months/${targetMonth}/categories/${categoryId}`);
+                categoryUpdatePromises.push(
+                    getDoc(categoryDocRef).then(categorySnap => {
+                        if (categorySnap.exists()) {
+                            const currentCategoryTotal = categorySnap.data().total || 0;
+                            return updateDoc(categoryDocRef, { total: currentCategoryTotal + amountToAdd });
+                        }
+                    })
+                );
+            }
+            await Promise.all(categoryUpdatePromises);
+            // console.log(`[applyRecurringExpensesToMonth] Updated category totals for ${targetMonth}.`);
+
+            const monthDocRef = doc(db, `manualBudget/${userId}/months/${targetMonth}`);
+            const monthSnap = await getDoc(monthDocRef);
+            const currentMonthTotalSpent = monthSnap.exists() ? (monthSnap.data().total || 0) : 0;
+            const finalMonthTotalSpent = currentMonthTotalSpent + addedRecurringExpensesTotalAmount;
+            await updateDoc(monthDocRef, { total: finalMonthTotalSpent });
+            // console.log(`[applyRecurringExpensesToMonth] Updated ${targetMonth} total spent to ${finalMonthTotalSpent}.`);
+        } else {
+            // console.log('[applyRecurringExpensesToMonth] No recurring expenses were applicable or added.');
+        }
+        return { addedTotal: addedRecurringExpensesTotalAmount };
+    }, [db]);
+
+
+    /**
+     * Fetches category names for a given user and month.
      */
     const fetchCategories = useCallback(async (userId, month) => {
         if (!userId || !month || !db) {
             setCategories([]);
             return [];
         }
-
         try {
-            // console.log(`Fetching categories for month: ${month} for user ${userId}`);
-            const categoriesPath = `manualBudget/${userId}/months/${month}/categories`; // Use passed userId
+            const categoriesPath = `manualBudget/${userId}/months/${month}/categories`;
             const categoriesSnapshot = await getDocs(collection(db, categoriesPath));
             const categoriesList = categoriesSnapshot.docs.map(doc => doc.id);
-            // console.log(`Found ${categoriesList.length} categories for month ${month} for user ${userId}`);
             setCategories(categoriesList);
             return categoriesList;
         } catch (error) {
@@ -178,341 +300,244 @@ export default function useManualBudgetData() {
             setCategories([]);
             return [];
         }
-    }, [db]); // Depend only on db, userId is passed in
+    }, [db]);
 
-    // Effect to handle initial data loading when the user logs in or auth state changes.
-    // It fetches the user's budget name and categories for the current calendar month.
-    // If the user or month document doesn't exist, it initializes them.
+    /**
+     * Effect for initial data loading (user name, current month categories, recurring expenses).
+     */
     useEffect(() => {
-        // console.log(`[processUser Effect Trigger] authLoading: ${authLoading}, activeUser?.uid: ${activeUser?.uid}`); // Log on trigger
-
-        // Don't run if auth is still loading
+        // console.log(`[processUser Effect Trigger] authLoading: ${authLoading}, activeUser?.uid: ${activeUser?.uid}`);
         if (authLoading) {
             setDataLoading(true);
-            // console.log('[processUser] Skipping: Auth is loading.');
             return;
         }
-
-        // Introduce a small delay to allow Firestore rules to potentially propagate
-        const timerId = setTimeout(() => {
+        const timerId = setTimeout(() => { // Debounce to allow Firestore rules to propagate
             setDataLoading(true);
             const processUser = async () => {
-                // Capture user and db instance at the start of this specific execution
-                const currentUser = activeUser; // Capture from context *inside* timeout
+                const currentUser = activeUser;
                 const currentDb = db;
-
-                // Log the user ID *just before* attempting Firestore operations
-                // console.log(`[processUser Timeout Start] currentUser?.uid: ${currentUser?.uid}`);
-
                 if (currentUser && currentDb) {
-                    const userIdForProcess = currentUser.uid; // Capture user ID for logging
-                    // console.log(`[processUser] Running for user: ${userIdForProcess} (after delay)`);
+                    const userIdForProcess = currentUser.uid;
                     try {
-                        // ... existing try block logic ...
-                        // console.log(`[processUser] Attempting getDoc for userDocRef: manualBudget/${userIdForProcess}`);
                         const userDocRef = doc(currentDb, 'manualBudget', userIdForProcess);
                         const userDocSnap = await getDoc(userDocRef);
-                        // ... rest of try block ...
                         if (userDocSnap.exists()) {
                             setName(userDocSnap.data().name || '');
                             setNeedsNamePrompt(!userDocSnap.data().name);
-                            // console.log(`[processUser] Found user doc for ${userIdForProcess}. Name: ${userDocSnap.data().name || 'N/A'}`);
                         } else {
-                            // User document doesn't exist, need to prompt for name
-                            // console.log(`[processUser] ManualBudget document for ${userIdForProcess} does not exist.`);
                             setName('');
                             setNeedsNamePrompt(true);
                         }
 
-                        // Determine and set the current month
                         const calendarMonth = getCurrentMonth();
-                        // console.log(`[processUser] Checking month ${calendarMonth} for user ${userIdForProcess}`);
                         const calendarMonthDocRef = doc(currentDb, `manualBudget/${userIdForProcess}/months/${calendarMonth}`);
                         const calendarMonthDocSnap = await getDoc(calendarMonthDocRef);
-
                         let monthToLoad = calendarMonth;
 
-                        // If current calendar month doesn't exist, create it from previous
                         if (!calendarMonthDocSnap.exists()) {
-                            // console.log(`[processUser] Month ${calendarMonth} does not exist for user ${userIdForProcess}. Attempting to create from previous.`);
-                            await createMonthFromPrevious(userIdForProcess, calendarMonth); // Pass userIdForProcess explicitly
-                            // If creation was successful, monthToLoad remains calendarMonth
-                            // console.log(`[processUser] Month ${calendarMonth} created/checked for user ${userIdForProcess}.`);
-                        } else {
-                             // console.log(`[processUser] Month ${calendarMonth} exists for user ${userIdForProcess}. Checking categories.`);
-                             // Check if the existing month has categories, if not, try to fix it
-                            const categoriesPath = `manualBudget/${userIdForProcess}/months/${calendarMonth}/categories`;
-                            const categoriesSnapshot = await getDocs(collection(currentDb, categoriesPath));
-                            if (categoriesSnapshot.empty) {
-                                console.warn(`[processUser] Month ${calendarMonth} exists but has no categories for user ${userIdForProcess}. Fix will be attempted by checkAndFixCurrentMonth effect.`);
-                                // Logic moved to checkAndFixCurrentMonth effect
-                            } else {
-                                // console.log(`[processUser] Found ${categoriesSnapshot.size} categories in ${calendarMonth} for user ${userIdForProcess}.`);
+                            // console.log(`[useManualBudgetData] Initial load: Month ${calendarMonth} does not exist. Creating.`);
+                            const { copiedCategories /*, newMonthTotalGoal */ } = await createMonthFromPrevious(userIdForProcess, calendarMonth);
+                            monthToLoad = calendarMonth; // Ensure monthToLoad is the newly created month
+
+                            // Apply recurring expenses to this newly created month
+                            const definitions = await fetchRecurringExpenseDefinitions(); // Fetches and sets recurringExpensesList
+                            if (definitions && definitions.length > 0) {
+                                console.log(`[processUser/useEffect] Applying recurring expenses to newly created month ${monthToLoad}.`);
+                                await applyRecurringExpensesToMonth(
+                                    userIdForProcess,
+                                    monthToLoad,
+                                    definitions,
+                                    copiedCategories // Categories created by createMonthFromPrevious
+                                );
                             }
                         }
 
                         setCurrentMonthState(monthToLoad);
-                        // console.log(`[processUser] Setting current month to ${monthToLoad} for user ${userIdForProcess}. Fetching categories.`);
-                        await fetchCategories(userIdForProcess, monthToLoad); // Pass userIdForProcess explicitly
-
+                        await fetchCategories(userIdForProcess, monthToLoad);
+                        await fetchRecurringExpenseDefinitions(); // Fetch recurring definitions
                     } catch (error) {
-                        // Add specific logging for permission errors
-                        if (error.code === 'permission-denied') {
-                             console.error(`[processUser] Firestore Permission Error for user ${userIdForProcess} (captured):`, error.message);
-                        } else {
-                            console.error(`[processUser] Error getting user data or month for user ${userIdForProcess} (captured):`, error);
-                        }
-                        // Reset state on error to avoid inconsistent UI
-                        setName('');
-                        setCategories([]);
-                        setCurrentMonthState(getCurrentMonth()); // Fallback to current calendar month
-                        setNeedsNamePrompt(false); // Avoid prompt loop on error
+                        console.error(`[processUser] Error for user ${userIdForProcess}:`, error);
+                        setName(''); setCategories([]); setCurrentMonthState(getCurrentMonth());
+                        setNeedsNamePrompt(false); setRecurringExpensesList([]);
                     } finally {
-                        // console.log(`[processUser] Finished processing for user ${userIdForProcess}. Setting dataLoading to false.`);
                         setDataLoading(false);
                     }
                 } else {
-                    // No active user
-                    // console.log('[processUser] No active user. Resetting state.');
-                    setName('');
-                    setCategories([]);
-                    setCurrentMonthState(getCurrentMonth()); // Reset month
-                    setNeedsNamePrompt(false);
+                    setName(''); setCategories([]); setCurrentMonthState(getCurrentMonth());
+                    setNeedsNamePrompt(false); setRecurringExpensesList([]);
                     setDataLoading(false);
                 }
             };
-
             processUser();
-        }, 500); // Increased delay to 500ms
+        }, 150); // Slightly increased delay
+        return () => clearTimeout(timerId);
+    }, [activeUser, db, authLoading, getCurrentMonth, createMonthFromPrevious, fetchCategories, fetchRecurringExpenseDefinitions, applyRecurringExpensesToMonth]);
 
-        // Cleanup function to clear the timeout if dependencies change or component unmounts
-        return () => {
-            // console.log('[processUser Effect Cleanup] Clearing timeout.');
-            clearTimeout(timerId);
-        }
 
-    }, [activeUser, db, authLoading, getCurrentMonth, createMonthFromPrevious, fetchCategories]); // Add authLoading and other dependencies
-
-    /**
-     * Updates the local `categories` state.
-     * @param {Array<string>|function} newCategories - The new list of categories or a function to update the existing list.
-     */
     const updateCategories = useCallback((newCategories) => {
         setCategories(newCategories);
     }, []);
 
-    /**
-     * Creates the initial user document in the 'manualBudget' collection in Firestore,
-     * including their chosen budget name and an initial document for the current month.
-     * @async
-     * @param {string} userId - The UID of the user.
-     * @param {string} userName - The name chosen by the user for their budget.
-     * @returns {Promise<void>}
-     */
+
     const createUserDocument = useCallback(async (userId, userName) => {
         if (!userId || !db) return;
-
         try {
-            await setDoc(doc(db, 'manualBudget', userId), { // Use passed userId
-                name: userName
-            });
-
-            // Also initialize the current month document
+            await setDoc(doc(db, 'manualBudget', userId), { name: userName });
             const thisMonth = getCurrentMonth();
-            await setDoc(doc(db, `manualBudget/${userId}/months/${thisMonth}`), { // Use passed userId
+            // Ensure the first month is created with initial goal and total
+            await setDoc(doc(db, `manualBudget/${userId}/months/${thisMonth}`), {
                 total: 0,
-                createdAt: new Date()
+                goal: 0,
+                createdAt: serverTimestamp()
             }, { merge: true });
 
             setName(userName);
             setNeedsNamePrompt(false);
-
-            // Set current month and fetch categories
             setCurrentMonthState(thisMonth);
-            fetchCategories(userId, thisMonth); // Pass userId explicitly
+            await fetchCategories(userId, thisMonth);
+            await fetchRecurringExpenseDefinitions(); // Also fetch recurring defs
         } catch (error) {
             console.error(`Error creating user document for user ${userId}:`, error);
-            // Potentially re-throw or handle error state
         }
-    }, [db, getCurrentMonth, fetchCategories]); // fetchCategories depends on activeUser/db
+    }, [db, getCurrentMonth, fetchCategories, fetchRecurringExpenseDefinitions]);
 
-    /**
-     * Sets the current active budget month and fetches its categories.
-     * @async
-     * @param {string} month - The month to set as current (YYYY-MM format).
-     * @returns {Promise<void>}
-     */
+
     const setCurrentMonth = useCallback(async (month) => {
-        // Check activeUser *here* before fetching
         if (!activeUser) {
-            console.warn("[setCurrentMonth] No active user, cannot fetch categories.");
             setCurrentMonthState(month);
-            setCategories([]); // Clear categories if no user
+            setCategories([]);
             return;
         }
         setCurrentMonthState(month);
-        // Pass activeUser.uid explicitly
         await fetchCategories(activeUser.uid, month);
-    }, [activeUser, fetchCategories]); // Add activeUser dependency
+        // Optionally, re-fetch recurring expenses if they could change per month,
+        // but definitions are usually user-wide.
+    }, [activeUser, fetchCategories]);
 
     /**
-     * Adds a new month document to Firestore for the authenticated user.
-     * If the month doesn't exist, it's created using `createMonthFromPrevious`.
-     * Then, it sets this new month as the `currentMonth` and fetches its categories.
-     * @async
-     * @param {string} newMonth - The month to add (YYYY-MM format).
-     * @returns {Promise<boolean>} True if the month was successfully added/set, false otherwise.
+     * Adds a new month, copies categories/goals, and generates recurring expense entries.
+     * @param {string} newMonth - The month to add (YYYY-MM).
      */
     const addNewMonth = useCallback(async (newMonth) => {
-        if (!activeUser || !db) return false; // Use activeUser
-
+        if (!activeUser || !db) return false;
+        // console.log(`[useManualBudgetData] addNewMonth called for ${newMonth}`);
         try {
-            // Check if month already exists
-            const monthDocRef = doc(db, `manualBudget/${activeUser.uid}/months/${newMonth}`); // Use activeUser.uid
-            const monthDoc = await getDoc(monthDocRef);
+            const monthDocRef = doc(db, `manualBudget/${activeUser.uid}/months/${newMonth}`);
+            const monthSnap = await getDoc(monthDocRef);
+            let categoriesForNewMonth = [];
+            // let currentMonthTotalSpent = 0; // Not needed here, applyRecurringExpensesToMonth handles it
+            // let currentMonthTotalGoal = 0; // Not needed here
 
-            if (!monthDoc.exists()) {
-                // console.log(`Creating new month: ${newMonth}`);
-                // Create new month based on previous month
-                const newCategories = await createMonthFromPrevious(activeUser.uid, newMonth); // Pass activeUser.uid explicitly
 
-                // Update state only after successful creation
-                setCurrentMonthState(newMonth);
-                setCategories(newCategories); // Set the categories copied/created
-
-                return true;
+            if (!monthSnap.exists()) {
+                // console.log(`[useManualBudgetData] Month ${newMonth} does not exist. Creating from previous.`);
+                const { copiedCategories /*, newMonthTotalGoal */ } = await createMonthFromPrevious(activeUser.uid, newMonth);
+                categoriesForNewMonth = copiedCategories;
+                // currentMonthTotalGoal = newMonthTotalGoal;
             } else {
-                // console.log(`Month ${newMonth} already exists`);
-                // Even if the month already exists, set it as the current month and fetch its categories
-                setCurrentMonthState(newMonth);
-                await fetchCategories(activeUser.uid, newMonth); // Pass activeUser.uid explicitly
-                return true; // Indicate success (month is now active)
+                // console.log(`[useManualBudgetData] Month ${newMonth} already exists. Fetching its categories and totals.`);
+                categoriesForNewMonth = await fetchCategories(activeUser.uid, newMonth);
+                // const existingMonthData = monthSnap.data();
+                // currentMonthTotalSpent = existingMonthData?.total || 0;
+                // currentMonthTotalGoal = existingMonthData?.goal || 0;
             }
+
+            // Fetch all recurring expense definitions for the user
+            const definitions = await fetchRecurringExpenseDefinitions(); // Uses the hook's state or re-fetches
+            // console.log(`[useManualBudgetData] Fetched ${definitions.length} recurring expense definitions for ${newMonth} generation.`);
+
+            if (definitions.length > 0) {
+                // console.log(`[addNewMonth] Applying recurring expenses to month ${newMonth}.`);
+                await applyRecurringExpensesToMonth(
+                    activeUser.uid,
+                    newMonth,
+                    definitions,
+                    categoriesForNewMonth
+                );
+            } else {
+                // console.log(`[addNewMonth] No recurring expense definitions to apply for ${newMonth}.`);
+            }
+
+            setCurrentMonthState(newMonth);
+            await fetchCategories(activeUser.uid, newMonth); // Refreshes categories for the new current month
+            return true;
         } catch (error) {
-            console.error(`Error adding new month ${newMonth} for user ${activeUser.uid}:`, error);
+            console.error(`Error in addNewMonth for ${newMonth}:`, error);
             return false;
         }
-    }, [activeUser, db, createMonthFromPrevious, fetchCategories]); // Add dependencies
+    }, [activeUser, db, createMonthFromPrevious, fetchCategories, fetchRecurringExpenseDefinitions, applyRecurringExpensesToMonth, setCurrentMonthState]);
 
-    // Effect to check if the current month has categories; if not, it attempts to
-    // copy them from the most recent previous month that does have categories.
-    // This acts as a self-healing mechanism for months that might have been created
-    // without categories due to race conditions or errors.
+
+    // Effect to check and fix current month if it has no categories (self-healing)
     useEffect(() => {
         let timerId;
-
-        // Log state when this effect triggers
-        // console.log(`[checkAndFix Effect Trigger] loading: ${loading}, activeUser?.uid: ${activeUser?.uid}, currentMonth: ${currentMonth}, db: ${!!db}`);
-
         const checkAndFixCurrentMonth = async () => {
-            // Capture state *inside* the async function after the delay
             const userForCheck = activeUser;
             const monthForCheck = currentMonth;
             const dbForCheck = db;
 
-            // Log the user ID *just before* attempting Firestore operations
-            // console.log(`[checkAndFix Timeout Start] userForCheck?.uid: ${userForCheck?.uid}, monthForCheck: ${monthForCheck}`);
-
-            // Check conditions again *inside* the timeout callback
-            if (loading || !userForCheck || !monthForCheck || !dbForCheck) {
-                 // console.log(`[checkAndFix Timeout] Skipping check inside async. State: loading=${loading}, userForCheck=${!!userForCheck}, monthForCheck=${monthForCheck}, dbForCheck=${!!dbForCheck}`);
-                 return;
-            }
-
-            const userIdForCheck = userForCheck.uid; // Use captured user ID
-
-            // console.log(`[checkAndFixCurrentMonth] Running for user: ${userIdForCheck}, month: ${monthForCheck} (after delay)`);
-
+            if (loading || !userForCheck || !monthForCheck || !dbForCheck) return;
+            const userIdForCheck = userForCheck.uid;
+            // console.log(`[checkAndFixCurrentMonth] Running for user: ${userIdForCheck}, month: ${monthForCheck}`);
             try {
-                // ... existing try block logic ...
-                // console.log(`[checkAndFixCurrentMonth] Attempting getDocs for categoriesPath: manualBudget/${userIdForCheck}/months/${monthForCheck}/categories`);
                 const categoriesPath = `manualBudget/${userIdForCheck}/months/${monthForCheck}/categories`;
                 const categoriesSnapshot = await getDocs(collection(dbForCheck, categoriesPath));
-                // ... rest of try block ...
-                if (categoriesSnapshot.empty) {
-                    console.warn(`[checkAndFixCurrentMonth] Detected empty categories for ${currentMonth}. Attempting fix for user ${userIdForCheck}.`);
 
-                    // Get all existing months for the user
+                if (categoriesSnapshot.empty) {
+                    // console.warn(`[checkAndFixCurrentMonth] Detected empty categories for ${monthForCheck}. Attempting fix for user ${userIdForCheck}.`);
+                    // Attempt to copy from the most recent previous month that has categories
                     const monthsCollection = collection(db, `manualBudget/${userIdForCheck}/months`);
                     const monthsSnapshot = await getDocs(monthsCollection);
                     const monthsList = monthsSnapshot.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
+                    const otherMonths = monthsList.filter(month => month < monthForCheck); // Only look at past months
 
-                    // Find the most recent *other* month with categories
-                    const otherMonths = monthsList.filter(month => month !== currentMonth);
                     let sourceMonth = null;
                     for (const month of otherMonths) {
                         const monthCategoriesPath = `manualBudget/${userIdForCheck}/months/${month}/categories`;
                         const monthCategoriesSnapshot = await getDocs(collection(db, monthCategoriesPath));
                         if (!monthCategoriesSnapshot.empty) {
                             sourceMonth = month;
-                            break; // Found a source month
+                            break;
                         }
                     }
 
                     if (sourceMonth) {
-                        // console.log(`[checkAndFixCurrentMonth] Found source month ${sourceMonth} with categories to copy from for user ${userIdForCheck}.`);
-                        // Copy categories from sourceMonth to currentMonth
+                        // console.log(`[checkAndFixCurrentMonth] Found source month ${sourceMonth} with categories.`);
                         const sourceCategoriesPath = `manualBudget/${userIdForCheck}/months/${sourceMonth}/categories`;
                         const sourceCategoriesSnapshot = await getDocs(collection(db, sourceCategoriesPath));
-
-                        let copiedCount = 0;
-                        for (const categoryDoc of sourceCategoriesSnapshot.docs) {
+                        const batch = writeBatch(db);
+                        let fixTotalGoal = 0;
+                        sourceCategoriesSnapshot.forEach(categoryDoc => {
                             const categoryName = categoryDoc.id;
                             const categoryData = categoryDoc.data() || {};
                             const goalValue = typeof categoryData.goal === 'number' ? categoryData.goal : 0;
                             const colorValue = categoryData.color || '#1976d2';
-
-                            // Set doc in the *current* month's categories
-                            await setDoc(doc(db, `manualBudget/${userIdForCheck}/months/${currentMonth}/categories/${categoryName}`), {
-                                goal: goalValue,
-                                total: 0, // Reset total
-                                createdAt: new Date(),
-                                color: colorValue
+                            fixTotalGoal += goalValue;
+                            batch.set(doc(db, categoriesPath, categoryName), {
+                                goal: goalValue, total: 0, createdAt: serverTimestamp(), color: colorValue
                             });
-                            copiedCount++;
-                            // console.log(`[checkAndFixCurrentMonth] Fixed: Copied category ${categoryName} from ${sourceMonth} to ${currentMonth} for user ${userIdForCheck}`);
+                        });
+                        await batch.commit();
+                        // Update month's goal if categories were copied
+                        if (fixTotalGoal > 0) {
+                            const monthDocRef = doc(db, `manualBudget/${userIdForCheck}/months/${monthForCheck}`);
+                            await updateDoc(monthDocRef, { goal: fixTotalGoal }, {merge: true});
                         }
-
-                        if (copiedCount > 0) {
-                            // Refresh categories state after fixing
-                            await fetchCategories(userIdForCheck, currentMonth); // Pass userIdForCheck explicitly
-                        } else {
-                             console.warn(`[checkAndFixCurrentMonth] Source month ${sourceMonth} had no categories to copy for user ${userIdForCheck}.`);
-                        }
+                        // console.log(`[checkAndFixCurrentMonth] Fixed: Copied categories from ${sourceMonth} to ${monthForCheck}. New goal: ${fixTotalGoal}`);
+                        await fetchCategories(userIdForCheck, monthForCheck); // Refresh categories state
                     } else {
-                        console.warn(`[checkAndFixCurrentMonth] Could not find any previous month with categories to fix ${currentMonth} for user ${userIdForCheck}. Month remains empty.`);
-                        // Ensure local state reflects empty categories
+                        // console.warn(`[checkAndFixCurrentMonth] Could not find any previous month with categories to fix ${monthForCheck}.`);
                         setCategories([]);
                     }
-                } else {
-                    // console.log(`[checkAndFixCurrentMonth] Categories found for ${currentMonth}, user ${userIdForCheck}. No fix needed.`);
                 }
             } catch (error) {
-                // Add specific logging for permission errors
-                if (error.code === 'permission-denied') {
-                    console.error(`[checkAndFixCurrentMonth] Firestore Permission Error for user ${userIdForCheck} (captured), month ${monthForCheck}:`, error.message);
-                } else {
-                    console.error(`[checkAndFixCurrentMonth] Error checking/fixing current month for user ${userIdForCheck} (captured), month ${monthForCheck}:`, error);
-                }
-                // Optionally reset state or indicate an error state here if needed
-                // setCategories([]); // Example: Reset categories on error
+                console.error(`[checkAndFixCurrentMonth] Error for user ${userIdForCheck}, month ${monthForCheck}:`, error);
             }
         };
-
-        // Run the check after initial loading is done and user/month are stable
         if (!loading && activeUser && currentMonth && db) {
-             // console.log(`[checkAndFix Effect] Conditions met. Setting timeout for user ${activeUser.uid}, month ${currentMonth}.`);
-             timerId = setTimeout(checkAndFixCurrentMonth, 500); // Keep delay
-        } else {
-            // console.log(`[checkAndFix Effect] Skipping check. State: loading=${loading}, activeUser=${!!activeUser}, currentMonth=${currentMonth}, db=${!!db}`);
+            timerId = setTimeout(checkAndFixCurrentMonth, 600); // Slightly longer delay
         }
-
-        // Cleanup function to clear the timeout
-        return () => {
-            // console.log('[checkAndFix Effect Cleanup] Clearing timeout.');
-            clearTimeout(timerId);
-        }
-
+        return () => clearTimeout(timerId);
     }, [activeUser, currentMonth, db, loading, fetchCategories]);
 
 
@@ -525,6 +550,10 @@ export default function useManualBudgetData() {
         needsNamePrompt,
         createUserDocument,
         setCurrentMonth,
-        addNewMonth
+        addNewMonth,
+        recurringExpensesList,
+        fetchRecurringExpenseDefinitions,
+        addRecurringExpenseDefinition,
+        deleteRecurringExpenseDefinition,
     };
 }

@@ -1,15 +1,12 @@
 // Copyright (c) 2025 Alex Frutkin
-// 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
 // theJunkyard without restriction, including without limitation the rights to
 // use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 // theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
 // subject to the following conditions:
-// 
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of theJunkyard.
-// 
 // THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 // FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -19,16 +16,14 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+import AutorenewIcon from '@mui/icons-material/Autorenew'; // For Recurring Expenses
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, Button, Grid } from '@mui/material';
 import CategorySelector from './CategorySelector';
 
 /**
- * BudgetActionsBar provides a set of actions for managing a budget,
- * including category selection, adding/removing categories, adding entries,
- * and viewing budget graphs.
+ * BudgetActionsBar provides a set of actions for managing a budget.
  * @param {object} props - The component's props.
  * @param {Array<string>} props.categories - List of available category names.
  * @param {string} props.selectedOption - The currently selected category name.
@@ -38,6 +33,7 @@ import CategorySelector from './CategorySelector';
  * @param {function} props.onRemoveCategory - Callback to initiate removing the selected category.
  * @param {function} props.onOpenAddEntryModal - Callback to open the add entry modal.
  * @param {function} props.onOpenGraphsModal - Callback to open the budget graphs modal.
+ * @param {function} props.onOpenRecurringExpenseModal - Callback to open the recurring expenses modal.
  */
 export default function BudgetActionsBar({
     categories,
@@ -48,20 +44,22 @@ export default function BudgetActionsBar({
     onRemoveCategory,
     onOpenAddEntryModal,
     onOpenGraphsModal,
+    onOpenRecurringExpenseModal, // New prop
 }) {
     return (
         <Grid container spacing={2} sx={{ mb: 2, mt: 1 }} alignItems="center">
             {/* CategorySelector component for choosing a budget category. */}
-            <Grid size={{ xs: 12, sm: 'auto' }}>
+            <Grid size={{ xs: 12, sm: "auto" }}>
                 <CategorySelector
                     categories={categories}
                     selectedOption={selectedOption}
                     onCategoryChange={onCategoryChange}
                     onEditCategory={onEditCategory}
+                    // onAddCategory and onRemoveCategory are handled by buttons below
                 />
             </Grid>
             {/* Container for action buttons related to budget management. */}
-            <Grid size={{ xs: 12, sm: true }}>
+            <Grid size={{ xs: 12, sm: "grow" }}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                     <Button
                         variant="contained"
@@ -100,14 +98,17 @@ export default function BudgetActionsBar({
                     >
                         View Budget Graphs
                     </Button>
+                    {/* --- New Button for Recurring Expenses --- */}
                     <Button
                         variant="contained"
-                        color="secondary"
+                        color="info" // Using "info" color, adjust as needed
                         startIcon={<AutorenewIcon />}
+                        onClick={onOpenRecurringExpenseModal} // Use the new handler
                         sx={{ height: 'fit-content' }}
                     >
-                        View Recurring Expenses
+                        Recurring Expenses
                     </Button>
+                    {/* --- End New Button --- */}
                 </Box>
             </Grid>
         </Grid>

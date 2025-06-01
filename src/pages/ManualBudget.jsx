@@ -1,15 +1,15 @@
 // Copyright (c) 2025 Alex Frutkin
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (theJunkyard), to deal in
 // theJunkyard without restriction, including without limitation the rights to
 // use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
 // theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of theJunkyard.
-// 
+//
 // THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
 // FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -40,6 +40,7 @@ import MonthSelectorModal from '../components/ManualBudget/MonthSelectorModal';
 import BudgetPageHeader from '../components/ManualBudget/BudgetPageHeader';
 import BudgetActionsBar from '../components/ManualBudget/BudgetActionsBar';
 import NamePromptDialog from '../components/ManualBudget/NamePromptDialog';
+import RecurringExpenseModal from '../components/ManualBudget/RecurringExpenseModal'; // Import the new modal
 
 import useModal from '../hooks/useModal';
 import useManualBudgetData from '../hooks/useManualBudgetData';
@@ -48,7 +49,7 @@ import { useAuth } from '../contexts/AuthContext';
 /**
  * ManualBudget component provides a user interface for managing a personal budget.
  * It allows users to create categories, add expense/income entries,
- * view data in graphs, and manage data across different months.
+ * view data in graphs, manage data across different months, and define recurring expenses.
  * Authentication is required to access and save budget data.
  * @param {object} props - The component's props.
  * @param {function} props.setMode - Function to toggle the color mode (light/dark).
@@ -56,7 +57,7 @@ import { useAuth } from '../contexts/AuthContext';
  */
 export default function ManualBudget({ setMode, mode }) {
     useTitle('theJunkyard: Manual Budget');
-    const { activeUser, loading: authLoading, db } = useAuth();
+    const { activeUser, loading: authLoading, db, app } = useAuth(); // Added app for modals
 
     const {
         loading: dataLoading,
@@ -68,6 +69,11 @@ export default function ManualBudget({ setMode, mode }) {
         createUserDocument,
         setCurrentMonth,
         addNewMonth,
+        // --- Destructure new items from hook ---
+        recurringExpensesList,
+        fetchRecurringExpenseDefinitions,
+        addRecurringExpenseDefinition,
+        deleteRecurringExpenseDefinition,
     } = useManualBudgetData();
 
     const overallLoading = authLoading || dataLoading;
@@ -87,6 +93,8 @@ export default function ManualBudget({ setMode, mode }) {
     const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
     const [monthSelectorOpen, openMonthSelector, closeMonthSelector] = useModal(false);
     const [editCategoryModalOpen, openEditCategoryModal, closeEditCategoryModal] = useModal(false);
+    // --- New modal state for Recurring Expenses ---
+    const [recurringExpenseModalOpen, openRecurringExpenseModal, closeRecurringExpenseModal] = useModal(false);
 
     // Effect to close modals if user logs out or auth state is still loading
     useEffect(() => {
@@ -94,21 +102,21 @@ export default function ManualBudget({ setMode, mode }) {
             const modalsToClose = [
                 closeAddCategoryModal, closeAddEntryModal, closeConfirmDialog,
                 closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector,
+                closeRecurringExpenseModal, // Close new modal on logout
             ];
             modalsToClose.forEach(closeModal => closeModal());
             setSelectedOption(''); // Reset selection if user logs out
         }
     }, [
         activeUser, authLoading, closeAddCategoryModal, closeAddEntryModal,
-        closeConfirmDialog, closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector
+        closeConfirmDialog, closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector,
+        closeRecurringExpenseModal // Add to dependency array
     ]);
-    
+
     // Effect to reset local state when user changes
     useEffect(() => {
         setSelectedOption('');
         setNameInput('');
-         // Keep modals open/closed based on their individual state,
-         // but ensure selection/input is reset for a new user.
     }, [activeUser]);
 
     // --- Event Handlers ---
@@ -132,26 +140,34 @@ export default function ManualBudget({ setMode, mode }) {
         openEditCategoryModal();
     }, [selectedOption, openEditCategoryModal]);
 
-    const handleCategoryRemoved = useCallback((categoryName) => {
+    const handleCategoryRemoved = useCallback(async (categoryName) => {
         updateCategories(prevCategories => prevCategories.filter(cat => cat !== categoryName));
         setSelectedOption('');
         setShouldRefreshGraphs(true);
-    }, [updateCategories]);
+        // Consider implications for recurring expenses linked to this category
+        if (fetchRecurringExpenseDefinitions) {
+            await fetchRecurringExpenseDefinitions(); // Refresh list in case some were auto-handled
+        }
+    }, [updateCategories, fetchRecurringExpenseDefinitions]);
 
-    const handleCategoryUpdated = useCallback((newCategoryName, oldCategoryName) => {
+    const handleCategoryUpdated = useCallback(async (newCategoryName, oldCategoryName) => {
         updateCategories(prevCategories => prevCategories.map(cat => (cat === oldCategoryName ? newCategoryName : cat)));
         if (selectedOption === oldCategoryName) {
             setSelectedOption(newCategoryName);
         }
         setShouldRefreshGraphs(true);
         closeEditCategoryModal();
-    }, [selectedOption, updateCategories, closeEditCategoryModal]);
+        // If a category name changes, existing recurring expenses linked to the old name
+        // will need to be updated manually by the user for now.
+        if (fetchRecurringExpenseDefinitions) {
+           await fetchRecurringExpenseDefinitions(); // Refresh list
+        }
+    }, [selectedOption, updateCategories, closeEditCategoryModal, fetchRecurringExpenseDefinitions]);
 
     const handleNameSubmit = useCallback(async () => {
         if (!nameInput.trim() || !activeUser) return;
         try {
             await createUserDocument(activeUser.uid, nameInput.trim());
-            // Name state and needsNamePrompt are updated by the useManualBudgetData hook
         } catch (error) {
             console.error("Error setting user name:", error);
         }
@@ -165,17 +181,16 @@ export default function ManualBudget({ setMode, mode }) {
     }, []);
 
     const handleMonthSelect = useCallback(async (month) => {
-        await setCurrentMonth(month); // setCurrentMonth also fetches categories for the new month
-        setSelectedOption(''); // Reset category selection for the new month
+        await setCurrentMonth(month);
+        setSelectedOption('');
         setShouldRefreshGraphs(true);
     }, [setCurrentMonth]);
 
     const handleOpenGraphsModal = useCallback(() => {
-        setShouldRefreshGraphs(false); // Reset refresh flag before opening graphs
+        setShouldRefreshGraphs(false);
         openBudgetGraphsModal();
     }, [openBudgetGraphsModal]);
 
-    // Reset refresh flag when graphs modal is closed to prevent unnecessary re-renders
     useEffect(() => {
         if (!budgetGraphsModalOpen) {
             setShouldRefreshGraphs(false);
@@ -187,7 +202,7 @@ export default function ManualBudget({ setMode, mode }) {
     const renderContent = () => {
         if (overallLoading) {
             return (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1, height: '50vh' }}>
                     <CircularProgress />
                 </Box>
             );
@@ -204,7 +219,7 @@ export default function ManualBudget({ setMode, mode }) {
                 />
             );
         }
-        
+
         if (needsNamePrompt) {
              return null; // NamePromptDialog is rendered outside this function
         }
@@ -220,6 +235,7 @@ export default function ManualBudget({ setMode, mode }) {
                     onRemoveCategory={handleOpenRemoveCategoryDialog}
                     onOpenAddEntryModal={openAddEntryModal}
                     onOpenGraphsModal={handleOpenGraphsModal}
+                    onOpenRecurringExpenseModal={openRecurringExpenseModal} // Pass handler
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
                     {selectedOption ? (
@@ -241,37 +257,36 @@ export default function ManualBudget({ setMode, mode }) {
 
     return (
         <PageLayout mode={mode} setMode={setMode}>
-            <Container maxWidth="lg" sx={{ 
-                pt: { xs: 12, sm: 15 }, 
-                flexGrow: 1, 
-                display: 'flex', 
+            <Container maxWidth="lg" sx={{
+                pt: { xs: 12, sm: 15 },
+                flexGrow: 1,
+                display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden' // Keep this if necessary for content scrolling
+                overflow: 'hidden'
             }}>
                 {!overallLoading && activeUser && !needsNamePrompt && (
                      <BudgetPageHeader
                         currentMonth={currentMonth}
                         onMonthChipClick={openMonthSelector}
-                        loading={overallLoading}
+                        loading={overallLoading} // Pass overallLoading
                         activeUser={activeUser}
                     />
                 )}
                 {renderContent()}
             </Container>
 
-            {/* Modals remain at this level to be managed by PageLayout's ThemeProvider */}
             {!overallLoading && activeUser && needsNamePrompt && (
                 <NamePromptDialog
                     open={needsNamePrompt}
                     nameInput={nameInput}
                     onNameInputChange={(e) => setNameInput(e.target.value)}
                     onSubmitName={handleNameSubmit}
-                    loading={dataLoading}
+                    loading={dataLoading} // Use dataLoading for this specific action
                 />
             )}
 
-            <LoginModal open={loginModalOpen} onClose={closeLoginModal} />
-            <SignUpModal open={signUpModalOpen} onClose={closeSignUpModal} />
+            <LoginModal open={loginModalOpen} onClose={closeLoginModal} app={app} />
+            <SignUpModal open={signUpModalOpen} onClose={closeSignUpModal} app={app} />
 
             {activeUser && db && (
                 <>
@@ -330,6 +345,18 @@ export default function ManualBudget({ setMode, mode }) {
                         currentMonth={currentMonth}
                         selectedCategory={selectedOption}
                         onCategoryUpdated={handleCategoryUpdated}
+                    />
+                    {/* --- Render the new RecurringExpenseModal --- */}
+                    <RecurringExpenseModal
+                        open={recurringExpenseModalOpen}
+                        onClose={closeRecurringExpenseModal}
+                        db={db}
+                        user={activeUser}
+                        categories={categories}
+                        addRecurringExpenseDefinition={addRecurringExpenseDefinition}
+                        recurringExpensesList={recurringExpensesList}
+                        fetchRecurringExpenseDefinitions={fetchRecurringExpenseDefinitions}
+                        deleteRecurringExpenseDefinition={deleteRecurringExpenseDefinition}
                     />
                 </>
             )}
