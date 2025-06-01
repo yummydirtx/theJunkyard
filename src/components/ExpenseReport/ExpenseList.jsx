@@ -17,16 +17,16 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState } from 'react';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ExpenseItemsModal from './ExpenseList/ExpenseItemsModal';
-import ExpenseActionMenu from './ExpenseList/ExpenseActionMenu';
+import { useState } from 'react';
 import ExpenseAccordion from './ExpenseList/ExpenseAccordion';
+import ExpenseActionMenu from './ExpenseList/ExpenseActionMenu';
+import ExpenseItemsModal from './ExpenseList/ExpenseItemsModal';
 import ExpenseListItemContent from './ExpenseListItemContent';
 
 /**

@@ -17,9 +17,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
-import { Box, Typography, Chip } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import { Box, Chip, Typography } from '@mui/material';
 
 /**
  * Formats a month string from YYYY-MM to "Month YYYY" for display.

@@ -17,22 +17,22 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useEffect } from 'react';
 import {
-    Modal,
-    Fade,
-    Paper,
-    Typography,
-    TextField,
-    Button,
+    Alert,
     Box,
+    Button,
+    Fade,
+    Modal,
+    Paper,
     Stack,
-    Alert
+    TextField,
+    Typography
 } from '@mui/material';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import ColorPicker, { categoryColors } from './shared/ColorPicker';
 import MoneyInput from './shared/MoneyInput';
-import { parseAmount, getCategoryData } from './utils/budgetUtils';
+import { parseAmount } from './utils/budgetUtils';
 
 /**
  * EditCategoryModal allows users to modify an existing budget category's name,

@@ -26,10 +26,9 @@ import { formatCurrency } from './utils';
  * @param {object} props - The component's props, passed by Recharts.
  * @param {boolean} props.active - True if the tooltip is active (mouse is over a data point).
  * @param {Array<object>} props.payload - Array containing the data of the hovered element.
- * @param {string|number} props.label - The label of the hovered data point (e.g., XAxis value).
  * @returns {JSX.Element|null} A Box component with tooltip content, or null if not active.
  */
-export const CustomTooltip = ({ active, payload, label }) => {
+export const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
         return (
             <Box sx={{

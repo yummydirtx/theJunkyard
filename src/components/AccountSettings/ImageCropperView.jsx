@@ -17,8 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
-import { Stack, Typography, Button, CircularProgress } from '@mui/material';
+import { Button, CircularProgress, Stack, Typography } from '@mui/material';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 

@@ -17,15 +17,14 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
-import Box from '@mui/material/Box';
-import ListItemText from '@mui/material/ListItemText';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import Tooltip from '@mui/material/Tooltip';
 import DescriptionIcon from '@mui/icons-material/Description';
-import ReceiptLink from './ReceiptLink';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import ListItemText from '@mui/material/ListItemText';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import { useParams } from 'react-router-dom';
+import ReceiptLink from './ReceiptLink';
 
 // Helper to get status chip color
 const getStatusColor = (status) => {

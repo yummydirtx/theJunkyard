@@ -18,7 +18,7 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
 
 /**
  * Custom hook to manage expenses for a shared expense report.

@@ -20,7 +20,7 @@
 import { useState, useEffect, useCallback } from 'react';
 // Remove Firebase auth imports, use context instead
 // import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, getDocs, collection, setDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, setDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 
 /**

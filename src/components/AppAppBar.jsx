@@ -17,33 +17,33 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 // Firebase services are used for saving user theme preferences.
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import MenuItem from '@mui/material/MenuItem';
-import Drawer from '@mui/material/Drawer';
-import MenuIcon from '@mui/icons-material/Menu';
-import LoginIcon from '@mui/icons-material/Login';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
-import ToggleColorMode from './ToggleColorMode';
-import LoginModal from './Authentication/LoginModal';
-import SignUpModal from './Authentication/SignUpModal';
-import logo from '../assets/websitelogo.png';
-import useModal from '../hooks/useModal';
-import ProfileMenu from './ProfileMenu';
-import { useAuth } from '../contexts/AuthContext';
-import Menu from '@mui/material/Menu';
-import Collapse from '@mui/material/Collapse';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LaunchIcon from '@mui/icons-material/Launch';
+import LoginIcon from '@mui/icons-material/Login';
+import MenuIcon from '@mui/icons-material/Menu';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
+import Container from '@mui/material/Container';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import { doc, setDoc } from 'firebase/firestore';
+import logo from '../assets/websitelogo.png';
+import { useAuth } from '../contexts/AuthContext';
+import useModal from '../hooks/useModal';
+import LoginModal from './Authentication/LoginModal';
+import SignUpModal from './Authentication/SignUpModal';
+import ProfileMenu from './ProfileMenu';
+import ToggleColorMode from './ToggleColorMode';
 
 const logoStyle = {
   width: '150px',

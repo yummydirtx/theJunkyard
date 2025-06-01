@@ -17,14 +17,12 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useEffect } from 'react';
 import {
     Box,
-    Button,
-    Typography,
-    Fade
+    Fade,
+    Typography
 } from '@mui/material';
-import Stack from '@mui/material/Stack';
+import { useEffect, useState } from 'react';
 
 /**
  * Welcome component displays a greeting message to the user in the Manual Budget page.

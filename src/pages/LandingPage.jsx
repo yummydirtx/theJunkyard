@@ -17,8 +17,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
-import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import PageLayout from '../components/PageLayout'; // Import PageLayout
 import Features from '../components/LandingPage/Features';

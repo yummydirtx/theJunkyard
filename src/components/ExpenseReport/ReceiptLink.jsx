@@ -17,15 +17,15 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useEffect } from 'react';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
-import CircularProgress from '@mui/material/CircularProgress';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { useEffect, useState } from 'react';
 // Import Firebase functions and storage
+import { getApp, getApps } from "firebase/app"; // To get app instance
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { getStorage, ref, getDownloadURL } from "firebase/storage"; // Import storage functions
-import { initializeApp, getApps, getApp } from "firebase/app"; // To get app instance
+import { getDownloadURL, getStorage, ref } from "firebase/storage"; // Import storage functions
 
 // Ensure Firebase app is initialized (similar pattern to SharedExpenseReport)
 let app;

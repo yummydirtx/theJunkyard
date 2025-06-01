@@ -17,9 +17,9 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { sendPasswordResetEmail, updateProfile, deleteUser } from 'firebase/auth';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getCroppedImg, centerAspectCrop } from '../../utils/imageUtils';
+import { deleteUser, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { centerAspectCrop, getCroppedImg } from '../../utils/imageUtils';
 
 // --- Handler Functions ---
 

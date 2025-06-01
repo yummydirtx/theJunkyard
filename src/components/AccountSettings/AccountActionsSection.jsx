@@ -17,8 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
-import { Stack, Button, CircularProgress } from '@mui/material';
+import { Button, CircularProgress, Stack } from '@mui/material';
 
 // Component for Account Actions (Password Reset, Delete)
 export default function AccountActionsSection({ onResetPassword, onDeleteAccount, loadingReset, loadingDelete, disabled, email }) {

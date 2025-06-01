@@ -17,20 +17,18 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useState, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-// Typography is now only used by sub-components or for adornments
-// import Typography from '@mui/material/Typography'; 
-import ReceiptUpload from './ReceiptUpload';
+import TextField from '@mui/material/TextField';
+import { useEffect, useRef, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
-import Alert from '@mui/material/Alert';
+import { getFirestore } from "firebase/firestore";
 import { useAuth } from '../../contexts/AuthContext';
-import { getFirestore } from "firebase/firestore"; 
 import FormHeader from './FormHeader';
 import ParsedItemsList from './ParsedItemsList';
+import ReceiptUpload from './ReceiptUpload';
 import { usePendingReceiptManagement } from './hooks/usePendingReceiptManagement';
 import { useReceiptProcessor } from './hooks/useReceiptProcessor';
 

@@ -17,20 +17,20 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useRef } from 'react';
 import {
-    Modal,
-    Fade,
-    Paper,
-    Typography,
-    TextField,
-    Button,
     Box,
-    Stack
+    Button,
+    Fade,
+    Modal,
+    Paper,
+    Stack,
+    TextField,
+    Typography
 } from '@mui/material';
-import { doc, setDoc, getDoc, collection, addDoc, updateDoc } from 'firebase/firestore';
-import MoneyInput from './shared/MoneyInput';
+import { addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useRef, useState } from 'react';
 import DateInput from './shared/DateInput';
+import MoneyInput from './shared/MoneyInput';
 import { parseAmount } from './utils/budgetUtils';
 
 /**

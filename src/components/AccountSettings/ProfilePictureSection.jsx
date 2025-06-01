@@ -17,9 +17,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
-import { Box, Avatar, Button } from '@mui/material';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import { Avatar, Box, Button } from '@mui/material';
 
 // Component for Profile Picture Display and Upload Trigger
 export default function ProfilePictureSection({ currentPhotoURL, email, onFileSelect, disabled }) {

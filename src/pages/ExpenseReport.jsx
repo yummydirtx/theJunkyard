@@ -17,17 +17,11 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
 import { useState, useCallback } from 'react';
-// import { createTheme, ThemeProvider } from '@mui/material/styles'; // Removed
-// import { alpha } from '@mui/material/styles'; // Removed, handled by PageLayout
-// import CssBaseline from '@mui/material/CssBaseline'; // Removed
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-// import AppAppBar from '../components/AppAppBar'; // Removed
-// import Footer from '../components/Footer'; // Removed
-import PageLayout from '../components/PageLayout'; // Added
+import PageLayout from '../components/PageLayout';
 import { useTitle } from '../components/useTitle';
 import { useAuth } from '../contexts/AuthContext';
 import LoginPrompt from '../components/ManualBudget/LoginPrompt';
