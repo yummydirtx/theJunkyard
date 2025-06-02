@@ -28,9 +28,9 @@ import {
   Alert,
   Stack,
 } from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { getStorage } from "firebase/storage";
-import ConfirmationDialog from './ConfirmationDialog';
+import ConfirmationDialog from '../../../components/common/ConfirmationDialog';
 import 'react-image-crop/dist/ReactCrop.css';
 
 // Sub-components for different sections of the modal

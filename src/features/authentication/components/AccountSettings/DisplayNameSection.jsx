@@ -22,7 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import { CircularProgress, IconButton, InputAdornment, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 // Component for Display Name Editing
 export default function DisplayNameSection({

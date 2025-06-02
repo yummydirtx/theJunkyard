@@ -26,7 +26,7 @@ import Divider from '@mui/material/Divider';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
-import AccountSettingsModal from '../common/AccountSettingsModal';
+import AccountSettingsModal from '../../features/authentication/components/AccountSettingsModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 /**

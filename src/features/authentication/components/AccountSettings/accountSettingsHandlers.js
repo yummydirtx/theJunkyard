@@ -19,7 +19,7 @@
 
 import { deleteUser, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { centerAspectCrop, getCroppedImg } from '../../../utils/imageUtils';
+import { centerAspectCrop, getCroppedImg } from '../../../../utils/imageUtils';
 
 // --- Handler Functions ---
 
