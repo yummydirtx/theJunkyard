@@ -16,35 +16,8 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
-
-import {
-    Box,
-    Container,
-    CircularProgress,
-} from '@mui/material';
-import { useState, useRef, useEffect, useCallback } from 'react';
-
-import PageLayout from '../../../components/layout/PageLayout';
-import LoginModal from '../../../features/authentication/components/LoginModal';
-import SignUpModal from '../../../features/authentication/components/SignUpModal';
-import LoginPrompt from '../../../components/common/LoginPrompt';
-import { useTitle } from '../../../hooks/useTitle';
-import Welcome from '../components/Welcome';
-import AddCategoryModal from '../components/AddCategoryModal';
-import EditCategoryModal from '../components/EditCategoryModal';
-import RemoveCategoryDialog from '../components/RemoveCategoryDialog';
-import AddEntryModal from '../components/AddEntryModal';
-import EntryList from '../components/EntryList';
-import BudgetGraphsModal from '../components/BudgetGraphsModal';
-import MonthSelectorModal from '../components/MonthSelectorModal';
-import BudgetPageHeader from '../components/BudgetPageHeader';
-import BudgetActionsBar from '../components/BudgetActionsBar';
-import NamePromptDialog from '../components/NamePromptDialog';
 import RecurringExpenseModal from '../components/RecurringExpenseModal'; // Import the new modal
-
-import useModal from '../../../hooks/useModal';
-import useManualBudgetDataService from '../hooks/useManualBudgetDataService';
-import { useAuth } from '../../../contexts/AuthContext';
+import useBudgetModals from '../hooks/useBudgetModals'; // Import the new hook
 
 /**
  * ManualBudget component provides a user interface for managing a personal budget.
@@ -84,33 +57,33 @@ export default function ManualBudget({ setMode, mode }) {
 
     const entryListRef = useRef(null);
 
-    // Modal states
-    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
-    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
-    const [addCategoryModalOpen, openAddCategoryModal, closeAddCategoryModal] = useModal(false);
-    const [confirmDialogOpen, openConfirmDialog, closeConfirmDialog] = useModal(false);
-    const [addEntryModalOpen, openAddEntryModal, closeAddEntryModal] = useModal(false);
-    const [budgetGraphsModalOpen, openBudgetGraphsModal, closeBudgetGraphsModal] = useModal(false);
-    const [monthSelectorOpen, openMonthSelector, closeMonthSelector] = useModal(false);
-    const [editCategoryModalOpen, openEditCategoryModal, closeEditCategoryModal] = useModal(false);
-    // --- New modal state for Recurring Expenses ---
-    const [recurringExpenseModalOpen, openRecurringExpenseModal, closeRecurringExpenseModal] = useModal(false);
+    // Modal states managed by useBudgetModals hook
+    const {
+        loginModal,
+        signUpModal,
+        addCategoryModal,
+        confirmDialog,
+        addEntryModal,
+        budgetGraphsModal,
+        monthSelectorModal,
+        editCategoryModal,
+        recurringExpenseModal
+    } = useBudgetModals();
 
     // Effect to close modals if user logs out or auth state is still loading
     useEffect(() => {
-        if (!activeUser && !authLoading) {
-            const modalsToClose = [
-                closeAddCategoryModal, closeAddEntryModal, closeConfirmDialog,
-                closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector,
-                closeRecurringExpenseModal, // Close new modal on logout
-            ];
-            modalsToClose.forEach(closeModal => closeModal());
-            setSelectedOption(''); // Reset selection if user logs out
+        if (!activeUser || authLoading) {
+            addCategoryModal.close();
+            addEntryModal.close();
+            confirmDialog.close();
+            editCategoryModal.close();
+            budgetGraphsModal.close();
+            monthSelectorModal.close();
+            recurringExpenseModal.close();
         }
     }, [
-        activeUser, authLoading, closeAddCategoryModal, closeAddEntryModal,
-        closeConfirmDialog, closeEditCategoryModal, closeBudgetGraphsModal, closeMonthSelector,
-        closeRecurringExpenseModal // Add to dependency array
+        activeUser, authLoading, addCategoryModal, addEntryModal, confirmDialog, editCategoryModal, 
+        budgetGraphsModal, monthSelectorModal, recurringExpenseModal
     ]);
 
     // Effect to reset local state when user changes
@@ -126,43 +99,35 @@ export default function ManualBudget({ setMode, mode }) {
 
     const handleCategoryAdded = useCallback((newCategory) => {
         updateCategories(prevCategories => [...prevCategories, newCategory]);
-        setSelectedOption(newCategory);
-        setShouldRefreshGraphs(true);
-    }, [updateCategories]);
+        addCategoryModal.close();
+    }, [updateCategories, addCategoryModal]);
 
     const handleOpenRemoveCategoryDialog = useCallback(() => {
-        if (!selectedOption) return;
-        openConfirmDialog();
-    }, [selectedOption, openConfirmDialog]);
+        if (selectedOption) {
+            confirmDialog.open();
+        }
+    }, [selectedOption, confirmDialog]);
 
     const handleOpenEditCategoryModal = useCallback(() => {
-        if (!selectedOption) return;
-        openEditCategoryModal();
-    }, [selectedOption, openEditCategoryModal]);
+        if (selectedOption) {
+            editCategoryModal.open();
+        }
+    }, [selectedOption, editCategoryModal]);
 
     const handleCategoryRemoved = useCallback(async (categoryName) => {
-        updateCategories(prevCategories => prevCategories.filter(cat => cat !== categoryName));
-        setSelectedOption('');
-        setShouldRefreshGraphs(true);
-        // Consider implications for recurring expenses linked to this category
-        if (fetchRecurringExpenseDefinitions) {
-            await fetchRecurringExpenseDefinitions(); // Refresh list in case some were auto-handled
-        }
-    }, [updateCategories, fetchRecurringExpenseDefinitions]);
+        updateCategories(prevCategories => prevCategories.filter(cat => cat.name !== categoryName));
+        confirmDialog.close();
+        fetchRecurringExpenseDefinitions(); // Refresh recurring expenses
+    }, [updateCategories, confirmDialog, fetchRecurringExpenseDefinitions]);
 
     const handleCategoryUpdated = useCallback(async (newCategoryName, oldCategoryName) => {
-        updateCategories(prevCategories => prevCategories.map(cat => (cat === oldCategoryName ? newCategoryName : cat)));
+        updateCategories(prevCategories => prevCategories.map(cat => cat.name === oldCategoryName ? { ...cat, name: newCategoryName } : cat));
         if (selectedOption === oldCategoryName) {
             setSelectedOption(newCategoryName);
         }
-        setShouldRefreshGraphs(true);
-        closeEditCategoryModal();
-        // If a category name changes, existing recurring expenses linked to the old name
-        // will need to be updated manually by the user for now.
-        if (fetchRecurringExpenseDefinitions) {
-           await fetchRecurringExpenseDefinitions(); // Refresh list
-        }
-    }, [selectedOption, updateCategories, closeEditCategoryModal, fetchRecurringExpenseDefinitions]);
+        editCategoryModal.close();
+        fetchRecurringExpenseDefinitions(); // Refresh recurring expenses
+    }, [selectedOption, updateCategories, editCategoryModal, fetchRecurringExpenseDefinitions]);
 
     const handleNameSubmit = useCallback(async () => {
         if (!nameInput.trim() || !activeUser) return;
@@ -174,28 +139,25 @@ export default function ManualBudget({ setMode, mode }) {
     }, [nameInput, activeUser, createUserDocument]);
 
     const handleEntryAdded = useCallback(() => {
-        if (entryListRef.current) {
-            entryListRef.current.refreshEntries();
-        }
-        setShouldRefreshGraphs(true);
-    }, []);
+        setShouldRefreshGraphs(true); // Signal graphs to refresh
+        addEntryModal.close();
+    }, [addEntryModal]);
 
     const handleMonthSelect = useCallback(async (month) => {
         await setCurrentMonth(month);
-        setSelectedOption('');
-        setShouldRefreshGraphs(true);
-    }, [setCurrentMonth]);
+        monthSelectorModal.close();
+        setShouldRefreshGraphs(true); // Refresh graphs for new month
+    }, [setCurrentMonth, monthSelectorModal]);
 
     const handleOpenGraphsModal = useCallback(() => {
-        setShouldRefreshGraphs(false);
-        openBudgetGraphsModal();
-    }, [openBudgetGraphsModal]);
+        budgetGraphsModal.open();
+    }, [budgetGraphsModal]);
 
     useEffect(() => {
-        if (!budgetGraphsModalOpen) {
-            setShouldRefreshGraphs(false);
+        if (budgetGraphsModal.isOpen) {
+            setShouldRefreshGraphs(false); // Reset refresh flag when modal opens
         }
-    }, [budgetGraphsModalOpen]);
+    }, [budgetGraphsModal.isOpen]);
 
 
     // --- Render Logic ---
@@ -291,16 +253,16 @@ export default function ManualBudget({ setMode, mode }) {
             {activeUser && db && (
                 <>
                     <AddCategoryModal
-                        open={addCategoryModalOpen}
-                        onClose={closeAddCategoryModal}
+                        open={addCategoryModal.open}
+                        onClose={addCategoryModal.close}
                         db={db}
                         user={activeUser}
                         currentMonth={currentMonth}
                         onCategoryAdded={handleCategoryAdded}
                     />
                     <RemoveCategoryDialog
-                        open={confirmDialogOpen}
-                        onClose={closeConfirmDialog}
+                        open={confirmDialog.open}
+                        onClose={confirmDialog.close}
                         categoryName={selectedOption}
                         db={db}
                         user={activeUser}
@@ -308,8 +270,8 @@ export default function ManualBudget({ setMode, mode }) {
                         onCategoryRemoved={handleCategoryRemoved}
                     />
                     <AddEntryModal
-                        open={addEntryModalOpen}
-                        onClose={closeAddEntryModal}
+                        open={addEntryModal.open}
+                        onClose={addEntryModal.close}
                         db={db}
                         user={activeUser}
                         currentMonth={currentMonth}
@@ -318,8 +280,8 @@ export default function ManualBudget({ setMode, mode }) {
                         mode={mode}
                     />
                     <BudgetGraphsModal
-                        open={budgetGraphsModalOpen}
-                        onClose={closeBudgetGraphsModal}
+                        open={budgetGraphsModal.open}
+                        onClose={budgetGraphsModal.close}
                         db={db}
                         user={activeUser}
                         currentMonth={currentMonth}
@@ -328,8 +290,8 @@ export default function ManualBudget({ setMode, mode }) {
                         forceRefresh={shouldRefreshGraphs}
                     />
                     <MonthSelectorModal
-                        open={monthSelectorOpen}
-                        onClose={closeMonthSelector}
+                        open={monthSelectorModal.open}
+                        onClose={monthSelectorModal.close}
                         db={db}
                         user={activeUser}
                         currentMonth={currentMonth}
@@ -338,8 +300,8 @@ export default function ManualBudget({ setMode, mode }) {
                         addNewMonth={addNewMonth}
                     />
                     <EditCategoryModal
-                        open={editCategoryModalOpen}
-                        onClose={closeEditCategoryModal}
+                        open={editCategoryModal.open}
+                        onClose={editCategoryModal.close}
                         db={db}
                         user={activeUser}
                         currentMonth={currentMonth}
@@ -348,8 +310,8 @@ export default function ManualBudget({ setMode, mode }) {
                     />
                     {/* --- Render the new RecurringExpenseModal --- */}
                     <RecurringExpenseModal
-                        open={recurringExpenseModalOpen}
-                        onClose={closeRecurringExpenseModal}
+                        open={recurringExpenseModal.open}
+                        onClose={recurringExpenseModal.close}
                         db={db}
                         user={activeUser}
                         categories={categories}

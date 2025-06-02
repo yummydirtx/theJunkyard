@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -29,6 +29,7 @@ import useModal from '../../../hooks/useModal';
 import LoginModal from '../../../features/authentication/components/LoginModal';
 import SignUpModal from '../../../features/authentication/components/SignUpModal';
 import CircularProgress from '@mui/material/CircularProgress';
+import useExpenseReportModals from '../hooks/useExpenseReportModals'; // Import the new hook
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import ExpenseTotal from '../components/ExpenseTotal';
@@ -62,13 +63,14 @@ export default function ExpenseReport({ setMode, mode }) {
         copied
     } = useShareLink();
 
-    // Modal hooks
-    const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
-    const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
+    // Modal hooks managed by useExpenseReportModals
+    const {
+        loginModal,
+        signUpModal,
+        editExpenseModal
+    } = useExpenseReportModals();
 
-    // State for Edit Modal
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [expenseToEdit, setExpenseToEdit] = useState(null);
+    // State for Edit Modal - updateError remains here as it's specific to the save operation
     const [updateError, setUpdateError] = useState('');
 
     // State for Action Menu
@@ -77,19 +79,13 @@ export default function ExpenseReport({ setMode, mode }) {
 
     // Handlers for Edit Modal
     const handleOpenEditModal = (expense) => {
-        if (expense.status === 'pending') {
-            setExpenseToEdit(expense);
-            setEditModalOpen(true);
-            setUpdateError('');
-        } else {
-            console.warn("Cannot edit expenses that are not pending.");
-        }
+        editExpenseModal.open(expense);
+        setUpdateError(''); // Clear error when opening
     };
 
     const handleCloseEditModal = () => {
-        setEditModalOpen(false);
-        setExpenseToEdit(null);
-        setUpdateError('');
+        editExpenseModal.close();
+        setUpdateError(''); // Clear error when closing
     };
 
     const handleSaveEdit = async (expenseId, updatedData) => {
@@ -207,8 +203,8 @@ export default function ExpenseReport({ setMode, mode }) {
                     </Box>
                 ) : (
                     <LoginPrompt
-                        openLoginModal={openLoginModal}
-                        openSignUpModal={openSignUpModal}
+                        openLoginModal={loginModal.open}
+                        openSignUpModal={signUpModal.open}
                         loading={authLoading}
                         user={activeUser}
                         app_title="Expense Report"
@@ -217,18 +213,18 @@ export default function ExpenseReport({ setMode, mode }) {
             </Container>
             {/* Modals are kept outside the main content, but within PageLayout's ThemeProvider scope */}
             <LoginModal
-                open={loginModalOpen || false}
-                onClose={closeLoginModal}
+                open={loginModal.isOpen || false}
+                onClose={loginModal.close}
             />
             <SignUpModal
-                open={signUpModalOpen || false}
-                onClose={closeSignUpModal}
+                open={signUpModal.isOpen || false}
+                onClose={signUpModal.close}
             />
 
             <EditExpenseModal
-                open={editModalOpen}
-                onClose={handleCloseEditModal}
-                expense={expenseToEdit}
+                open={editExpenseModal.isOpen}
+                onClose={handleCloseEditModal} // Keep original close to also clear updateError
+                expense={editExpenseModal.expenseToEdit}
                 onSave={handleSaveEdit}
             />
         </PageLayout>
