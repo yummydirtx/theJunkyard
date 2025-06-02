@@ -17,8 +17,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import RecurringExpenseModal from '../components/RecurringExpenseModal'; // Import the new modal
-import useBudgetModals from '../hooks/useBudgetModals'; // Import the new hook
+import RecurringExpenseModal from '../components/RecurringExpenseModal';
+import useBudgetModals from '../hooks/useBudgetModals';
 import useTitle from '../../../hooks/useTitle';
 
 /**
@@ -32,7 +32,7 @@ import useTitle from '../../../hooks/useTitle';
  */
 export default function ManualBudget({ setMode, mode }) {
     useTitle('theJunkyard: Manual Budget');
-    const { activeUser, loading: authLoading, db, app } = useAuth(); // Added app for modals
+    const { activeUser, loading: authLoading, db, app } = useAuth();
 
     const {
         loading: dataLoading,
@@ -199,7 +199,7 @@ export default function ManualBudget({ setMode, mode }) {
                     onRemoveCategory={handleOpenRemoveCategoryDialog}
                     onOpenAddEntryModal={openAddEntryModal}
                     onOpenGraphsModal={handleOpenGraphsModal}
-                    onOpenRecurringExpenseModal={openRecurringExpenseModal} // Pass handler
+                    onOpenRecurringExpenseModal={openRecurringExpenseModal}
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
                     {selectedOption ? (
