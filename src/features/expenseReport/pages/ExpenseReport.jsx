@@ -33,7 +33,7 @@ import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import ExpenseTotal from '../components/ExpenseTotal';
 import ShareLinkManager from '../components/ShareLinkManager';
-import { useUserExpenses } from '../hooks/useUserExpenses';
+import useExpenseReportService from '../hooks/useExpenseReportService';
 import { useShareLink } from '../hooks/useShareLink';
 import EditExpenseModal from '../components/EditExpenseModal';
 import Alert from '@mui/material/Alert';
@@ -51,7 +51,7 @@ export default function ExpenseReport({ setMode, mode }) {
         updateExpense,
         deleteStorageFile,
         totalPendingAmount
-    } = useUserExpenses();
+    } = useExpenseReportService();
 
     const {
         shareLink,
@@ -140,7 +140,7 @@ export default function ExpenseReport({ setMode, mode }) {
             console.error(`Failed to update status for expense ${expenseId}:`, error);
             setUpdateError(`Failed to update status: ${error.message}`);
         }
-        // Note: No need to manually refresh data, useUserExpenses hook handles updates
+        // Note: No need to manually refresh data, useExpenseReportService hook handles updates
     };
 
     return (

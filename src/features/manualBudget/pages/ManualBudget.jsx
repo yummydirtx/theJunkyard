@@ -43,7 +43,7 @@ import NamePromptDialog from '../components/NamePromptDialog';
 import RecurringExpenseModal from '../components/RecurringExpenseModal'; // Import the new modal
 
 import useModal from '../../../hooks/useModal';
-import useManualBudgetData from '../hooks/useManualBudgetData';
+import useManualBudgetDataService from '../hooks/useManualBudgetDataService';
 import { useAuth } from '../../../contexts/AuthContext';
 
 /**
@@ -74,7 +74,7 @@ export default function ManualBudget({ setMode, mode }) {
         fetchRecurringExpenseDefinitions,
         addRecurringExpenseDefinition,
         deleteRecurringExpenseDefinition,
-    } = useManualBudgetData();
+    } = useManualBudgetDataService();
 
     const overallLoading = authLoading || dataLoading;
 

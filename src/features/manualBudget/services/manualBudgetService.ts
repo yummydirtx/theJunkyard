@@ -30,166 +30,633 @@ import {
   where, 
   orderBy,
   Firestore,
-  User
+  serverTimestamp,
+  writeBatch,
+  Timestamp,
+  FieldValue
 } from 'firebase/firestore';
-import { BudgetCategory, BudgetEntry, RecurringExpense, BudgetData } from '../types';
+
+// Import shared types and event bus
+import { 
+  MonetaryAmount, 
+  FinancialTransaction, 
+  BudgetSummary,
+  FinancialCategory
+} from '../../../shared/types/financial';
+import { financialEventBus, FinancialEvent } from '../../../shared/events/financialEventBus';
+
+// Internal types that match the actual Firebase structure
+export interface ManualBudgetUser {
+  name: string;
+  createdAt?: Timestamp | FieldValue;
+}
+
+export interface BudgetMonth {
+  total: number;
+  goal: number;
+  createdAt?: Timestamp | FieldValue;
+}
+
+export interface BudgetCategory {
+  goal: number;
+  total: number;
+  color: string;
+  createdAt?: Timestamp | FieldValue;
+}
+
+export interface BudgetEntry {
+  id?: string;
+  amount: number;
+  date: Date | Timestamp;
+  description: string;
+  createdAt?: Timestamp | FieldValue;
+  isRecurring?: boolean;
+  recurringExpenseDefId?: string;
+}
+
+export interface RecurringExpenseDefinition {
+  id?: string;
+  description: string;
+  amount: number;
+  categoryId: string;
+  recurrenceType: 'specificDay' | 'lastDay';
+  dayOfMonth?: number;
+  userId: string;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
+}
+
+export interface MonthCreationResult {
+  copiedCategories: string[];
+  newMonthTotalGoal: number;
+}
 
 export class ManualBudgetService {
   constructor(private db: Firestore) {}
 
   /**
-   * Get all budget categories for a user
+   * Get user document for manual budget
    */
-  async getCategories(user: User): Promise<BudgetCategory[]> {
-    const categoriesRef = collection(this.db, 'users', user.uid, 'budgetCategories');
-    const snapshot = await getDocs(categoriesRef);
-    return snapshot.docs.map(doc => ({ ...doc.data() } as BudgetCategory));
+  async getUserDocument(userId: string): Promise<ManualBudgetUser | null> {
+    const userDocRef = doc(this.db, 'manualBudget', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      return userDocSnap.data() as ManualBudgetUser;
+    }
+    return null;
   }
 
   /**
-   * Add a new budget category
+   * Create or update user document
    */
-  async addCategory(user: User, category: Omit<BudgetCategory, 'spent'>): Promise<void> {
-    const categoriesRef = collection(this.db, 'users', user.uid, 'budgetCategories');
-    await addDoc(categoriesRef, category);
+  async createUserDocument(userId: string, name: string): Promise<void> {
+    const userDocRef = doc(this.db, 'manualBudget', userId);
+    await setDoc(userDocRef, { name });
+    
+    // Initialize current month if it doesn't exist
+    const currentMonth = this.getCurrentMonth();
+    const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${currentMonth}`);
+    await setDoc(monthDocRef, {
+      total: 0,
+      goal: 0,
+      createdAt: serverTimestamp()
+    }, { merge: true });
   }
 
   /**
-   * Update an existing budget category
+   * Get current month in YYYY-MM format
    */
-  async updateCategory(user: User, categoryId: string, updates: Partial<BudgetCategory>): Promise<void> {
-    const categoryRef = doc(this.db, 'users', user.uid, 'budgetCategories', categoryId);
-    await updateDoc(categoryRef, updates);
+  getCurrentMonth(): string {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   }
 
   /**
-   * Delete a budget category
+   * Get all category names for a specific month
    */
-  async deleteCategory(user: User, categoryId: string): Promise<void> {
-    const categoryRef = doc(this.db, 'users', user.uid, 'budgetCategories', categoryId);
-    await deleteDoc(categoryRef);
+  async getCategories(userId: string, month: string): Promise<string[]> {
+    const categoriesPath = `manualBudget/${userId}/months/${month}/categories`;
+    const categoriesSnapshot = await getDocs(collection(this.db, categoriesPath));
+    return categoriesSnapshot.docs.map(doc => doc.id);
   }
 
   /**
-   * Get budget entries for a specific month
+   * Get category data for a specific category in a month
    */
-  async getEntriesForMonth(user: User, month: string): Promise<BudgetEntry[]> {
-    const entriesRef = collection(this.db, 'users', user.uid, 'budgetEntries');
-    const q = query(
-      entriesRef,
-      where('date', '>=', `${month}-01`),
-      where('date', '<=', `${month}-31`),
-      orderBy('date', 'desc')
-    );
+  async getCategoryData(userId: string, month: string, categoryName: string): Promise<BudgetCategory | null> {
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    const categoryDoc = await getDoc(categoryDocRef);
+    
+    if (categoryDoc.exists()) {
+      return categoryDoc.data() as BudgetCategory;
+    }
+    return null;
+  }
+
+  /**
+   * Get month data
+   */
+  async getMonthData(userId: string, month: string): Promise<BudgetMonth | null> {
+    const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${month}`);
+    const monthDoc = await getDoc(monthDocRef);
+    
+    if (monthDoc.exists()) {
+      return monthDoc.data() as BudgetMonth;
+    }
+    return null;
+  }
+
+  /**
+   * Get all months for a user
+   */
+  async getAvailableMonths(userId: string): Promise<string[]> {
+    const monthsCollectionRef = collection(this.db, `manualBudget/${userId}/months`);
+    const monthsSnapshot = await getDocs(monthsCollectionRef);
+    const monthsList = monthsSnapshot.docs.map(doc => doc.id);
+    return monthsList.sort((a, b) => b.localeCompare(a)); // Sort newest first
+  }
+
+  /**
+   * Create a new month by copying categories from the most recent previous month
+   */
+  async createMonthFromPrevious(userId: string, newMonth: string): Promise<MonthCreationResult> {
+    let newMonthTotalGoal = 0;
+    const copiedCategories: string[] = [];
+
+    try {
+      // Get all months and find previous ones
+      const monthsCollectionRef = collection(this.db, `manualBudget/${userId}/months`);
+      const monthsSnapshot = await getDocs(monthsCollectionRef);
+      const monthsList = monthsSnapshot.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
+      const previousMonths = monthsList.filter(month => month < newMonth);
+
+      // Initialize new month document
+      const newMonthDocRef = doc(this.db, `manualBudget/${userId}/months/${newMonth}`);
+      await setDoc(newMonthDocRef, {
+        total: 0,
+        goal: 0,
+        createdAt: serverTimestamp()
+      });
+
+      // Copy categories from most recent previous month if available
+      if (previousMonths.length > 0) {
+        const mostRecentPreviousMonth = previousMonths[0];
+        const prevCategoriesPath = `manualBudget/${userId}/months/${mostRecentPreviousMonth}/categories`;
+        const prevCategoriesSnapshot = await getDocs(collection(this.db, prevCategoriesPath));
+
+        if (!prevCategoriesSnapshot.empty) {
+          const batch = writeBatch(this.db);
+          
+          prevCategoriesSnapshot.forEach(categoryDoc => {
+            const categoryName = categoryDoc.id;
+            const categoryData = categoryDoc.data();
+            const goalValue = typeof categoryData.goal === 'number' ? categoryData.goal : 0;
+            const colorValue = categoryData.color || '#1976d2';
+
+            copiedCategories.push(categoryName);
+            newMonthTotalGoal += goalValue;
+
+            const newCategoryDocRef = doc(this.db, `manualBudget/${userId}/months/${newMonth}/categories/${categoryName}`);
+            batch.set(newCategoryDocRef, {
+              goal: goalValue,
+              total: 0,
+              createdAt: serverTimestamp(),
+              color: colorValue
+            });
+          });
+          
+          await batch.commit();
+        }
+      }
+
+      // Update month's goal if categories were copied
+      if (newMonthTotalGoal > 0) {
+        await updateDoc(newMonthDocRef, { goal: newMonthTotalGoal });
+      }
+
+      return { copiedCategories, newMonthTotalGoal };
+    } catch (error) {
+      console.error(`Error in createMonthFromPrevious for ${newMonth}:`, error);
+      return { copiedCategories: [], newMonthTotalGoal: 0 };
+    }
+  }
+
+  /**
+   * Get all recurring expense definitions for a user
+   */
+  async getRecurringExpenseDefinitions(userId: string): Promise<RecurringExpenseDefinition[]> {
+    const recurringExpensesPath = `manualBudget/${userId}/recurringExpenses`;
+    const q = query(collection(this.db, recurringExpensesPath), orderBy('description', 'asc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ 
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RecurringExpenseDefinition));
+  }
+
+  /**
+   * Add or update a recurring expense definition
+   */
+  async saveRecurringExpenseDefinition(
+    userId: string, 
+    expenseData: Omit<RecurringExpenseDefinition, 'id' | 'userId' | 'createdAt' | 'updatedAt'>, 
+    editingId?: string
+  ): Promise<void> {
+    const dataToSave = {
+      ...expenseData,
+      userId,
+      updatedAt: serverTimestamp(),
+    };
+
+    const recurringExpensesColRef = collection(this.db, `manualBudget/${userId}/recurringExpenses`);
+    
+    if (editingId) {
+      const docRef = doc(recurringExpensesColRef, editingId);
+      await updateDoc(docRef, dataToSave);
+    } else {
+      const dataWithCreatedAt = {
+        ...dataToSave,
+        createdAt: serverTimestamp()
+      };
+      await addDoc(recurringExpensesColRef, dataWithCreatedAt);
+    }
+  }
+
+  /**
+   * Delete a recurring expense definition
+   */
+  async deleteRecurringExpenseDefinition(userId: string, expenseId: string): Promise<void> {
+    const docRef = doc(this.db, `manualBudget/${userId}/recurringExpenses`, expenseId);
+    await deleteDoc(docRef);
+  }
+
+  /**
+   * Apply recurring expenses to a specific month
+   */
+  async applyRecurringExpensesToMonth(
+    userId: string, 
+    targetMonth: string, 
+    recurringDefs: RecurringExpenseDefinition[], 
+    monthCategoryNames: string[]
+  ): Promise<{ addedTotal: number }> {
+    if (!recurringDefs || recurringDefs.length === 0) {
+      return { addedTotal: 0 };
+    }
+
+    const batch = writeBatch(this.db);
+    const [year, monthIndexBase1] = targetMonth.split('-').map(Number);
+    const monthIndexBase0 = monthIndexBase1 - 1;
+    let addedRecurringExpensesTotalAmount = 0;
+    const categoryRecurringAmounts: Record<string, number> = {};
+
+    for (const def of recurringDefs) {
+      if (!monthCategoryNames.includes(def.categoryId)) {
+        continue; // Skip if category doesn't exist in this month
+      }
+
+      let expenseDate: Date;
+      if (def.recurrenceType === 'lastDay') {
+        expenseDate = new Date(year, monthIndexBase0 + 1, 0); // Last day of month
+      } else {
+        const lastDayOfMonth = new Date(year, monthIndexBase0 + 1, 0).getDate();
+        const day = Math.min(def.dayOfMonth || 1, lastDayOfMonth);
+        expenseDate = new Date(year, monthIndexBase0, day);
+      }
+
+      const entryData: Omit<BudgetEntry, 'id'> = {
+        amount: def.amount,
+        date: expenseDate,
+        description: `Recurring: ${def.description}`,
+        createdAt: serverTimestamp(),
+        isRecurring: true,
+        recurringExpenseDefId: def.id
+      };
+
+      const entryRef = doc(collection(this.db, `manualBudget/${userId}/months/${targetMonth}/categories/${def.categoryId}/entries`));
+      batch.set(entryRef, entryData);
+      addedRecurringExpensesTotalAmount += def.amount;
+      categoryRecurringAmounts[def.categoryId] = (categoryRecurringAmounts[def.categoryId] || 0) + def.amount;
+    }
+
+    if (addedRecurringExpensesTotalAmount > 0) {
+      await batch.commit();
+
+      // Update category totals
+      const categoryUpdatePromises = [];
+      for (const categoryId in categoryRecurringAmounts) {
+        const amountToAdd = categoryRecurringAmounts[categoryId];
+        const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${targetMonth}/categories/${categoryId}`);
+        categoryUpdatePromises.push(
+          getDoc(categoryDocRef).then(categorySnap => {
+            if (categorySnap.exists()) {
+              const currentCategoryTotal = categorySnap.data().total || 0;
+              return updateDoc(categoryDocRef, { total: currentCategoryTotal + amountToAdd });
+            }
+          })
+        );
+      }
+      await Promise.all(categoryUpdatePromises);
+
+      // Update month total
+      const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${targetMonth}`);
+      const monthSnap = await getDoc(monthDocRef);
+      const currentMonthTotalSpent = monthSnap.exists() ? (monthSnap.data().total || 0) : 0;
+      const finalMonthTotalSpent = currentMonthTotalSpent + addedRecurringExpensesTotalAmount;
+      await updateDoc(monthDocRef, { total: finalMonthTotalSpent });
+    }
+
+    return { addedTotal: addedRecurringExpensesTotalAmount };
+  }
+
+  /**
+   * Check if a month exists
+   */
+  async monthExists(userId: string, month: string): Promise<boolean> {
+    const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${month}`);
+    const monthSnap = await getDoc(monthDocRef);
+    return monthSnap.exists();
+  }
+
+  /**
+   * Get entries for a specific category in a month
+   */
+  async getCategoryEntries(userId: string, month: string, categoryName: string): Promise<BudgetEntry[]> {
+    const entriesPath = `manualBudget/${userId}/months/${month}/categories/${categoryName}/entries`;
+    const entriesSnapshot = await getDocs(collection(this.db, entriesPath));
+    return entriesSnapshot.docs.map(doc => ({ 
       id: doc.id, 
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate(),
-      updatedAt: doc.data().updatedAt?.toDate()
+      ...doc.data() 
     } as BudgetEntry));
   }
 
   /**
-   * Add a new budget entry
+   * Add a new entry to a category
    */
-  async addEntry(user: User, entry: Omit<BudgetEntry, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const entriesRef = collection(this.db, 'users', user.uid, 'budgetEntries');
-    const now = new Date();
-    const newEntry = {
-      ...entry,
-      userId: user.uid,
-      createdAt: now,
-      updatedAt: now
+  async addEntry(
+    userId: string, 
+    month: string, 
+    categoryName: string, 
+    entryData: Omit<BudgetEntry, 'id' | 'createdAt'>
+  ): Promise<void> {
+    const entriesColRef = collection(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}/entries`);
+    const dataWithTimestamp = {
+      ...entryData,
+      createdAt: serverTimestamp()
     };
-    const docRef = await addDoc(entriesRef, newEntry);
-    return docRef.id;
+    const entryDocRef = await addDoc(entriesColRef, dataWithTimestamp);
+
+    // Update category total
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    const categorySnap = await getDoc(categoryDocRef);
+    if (categorySnap.exists()) {
+      const currentTotal = categorySnap.data().total || 0;
+      await updateDoc(categoryDocRef, { total: currentTotal + entryData.amount });
+    }
+
+    // Update month total
+    const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${month}`);
+    const monthSnap = await getDoc(monthDocRef);
+    let newMonthTotal = 0;
+    if (monthSnap.exists()) {
+      const currentMonthTotal = monthSnap.data().total || 0;
+      newMonthTotal = currentMonthTotal + entryData.amount;
+      await updateDoc(monthDocRef, { total: newMonthTotal });
+    }
+
+    // Emit budget entry added event
+    const addedEvent: FinancialEvent = {
+      type: 'budget.entry-added',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        entryId: entryDocRef.id,
+        amount: entryData.amount,
+        description: entryData.description,
+        monthTotal: newMonthTotal
+      }
+    };
+    financialEventBus.emit(addedEvent);
   }
 
   /**
-   * Update an existing budget entry
+   * Update an existing entry
    */
-  async updateEntry(user: User, entryId: string, updates: Partial<BudgetEntry>): Promise<void> {
-    const entryRef = doc(this.db, 'users', user.uid, 'budgetEntries', entryId);
-    await updateDoc(entryRef, {
-      ...updates,
-      updatedAt: new Date()
-    });
+  async updateEntry(
+    userId: string, 
+    month: string, 
+    categoryName: string, 
+    entryId: string, 
+    updates: Partial<BudgetEntry>
+  ): Promise<void> {
+    const entryRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}/entries/${entryId}`);
+    
+    // Get current entry to calculate amount difference
+    const entrySnap = await getDoc(entryRef);
+    if (!entrySnap.exists()) {
+      throw new Error('Entry not found');
+    }
+    
+    const currentEntry = entrySnap.data() as BudgetEntry;
+    const amountDifference = (updates.amount || currentEntry.amount) - currentEntry.amount;
+    
+    // Update the entry
+    await updateDoc(entryRef, updates);
+    
+    let newMonthTotal = 0;
+    // Update category total if amount changed
+    if (amountDifference !== 0) {
+      const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+      const categorySnap = await getDoc(categoryDocRef);
+      if (categorySnap.exists()) {
+        const currentTotal = categorySnap.data().total || 0;
+        await updateDoc(categoryDocRef, { total: currentTotal + amountDifference });
+      }
+
+      // Update month total
+      const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${month}`);
+      const monthSnap = await getDoc(monthDocRef);
+      if (monthSnap.exists()) {
+        const currentMonthTotal = monthSnap.data().total || 0;
+        newMonthTotal = currentMonthTotal + amountDifference;
+        await updateDoc(monthDocRef, { total: newMonthTotal });
+      }
+    }
+
+    // Emit budget entry updated event
+    const updatedEvent: FinancialEvent = {
+      type: 'budget.entry-updated',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        entryId,
+        amountDifference,
+        updatedAmount: updates.amount || currentEntry.amount,
+        monthTotal: newMonthTotal || undefined
+      }
+    };
+    financialEventBus.emit(updatedEvent);
   }
 
   /**
-   * Delete a budget entry
+   * Delete an entry
    */
-  async deleteEntry(user: User, entryId: string): Promise<void> {
-    const entryRef = doc(this.db, 'users', user.uid, 'budgetEntries', entryId);
+  async deleteEntry(
+    userId: string, 
+    month: string, 
+    categoryName: string, 
+    entryId: string
+  ): Promise<void> {
+    const entryRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}/entries/${entryId}`);
+    
+    // Get entry to know the amount for total updates
+    const entrySnap = await getDoc(entryRef);
+    if (!entrySnap.exists()) {
+      throw new Error('Entry not found');
+    }
+    
+    const entryData = entrySnap.data() as BudgetEntry;
+    const entryAmount = entryData.amount;
+    
+    // Delete the entry
     await deleteDoc(entryRef);
-  }
+    
+    // Update category total
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    const categorySnap = await getDoc(categoryDocRef);
+    if (categorySnap.exists()) {
+      const currentTotal = categorySnap.data().total || 0;
+      await updateDoc(categoryDocRef, { total: Math.max(0, currentTotal - entryAmount) });
+    }
 
-  /**
-   * Get recurring expenses for a user
-   */
-  async getRecurringExpenses(user: User): Promise<RecurringExpense[]> {
-    const recurringRef = collection(this.db, 'users', user.uid, 'recurringExpenses');
-    const q = query(recurringRef, where('isActive', '==', true));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate(),
-      updatedAt: doc.data().updatedAt?.toDate()
-    } as RecurringExpense));
-  }
+    // Update month total
+    const monthDocRef = doc(this.db, `manualBudget/${userId}/months/${month}`);
+    const monthSnap = await getDoc(monthDocRef);
+    let newMonthTotal = 0;
+    if (monthSnap.exists()) {
+      const currentMonthTotal = monthSnap.data().total || 0;
+      newMonthTotal = Math.max(0, currentMonthTotal - entryAmount);
+      await updateDoc(monthDocRef, { total: newMonthTotal });
+    }
 
-  /**
-   * Add a new recurring expense
-   */
-  async addRecurringExpense(user: User, expense: Omit<RecurringExpense, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const recurringRef = collection(this.db, 'users', user.uid, 'recurringExpenses');
-    const now = new Date();
-    const newExpense = {
-      ...expense,
-      userId: user.uid,
-      createdAt: now,
-      updatedAt: now
+    // Emit budget entry deleted event
+    const deletedEvent: FinancialEvent = {
+      type: 'budget.entry-deleted',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        entryId,
+        amount: entryAmount,
+        description: entryData.description,
+        monthTotal: newMonthTotal
+      }
     };
-    const docRef = await addDoc(recurringRef, newExpense);
-    return docRef.id;
+    financialEventBus.emit(deletedEvent);
   }
 
   /**
-   * Update a recurring expense
+   * Update category data (goal, color, etc.)
    */
-  async updateRecurringExpense(user: User, expenseId: string, updates: Partial<RecurringExpense>): Promise<void> {
-    const expenseRef = doc(this.db, 'users', user.uid, 'recurringExpenses', expenseId);
-    await updateDoc(expenseRef, {
-      ...updates,
-      updatedAt: new Date()
+  async updateCategory(
+    userId: string, 
+    month: string, 
+    categoryName: string, 
+    updates: Partial<BudgetCategory>
+  ): Promise<void> {
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    await updateDoc(categoryDocRef, updates);
+
+    // Emit budget category updated event
+    const updatedEvent: FinancialEvent = {
+      type: 'budget.category-updated',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        updates
+      }
+    };
+    financialEventBus.emit(updatedEvent);
+  }
+
+  /**
+   * Create a new category in a month
+   */
+  async createCategory(
+    userId: string, 
+    month: string, 
+    categoryName: string, 
+    categoryData: Omit<BudgetCategory, 'createdAt'>
+  ): Promise<void> {
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    const dataWithTimestamp = {
+      ...categoryData,
+      createdAt: serverTimestamp()
+    };
+    await setDoc(categoryDocRef, dataWithTimestamp);
+
+    // Emit budget category created event
+    const createdEvent: FinancialEvent = {
+      type: 'budget.category-created',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        goal: categoryData.goal,
+        color: categoryData.color
+      }
+    };
+    financialEventBus.emit(createdEvent);
+  }
+
+  /**
+   * Delete a category and all its entries
+   */
+  async deleteCategory(userId: string, month: string, categoryName: string): Promise<void> {
+    // Get category data before deletion for event payload
+    const categoryDocRef = doc(this.db, `manualBudget/${userId}/months/${month}/categories/${categoryName}`);
+    const categorySnap = await getDoc(categoryDocRef);
+    const categoryData = categorySnap.exists() ? categorySnap.data() as BudgetCategory : null;
+    
+    const batch = writeBatch(this.db);
+    
+    // Get all entries in the category first
+    const entriesPath = `manualBudget/${userId}/months/${month}/categories/${categoryName}/entries`;
+    const entriesSnapshot = await getDocs(collection(this.db, entriesPath));
+    
+    // Delete all entries
+    entriesSnapshot.docs.forEach(entryDoc => {
+      batch.delete(entryDoc.ref);
     });
-  }
+    
+    // Delete the category document
+    batch.delete(categoryDocRef);
+    
+    await batch.commit();
 
-  /**
-   * Get budget data for graphs
-   */
-  async getBudgetData(user: User, month: string): Promise<BudgetData> {
-    const [categories, entries] = await Promise.all([
-      this.getCategories(user),
-      this.getEntriesForMonth(user, month)
-    ]);
-
-    const totalSpent = entries
-      .filter(entry => entry.type === 'expense')
-      .reduce((sum, entry) => sum + entry.amount, 0);
-
-    const totalBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
-
-    return {
-      categories,
-      entries,
-      totalSpent,
-      totalBudget,
-      currentMonth: month
+    // Emit budget category deleted event
+    const deletedEvent: FinancialEvent = {
+      type: 'budget.category-deleted',
+      timestamp: new Date(),
+      source: 'manual-budget',
+      payload: {
+        userId,
+        month,
+        categoryName,
+        deletedTotal: categoryData?.total || 0,
+        entryCount: entriesSnapshot.docs.length
+      }
     };
+    financialEventBus.emit(deletedEvent);
   }
 }
-
-export default ManualBudgetService;

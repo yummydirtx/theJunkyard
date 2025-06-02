@@ -27,65 +27,239 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  where, 
   orderBy,
+  onSnapshot,
+  serverTimestamp,
   Firestore,
-  User
+  FieldValue,
+  Timestamp,
+  Unsubscribe
 } from 'firebase/firestore';
-import { Expense, SharedExpenseReport, ShareLinkData } from '../types';
+import { FirebaseStorage, ref, deleteObject } from 'firebase/storage';
+
+// Import shared types and event bus
+import { 
+  MonetaryAmount, 
+  FinancialTransaction, 
+  ExpenseSummary,
+  TransactionStatus
+} from '../../../shared/types/financial';
+import { financialEventBus, FinancialEvent } from '../../../shared/events/financialEventBus';
+
+// Types aligned with useUserExpenses hook data structure
+export interface ExpenseItem {
+  name: string;
+  price: number;
+  quantity?: number;
+}
+
+export interface Expense {
+  id: string;
+  userId: string;
+  description: string;
+  amount: number;
+  receiptUri?: string | null;
+  items?: ExpenseItem[] | null;
+  status: 'pending' | 'approved' | 'denied';
+  denialReason?: string | null;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
+}
+
+export interface NewExpenseData {
+  description: string;
+  amount: number;
+  receiptUri?: string | null;
+  items?: ExpenseItem[] | null;
+}
+
+export interface ShareLinkData {
+  shareId: string;
+  userId: string;
+  expenses: Expense[];
+  generatedAt: Date;
+  isActive: boolean;
+}
 
 export class ExpenseReportService {
-  constructor(private db: Firestore) {}
+  constructor(private db: Firestore, private storage?: FirebaseStorage) {}
 
   /**
-   * Get all expenses for a user
+   * Subscribe to user expenses with real-time updates
    */
-  async getUserExpenses(user: User): Promise<Expense[]> {
-    const expensesRef = collection(this.db, 'users', user.uid, 'expenses');
-    const q = query(expensesRef, orderBy('submittedAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ 
-      id: doc.id, 
-      ...doc.data(),
-      submittedAt: doc.data().submittedAt?.toDate(),
-      updatedAt: doc.data().updatedAt?.toDate(),
-      processedAt: doc.data().processedAt?.toDate()
-    } as Expense));
+  subscribeToUserExpenses(userId: string, callback: (expenses: Expense[]) => void, onError?: (error: Error) => void): Unsubscribe {
+    const expensesColRef = collection(this.db, "users", userId, "expenses");
+    const q = query(expensesColRef, orderBy("createdAt", "desc"));
+
+    return onSnapshot(q, (querySnapshot) => {
+      const expenses: Expense[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        expenses.push({
+          ...data,
+          id: doc.id,
+          status: data.status || 'pending',
+          denialReason: data.denialReason || null,
+        } as Expense);
+      });
+      callback(expenses);
+    }, (error) => {
+      console.error("Error fetching expenses: ", error);
+      onError?.(error);
+    });
   }
 
   /**
    * Add a new expense
    */
-  async addExpense(user: User, expense: Omit<Expense, 'id' | 'userId' | 'submittedAt' | 'updatedAt'>): Promise<string> {
-    const expensesRef = collection(this.db, 'users', user.uid, 'expenses');
-    const now = new Date();
-    const newExpense = {
-      ...expense,
-      userId: user.uid,
-      submittedAt: now,
-      updatedAt: now
+  async addExpense(userId: string, newExpense: NewExpenseData): Promise<string> {
+    const expenseData = {
+      userId,
+      description: newExpense.description,
+      amount: newExpense.amount,
+      receiptUri: newExpense.receiptUri || null,
+      items: newExpense.items || null,
+      status: 'pending' as TransactionStatus,
+      denialReason: null,
+      createdAt: serverTimestamp(),
     };
-    const docRef = await addDoc(expensesRef, newExpense);
+
+    const docRef = await addDoc(collection(this.db, "users", userId, "expenses"), expenseData);
+    console.log("Document written with ID: ", docRef.id);
+
+    // Emit expense added event
+    const addedEvent: FinancialEvent = {
+      type: 'expense.added',
+      timestamp: new Date(),
+      source: 'expense-report',
+      payload: {
+        userId,
+        expenseId: docRef.id,
+        amount: { value: newExpense.amount },
+        description: newExpense.description,
+      },
+    };
+    financialEventBus.emit(addedEvent);
+
     return docRef.id;
   }
 
   /**
    * Update an existing expense
    */
-  async updateExpense(user: User, expenseId: string, updates: Partial<Expense>): Promise<void> {
-    const expenseRef = doc(this.db, 'users', user.uid, 'expenses', expenseId);
-    await updateDoc(expenseRef, {
-      ...updates,
-      updatedAt: new Date()
-    });
+  async updateExpense(userId: string, expenseId: string, updatedData: Partial<Expense>): Promise<void> {
+    const expenseDocRef = doc(this.db, "users", userId, "expenses", expenseId);
+    
+    // Get current expense data to track status changes
+    const currentExpense = await getDoc(expenseDocRef);
+    const currentData = currentExpense.exists() ? currentExpense.data() as Expense : null;
+    
+    const payload = {
+      ...updatedData,
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(expenseDocRef, payload);
+    console.log("Expense document successfully updated:", expenseId);
+
+    // Emit status change event if status was updated
+    if (updatedData.status && currentData && currentData.status !== updatedData.status) {
+      const statusChangedEvent: FinancialEvent = {
+        type: 'expense.status-changed',
+        timestamp: new Date(),
+        source: 'expense-report',
+        payload: {
+          userId,
+          expenseId,
+          previousStatus: currentData.status,
+          newStatus: updatedData.status,
+          amount: { value: currentData.amount || 0 },
+          description: currentData.description,
+        },
+      };
+      financialEventBus.emit(statusChangedEvent);
+    }
   }
 
   /**
-   * Delete an expense
+   * Delete an expense document
    */
-  async deleteExpense(user: User, expenseId: string): Promise<void> {
-    const expenseRef = doc(this.db, 'users', user.uid, 'expenses', expenseId);
-    await deleteDoc(expenseRef);
+  async deleteExpense(userId: string, expenseId: string): Promise<void> {
+    // Get expense data before deletion for event emission
+    const expenseDocRef = doc(this.db, "users", userId, "expenses", expenseId);
+    const expenseDoc = await getDoc(expenseDocRef);
+    const expenseData = expenseDoc.exists() ? expenseDoc.data() as Expense : null;
+    
+    await deleteDoc(expenseDocRef);
+    console.log("Expense document successfully deleted!");
+
+    // Emit expense deleted event
+    if (expenseData) {
+      const deletedEvent: FinancialEvent = {
+        type: 'expense.deleted',
+        timestamp: new Date(),
+        source: 'expense-report',
+        payload: {
+          userId,
+          expenseId,
+          amount: { value: expenseData.amount || 0 },
+          description: expenseData.description,
+          status: expenseData.status,
+        },
+      };
+      financialEventBus.emit(deletedEvent);
+    }
+  }
+
+  /**
+   * Delete a file from Firebase Storage
+   */
+  async deleteStorageFile(gsUri: string): Promise<void> {
+    if (!gsUri || !this.storage) {
+      console.log("No URI or storage, skipping deletion.");
+      return;
+    }
+    
+    console.log("Attempting to delete file from Storage:", gsUri);
+    try {
+      const storageRef = ref(this.storage, gsUri);
+      await deleteObject(storageRef);
+      console.log("File successfully deleted from Storage:", gsUri);
+    } catch (error: any) {
+      if (error.code === 'storage/object-not-found') {
+        console.warn("Storage file not found (already deleted?):", gsUri);
+      } else {
+        console.error("Error deleting file from Storage:", gsUri, error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Delete an expense with its associated receipt
+   */
+  async deleteExpenseWithReceipt(userId: string, expenseId: string, expense: Expense): Promise<void> {
+    // Delete Receipt from Storage first
+    if (expense.receiptUri) {
+      try {
+        await this.deleteStorageFile(expense.receiptUri);
+      } catch (storageError) {
+        console.error("Failed to delete storage file during expense deletion:", storageError);
+        // Decide if you want to proceed with Firestore deletion even if storage fails
+      }
+    }
+
+    // Delete Expense Document from Firestore
+    await this.deleteExpense(userId, expenseId);
+  }
+
+  /**
+   * Calculate total pending amount from expenses
+   */
+  calculateTotalPendingAmount(expenses: Expense[]): number {
+    return expenses
+      .filter(expense => expense.status === 'pending')
+      .reduce((total, expense) => total + (expense.amount || 0), 0);
   }
 
   /**
@@ -106,9 +280,8 @@ export class ExpenseReportService {
       generatedAt: data.generatedAt?.toDate(),
       expenses: data.expenses?.map((expense: any) => ({
         ...expense,
-        submittedAt: expense.submittedAt?.toDate(),
+        createdAt: expense.createdAt?.toDate(),
         updatedAt: expense.updatedAt?.toDate(),
-        processedAt: expense.processedAt?.toDate()
       }))
     } as ShareLinkData;
   }
@@ -116,12 +289,12 @@ export class ExpenseReportService {
   /**
    * Create a shared expense report
    */
-  async createSharedExpenseReport(user: User, expenses: Expense[]): Promise<string> {
+  async createSharedExpenseReport(userId: string, expenses: Expense[]): Promise<string> {
     const shareId = this.generateShareId();
     const shareRef = doc(this.db, 'sharedExpenseReports', shareId);
     
     const shareData: Omit<ShareLinkData, 'shareId'> = {
-      userId: user.uid,
+      userId,
       expenses,
       generatedAt: new Date(),
       isActive: true
@@ -154,7 +327,6 @@ export class ExpenseReportService {
       ...expenses[expenseIndex],
       status,
       denialReason: status === 'denied' ? denialReason : null,
-      processedAt: status !== 'pending' ? new Date() : null,
       updatedAt: new Date()
     };
 
@@ -167,15 +339,6 @@ export class ExpenseReportService {
   private generateShareId(): string {
     return Math.random().toString(36).substring(2, 15) + 
            Math.random().toString(36).substring(2, 15);
-  }
-
-  /**
-   * Calculate total pending amount from expenses
-   */
-  calculateTotalPendingAmount(expenses: Expense[]): number {
-    return expenses
-      .filter(expense => expense.status === 'pending')
-      .reduce((total, expense) => total + expense.totalAmount, 0);
   }
 }
 
