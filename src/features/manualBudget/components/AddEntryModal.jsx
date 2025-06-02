@@ -29,9 +29,8 @@ import {
 } from '@mui/material';
 import { addDoc, collection, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useRef, useState } from 'react';
-import DateInput from './shared/DateInput';
-import MoneyInput from './shared/MoneyInput';
-import { parseAmount } from './utils/budgetUtils';
+import { DateInput, MoneyInput } from '../../../components/common/forms';
+import { parseAmount } from '../../../shared/utils/financialUtils';
 
 /**
  * Helper function to get a date string in YYYY-MM-DD format from a Date object,

@@ -98,6 +98,39 @@ export const formatDateRange = (range: DateRange): string => {
   return `${formatter.format(range.startDate)} - ${formatter.format(range.endDate)}`;
 };
 
+// Amount parsing utilities
+export const parseAmount = (amount: string | number): number => {
+  if (typeof amount === 'number') {
+    return Math.round(amount * 100) / 100;
+  }
+  
+  const parsed = amount ? parseFloat(amount) : 0;
+  return Math.round(parsed * 100) / 100;
+};
+
+export const formatDate = (date: Date | string): string => {
+  return new Date(date).toLocaleDateString();
+};
+
+export const getCurrentMonth = (): string => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const formatMonth = (monthStr: string): string => {
+  try {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  } catch (e) {
+    return monthStr;
+  }
+};
+
+export const isValidMonth = (month: string): boolean => {
+  return Boolean(month && /^\d{4}-\d{2}$/.test(month));
+};
+
 // Budget calculation utilities
 export const calculateBudgetStatus = (budgeted: number, spent: number): BudgetStatus => {
   const percentage = budgeted > 0 ? (spent / budgeted) * 100 : 0;

@@ -44,8 +44,8 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import MoneyInput from './shared/MoneyInput'; // Assuming you have this shared component
-import { parseAmount } from './utils/budgetUtils'; // Assuming you have this utility
+import { MoneyInput } from '../../../components/common/forms'; // Shared form component
+import { parseAmount } from '../../../shared/utils/financialUtils'; // Shared utility
 
 /**
  * RecurringExpenseModal allows users to add, view, edit, and delete recurring monthly expenses.

@@ -37,9 +37,8 @@ import {
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import MoneyInput from './shared/MoneyInput';
-import DateInput from './shared/DateInput';
-import { parseAmount } from './utils/budgetUtils';
+import { DateInput, MoneyInput } from '../../../components/common/forms';
+import { parseAmount } from '../../../shared/utils/financialUtils';
 
 /**
  * Helper function to get a date string in YYYY-MM-DD format from a Date object,

@@ -29,9 +29,8 @@ import {
     Stack
 } from '@mui/material';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import ColorPicker, { categoryColors } from './shared/ColorPicker';
-import MoneyInput from './shared/MoneyInput';
-import { parseAmount } from './utils/budgetUtils';
+import { ColorPicker, categoryColors, MoneyInput } from '../../../components/common/forms';
+import { parseAmount } from '../../../shared/utils/financialUtils';
 
 /**
  * AddCategoryModal provides a form for users to add a new budget category.

@@ -30,9 +30,8 @@ import {
 } from '@mui/material';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import ColorPicker, { categoryColors } from './shared/ColorPicker';
-import MoneyInput from './shared/MoneyInput';
-import { parseAmount } from './utils/budgetUtils';
+import { ColorPicker, categoryColors, MoneyInput } from '../../../components/common/forms';
+import { parseAmount } from '../../../shared/utils/financialUtils';
 
 /**
  * EditCategoryModal allows users to modify an existing budget category's name,
