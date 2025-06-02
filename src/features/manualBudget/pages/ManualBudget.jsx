@@ -16,8 +16,10 @@
 // COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
+
 import RecurringExpenseModal from '../components/RecurringExpenseModal'; // Import the new modal
 import useBudgetModals from '../hooks/useBudgetModals'; // Import the new hook
+import useTitle from '../../../hooks/useTitle';
 
 /**
  * ManualBudget component provides a user interface for managing a personal budget.
