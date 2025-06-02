@@ -19,7 +19,29 @@
 
 import RecurringExpenseModal from '../components/RecurringExpenseModal';
 import useBudgetModals from '../hooks/useBudgetModals';
-import useTitle from '../../../hooks/useTitle';
+import { useTitle } from '../../../hooks/useTitle';
+import { useAuth } from '../../../contexts/AuthContext';
+import useManualBudgetDataService from '../hooks/useManualBudgetDataService';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Container from '@mui/material/Container';
+import LoginPrompt from '../../../components/common/LoginPrompt';
+import NamePromptDialog from '../components/NamePromptDialog';
+import BudgetActionsBar from '../components/BudgetActionsBar';
+import EntryList from '../components/EntryList';
+import Welcome from '../components/Welcome';
+import PageLayout from '../../../components/layout/PageLayout';
+import BudgetPageHeader from '../components/BudgetPageHeader';
+import LoginModal from '../../authentication/components/LoginModal';
+import SignUpModal from '../../authentication/components/SignUpModal';
+import AddCategoryModal from '../components/AddCategoryModal';
+import RemoveCategoryDialog from '../components/RemoveCategoryDialog';
+import AddEntryModal from '../components/AddEntryModal';
+import BudgetGraphsModal from '../components/BudgetGraphsModal';
+import MonthSelectorModal from '../components/MonthSelectorModal';
+import EditCategoryModal from '../components/EditCategoryModal';
+
 
 /**
  * ManualBudget component provides a user interface for managing a personal budget.
@@ -84,7 +106,7 @@ export default function ManualBudget({ setMode, mode }) {
             recurringExpenseModal.close();
         }
     }, [
-        activeUser, authLoading, addCategoryModal, addEntryModal, confirmDialog, editCategoryModal, 
+        activeUser, authLoading, addCategoryModal, addEntryModal, confirmDialog, editCategoryModal,
         budgetGraphsModal, monthSelectorModal, recurringExpenseModal
     ]);
 
@@ -175,8 +197,8 @@ export default function ManualBudget({ setMode, mode }) {
         if (!activeUser) {
             return (
                 <LoginPrompt
-                    openLoginModal={openLoginModal}
-                    openSignUpModal={openSignUpModal}
+                    openLoginModal={loginModal.open} // Corrected: use loginModal.open from useBudgetModals
+                    openSignUpModal={signUpModal.open} // Corrected: use signUpModal.open from useBudgetModals
                     loading={authLoading}
                     user={activeUser}
                     app_title="Manual Budget"
@@ -185,7 +207,7 @@ export default function ManualBudget({ setMode, mode }) {
         }
 
         if (needsNamePrompt) {
-             return null; // NamePromptDialog is rendered outside this function
+            return null; // NamePromptDialog is rendered outside this function
         }
 
         return (
@@ -195,11 +217,11 @@ export default function ManualBudget({ setMode, mode }) {
                     selectedOption={selectedOption}
                     onCategoryChange={handleCategorySelectChange}
                     onEditCategory={handleOpenEditCategoryModal}
-                    onOpenAddCategoryModal={openAddCategoryModal}
+                    onOpenAddCategoryModal={addCategoryModal.open} // Corrected: use addCategoryModal.open
                     onRemoveCategory={handleOpenRemoveCategoryDialog}
-                    onOpenAddEntryModal={openAddEntryModal}
+                    onOpenAddEntryModal={addEntryModal.open} // Corrected: use addEntryModal.open
                     onOpenGraphsModal={handleOpenGraphsModal}
-                    onOpenRecurringExpenseModal={openRecurringExpenseModal}
+                    onOpenRecurringExpenseModal={recurringExpenseModal.open} // Corrected: use recurringExpenseModal.open
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
                     {selectedOption ? (
@@ -229,9 +251,9 @@ export default function ManualBudget({ setMode, mode }) {
                 overflow: 'hidden'
             }}>
                 {!overallLoading && activeUser && !needsNamePrompt && (
-                     <BudgetPageHeader
+                    <BudgetPageHeader
                         currentMonth={currentMonth}
-                        onMonthChipClick={openMonthSelector}
+                        onMonthChipClick={monthSelectorModal.open} // Corrected: use monthSelectorModal.open
                         loading={overallLoading} // Pass overallLoading
                         activeUser={activeUser}
                     />
@@ -249,13 +271,13 @@ export default function ManualBudget({ setMode, mode }) {
                 />
             )}
 
-            <LoginModal open={loginModalOpen} onClose={closeLoginModal} app={app} />
-            <SignUpModal open={signUpModalOpen} onClose={closeSignUpModal} app={app} />
+            <LoginModal open={loginModal.isOpen} onClose={loginModal.close} app={app} /> 
+            <SignUpModal open={signUpModal.isOpen} onClose={signUpModal.close} app={app} />
 
             {activeUser && db && (
                 <>
                     <AddCategoryModal
-                        open={addCategoryModal.open}
+                        open={addCategoryModal.isOpen}
                         onClose={addCategoryModal.close}
                         db={db}
                         user={activeUser}
@@ -263,7 +285,7 @@ export default function ManualBudget({ setMode, mode }) {
                         onCategoryAdded={handleCategoryAdded}
                     />
                     <RemoveCategoryDialog
-                        open={confirmDialog.open}
+                        open={confirmDialog.isOpen}
                         onClose={confirmDialog.close}
                         categoryName={selectedOption}
                         db={db}
@@ -272,7 +294,7 @@ export default function ManualBudget({ setMode, mode }) {
                         onCategoryRemoved={handleCategoryRemoved}
                     />
                     <AddEntryModal
-                        open={addEntryModal.open}
+                        open={addEntryModal.isOpen}
                         onClose={addEntryModal.close}
                         db={db}
                         user={activeUser}
@@ -282,7 +304,7 @@ export default function ManualBudget({ setMode, mode }) {
                         mode={mode}
                     />
                     <BudgetGraphsModal
-                        open={budgetGraphsModal.open}
+                        open={budgetGraphsModal.isOpen}
                         onClose={budgetGraphsModal.close}
                         db={db}
                         user={activeUser}
@@ -292,7 +314,7 @@ export default function ManualBudget({ setMode, mode }) {
                         forceRefresh={shouldRefreshGraphs}
                     />
                     <MonthSelectorModal
-                        open={monthSelectorModal.open}
+                        open={monthSelectorModal.isOpen}
                         onClose={monthSelectorModal.close}
                         db={db}
                         user={activeUser}
@@ -302,7 +324,7 @@ export default function ManualBudget({ setMode, mode }) {
                         addNewMonth={addNewMonth}
                     />
                     <EditCategoryModal
-                        open={editCategoryModal.open}
+                        open={editCategoryModal.isOpen}
                         onClose={editCategoryModal.close}
                         db={db}
                         user={activeUser}
@@ -312,7 +334,7 @@ export default function ManualBudget({ setMode, mode }) {
                     />
                     {/* --- Render the new RecurringExpenseModal --- */}
                     <RecurringExpenseModal
-                        open={recurringExpenseModal.open}
+                        open={recurringExpenseModal.isOpen}
                         onClose={recurringExpenseModal.close}
                         db={db}
                         user={activeUser}
