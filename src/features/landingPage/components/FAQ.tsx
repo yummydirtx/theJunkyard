@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
+import React from 'react';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -27,10 +27,10 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
-export default function FAQ() {
-  const [expanded, setExpanded] = React.useState(false);
+const FAQ: React.FC = () => {
+  const [expanded, setExpanded] = React.useState<string | false>(false);
 
-  const handleChange = (panel) => (event, isExpanded) => {
+  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
 
@@ -110,4 +110,6 @@ export default function FAQ() {
       </Box>
     </Container>
   );
-}
+};
+
+export default FAQ;

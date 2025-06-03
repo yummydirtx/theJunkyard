@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
+import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -37,8 +37,9 @@ import ExpenseReportLogo from '../../../assets/expensereport.png'; // Placeholde
 import SearchIcon from '@mui/icons-material/Search';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { FeatureItem } from '../types/index';
 
-const items = [
+const items: FeatureItem[] = [
   {
     icon: <SearchIcon />,
     title: 'AnteaterFind',
@@ -68,10 +69,10 @@ const items = [
   },
 ];
 
-export default function Features() {
-  const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
+const Features: React.FC = () => {
+  const [selectedItemIndex, setSelectedItemIndex] = React.useState<number>(0);
 
-  const handleItemClick = (index) => {
+  const handleItemClick = (index: number): void => {
     setSelectedItemIndex(index);
   };
 
@@ -157,7 +158,7 @@ export default function Features() {
                       '& > svg': { transition: '0.2s' },
                       '&:hover > svg': { transform: 'translateX(2px)' },
                     }}
-                    onClick={(event) => {
+                    onClick={(event: React.MouseEvent) => {
                       window.open(selectedFeature.githubLink, '_blank');
                       event.stopPropagation();
                     }}
@@ -177,7 +178,7 @@ export default function Features() {
                       '& > svg': { transition: '0.2s' },
                       '&:hover > svg': { transform: 'translateX(2px)' },
                     }}
-                    onClick={(event) => {
+                    onClick={(event: React.MouseEvent) => {
                       // Use relative path for internal links
                       window.open(selectedFeature.demoLink, '_self');
                       event.stopPropagation();
@@ -274,7 +275,7 @@ export default function Features() {
                             '& > svg': { transition: '0.2s' },
                             '&:hover > svg': { transform: 'translateX(2px)' },
                           }}
-                          onClick={(event) => {
+                          onClick={(event: React.MouseEvent) => {
                             window.open(githubLink, '_blank');
                             event.stopPropagation();
                           }}
@@ -294,7 +295,7 @@ export default function Features() {
                             '& > svg': { transition: '0.2s' },
                             '&:hover > svg': { transform: 'translateX(2px)' },
                           }}
-                          onClick={(event) => {
+                          onClick={(event: React.MouseEvent) => {
                              // Use relative path for internal links
                             window.open(demoLink, '_self');
                             event.stopPropagation();
@@ -337,4 +338,6 @@ export default function Features() {
       </Grid>
     </Container>
   );
-}
+};
+
+export default Features;

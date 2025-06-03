@@ -17,23 +17,22 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React from 'react';
 import Divider from '@mui/material/Divider';
-import PageLayout from '../../../components/layout/PageLayout'; // Import PageLayout
+import PageLayout from '../../../components/layout/PageLayout';
 import Features from '../components/Features';
 import Testimonials from '../components/Testimonials';
 import FAQ from '../components/FAQ';
 import Me from '../components/Me';
 import PastWebsites from '../components/PastWebsites';
 import { useTitle } from '../../../hooks/useTitle';
+import { LandingPageProps } from '../types/index';
 
 /**
  * LandingPage component serves as the main entry point or homepage of the application.
  * It typically showcases features, testimonials, FAQs, and other introductory content.
- * @param {object} props - The component's props.
- * @param {function} props.setMode - Function to toggle the color mode (light/dark).
- * @param {string} props.mode - The current color mode ('light' or 'dark').
  */
-export default function LandingPage({ setMode, mode }) {
+const LandingPage: React.FC<LandingPageProps> = ({ setMode, mode }) => {
   useTitle('theJunkyard: Landing Page');
 
   return (
@@ -49,4 +48,6 @@ export default function LandingPage({ setMode, mode }) {
       <PastWebsites />
     </PageLayout>
   );
-}
+};
+
+export default LandingPage;

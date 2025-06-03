@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
+import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -34,10 +34,11 @@ import YummyMe from '../../../assets/yummyme.png';
 import MeLogo from '../../../assets/MeLogo.ico';
 import Lobster from '../../../assets/lobster.png';
 import LobsterTeck from '../../../assets/lobsterteck.png';
+import { PastWebsiteItem } from '../types/index';
 
-const items = [
+const items: PastWebsiteItem[] = [
   {
-    icon: <img src={YummyLogo} />,
+    icon: <img src={YummyLogo} alt="YummyDirt Logo" />,
     title: 'yummydirt.com (2016-2018)',
     link: 'https://web.archive.org/web/20161106100941/http://www.yummydirt.com/',
     description:
@@ -45,7 +46,7 @@ const items = [
     imageLight: ('url(' + Yummydirt + ')'),
   },
   {
-    icon: <img src={MeLogo} />,
+    icon: <img src={MeLogo} alt="Me Logo" />,
     title: 'yummydirt.me (2022-2023)',
     link: 'https://yummydirtx.github.io/',
     description:
@@ -53,7 +54,7 @@ const items = [
     imageLight: ('url(' + YummyMe + ')'),
   },
   {
-    icon: <img src={Lobster} />,
+    icon: <img src={Lobster} alt="Lobster Logo" />,
     title: 'LobsterTeck.tech (2022-forever)',
     link: 'https://yummydirtx.github.io/lobsterteck/',
     description:
@@ -62,10 +63,10 @@ const items = [
   },
 ];
 
-export default function PastWebsites() {
-  const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
+const PastWebsites: React.FC = () => {
+  const [selectedItemIndex, setSelectedItemIndex] = React.useState<number>(0);
 
-  const handleItemClick = (index) => {
+  const handleItemClick = (index: number): void => {
     setSelectedItemIndex(index);
   };
 
@@ -147,7 +148,7 @@ export default function PastWebsites() {
                   '& > svg': { transition: '0.2s' },
                   '&:hover > svg': { transform: 'translateX(2px)' },
                 }}
-                onClick={(event) => {
+                onClick={(event: React.MouseEvent) => {
                   window.open(selectedFeature.link, '_blank');
                   event.stopPropagation();
                 }}
@@ -244,7 +245,7 @@ export default function PastWebsites() {
                         '& > svg': { transition: '0.2s' },
                         '&:hover > svg': { transform: 'translateX(2px)' },
                       }}
-                      onClick={(event) => {
+                      onClick={(event: React.MouseEvent) => {
                         window.open(link, '_blank');
                         event.stopPropagation();
                       }}
@@ -293,4 +294,6 @@ export default function PastWebsites() {
       <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>*We did not actually patent nor release world peace.</Typography>
     </Container>
   );
-}
+};
+
+export default PastWebsites;

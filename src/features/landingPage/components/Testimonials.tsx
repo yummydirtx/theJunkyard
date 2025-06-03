@@ -17,6 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -28,8 +29,9 @@ import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/system';
 import DiscordIcon from '../../../assets/discord-mark-blue.svg';
 import logo from '../../../assets/websitelogo.png';
+import { TestimonialItem } from '../types/index';
 
-const userTestimonials = [
+const userTestimonials: TestimonialItem[] = [
   {
     avatar: <Avatar alt="Ayush Lenka" src="/static/images/avatar/1.jpg" />,
     name: 'Ayush Lenka',
@@ -74,7 +76,7 @@ const userTestimonials = [
   },
 ];
 
-const whiteLogos = [
+const whiteLogos: string[] = [
   'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
   'https://aepi.org/wp-content/uploads/2018/06/AEPi_Greek-1024x576.png',
   DiscordIcon,
@@ -83,7 +85,7 @@ const whiteLogos = [
   logo,
 ];
 
-const darkLogos = [
+const darkLogos: string[] = [
   'https://em-content.zobj.net/source/apple/155/basket_1f9fa.png',
   'https://aepi.org/wp-content/uploads/2018/06/AEPi_Greek-1024x576.png',
   DiscordIcon,
@@ -92,12 +94,12 @@ const darkLogos = [
   logo,
 ];
 
-const logoStyle = {
+const logoStyle: React.CSSProperties = {
   height: '25px',
   opacity: 0.3,
 };
 
-export default function Testimonials() {
+const Testimonials: React.FC = () => {
   const theme = useTheme();
   const logos = theme.palette.mode === 'light' ? darkLogos : whiteLogos;
 
@@ -170,4 +172,6 @@ export default function Testimonials() {
       </Grid>
     </Container>
   );
-}
+};
+
+export default Testimonials;
