@@ -21,30 +21,44 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import { Container } from '@mui/material';
-import PageLayout from '../../../components/layout/PageLayout'; // Import PageLayout
+import PageLayout from '../../../components/layout/PageLayout';
 import { CalcTitle, CalcForm, ResultsDisplay } from '../components';
 import { useTitle } from '../../../hooks/useTitle';
+
+/**
+ * Type definition for color mode
+ */
+type ColorMode = 'light' | 'dark';
+
+/**
+ * Props interface for the CalcBasic component
+ */
+interface CalcBasicProps {
+  /** Function to toggle the color mode (light/dark) */
+  setMode: (mode: ColorMode) => void;
+  /** The current color mode ('light' or 'dark') */
+  mode: ColorMode;
+}
 
 /**
  * CalcBasic component provides a basic calculator interface.
  * It allows users to input numbers and operations to perform calculations.
  * This specific version seems to focus on finding the lowest number and its count.
- * @param {object} props - The component's props.
- * @param {function} props.setMode - Function to toggle the color mode (light/dark).
- * @param {string} props.mode - The current color mode ('light' or 'dark').
- * @param {object} props.app - Firebase app instance (currently unused in this component directly).
  */
-export default function CalcBasic({ setMode, mode }) {
+const CalcBasic: React.FC<CalcBasicProps> = ({ setMode, mode }) => {
   useTitle('theJunkyard: calcBasic');
-  /** @state {number} lowest - Stores the lowest number found from the input. */
-  const [lowest, setLowest] = React.useState(0);
-  /** @state {number} numberOfLowest - Stores the count of occurrences of the lowest number. */
-  const [numberOfLowest, setNumberOfLowest] = React.useState(0);
-  /** @state {string} plural - Determines if the word "time" should be pluralized in the results display. */
-  const [plural, setPlural] = React.useState('s');
+  
+  /** State to store the lowest number found from the input */
+  const [lowest, setLowest] = React.useState<number>(0);
+  
+  /** State to store the count of occurrences of the lowest number */
+  const [numberOfLowest, setNumberOfLowest] = React.useState<number>(0);
+  
+  /** State to determine if the word "time" should be pluralized in the results display */
+  const [plural, setPlural] = React.useState<string>('s');
 
   return (
-    <PageLayout mode={mode} setMode={setMode}>
+    <PageLayout mode={mode} setMode={setMode} sx={{}}>
       <Box sx={{
         position: 'relative',
         display: 'flex',
@@ -54,7 +68,6 @@ export default function CalcBasic({ setMode, mode }) {
         gap: { xs: 3, sm: 6 },
         pt: { xs: 12, sm: 15 },
         px: { xs: 2 },
-        useFlexGap: true,
       }}>
         <Container maxWidth="lg">
           <Grid container spacing={3} sx={{
@@ -81,4 +94,6 @@ export default function CalcBasic({ setMode, mode }) {
       </Box>
     </PageLayout>
   );
-}
+};
+
+export default CalcBasic;

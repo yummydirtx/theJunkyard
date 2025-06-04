@@ -18,39 +18,56 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import * as React from 'react';
-import PropTypes from 'prop-types';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import { FormControl, InputLabel, InputAdornment, Input } from '@mui/material';
 import { calcBasic } from '../hooks/hooks';
 
-function CalcForm({ setLowest, setNumberOfLowest, setPlural }) {
-  const [oddsValue, setOddsValue] = React.useState('');
-  const [oddsValid, setOddsValid] = React.useState(false);
-  const [iterationsValue, setIterationsValue] = React.useState('');
-  const [iterationsValid, setIterationsValid] = React.useState(false);
+/**
+ * Props interface for the CalcForm component
+ */
+interface CalcFormProps {
+  /** Function to set the lowest number of tickets */
+  setLowest: (lowest: number) => void;
+  /** Function to set the count of times the lowest occurred */
+  setNumberOfLowest: (count: number) => void;
+  /** Function to set plural suffix for display */
+  setPlural: (plural: string) => void;
+}
 
-  function validateOdds(value) {
-    if (value < 1) {
+/**
+ * CalcForm component provides input fields for odds and iterations,
+ * and a calculate button to run the lottery simulation.
+ */
+const CalcForm: React.FC<CalcFormProps> = ({ setLowest, setNumberOfLowest, setPlural }) => {
+  const [oddsValue, setOddsValue] = React.useState<string>('');
+  const [oddsValid, setOddsValid] = React.useState<boolean>(false);
+  const [iterationsValue, setIterationsValue] = React.useState<string>('');
+  const [iterationsValid, setIterationsValid] = React.useState<boolean>(false);
+
+  const validateOdds = (value: string): void => {
+    const numValue = parseFloat(value);
+    if (numValue < 1) {
       setOddsValid(false);
     } else {
       setOddsValid(true);
     }
-  }
+  };
 
-  function validateIterations(value) {
-    if (value < 1) {
+  const validateIterations = (value: string): void => {
+    const numValue = parseFloat(value);
+    if (numValue < 1) {
       setIterationsValid(false);
     } else {
       setIterationsValid(true);
     }
-  }
+  };
 
-  const handleCalculate = () => {
+  const handleCalculate = (): void => {
     if (!oddsValid || !iterationsValid) {
       return;
     }
-    let calc = calcBasic(oddsValue, iterationsValue);
+    const calc = calcBasic(parseFloat(oddsValue), parseInt(iterationsValue));
     setLowest(calc[0]);
     setNumberOfLowest(calc[1]);
     if (calc[1] === 1) {
@@ -58,6 +75,18 @@ function CalcForm({ setLowest, setNumberOfLowest, setPlural }) {
     } else {
       setPlural('s');
     }
+  };
+
+  const handleOddsChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const value = event.target.value;
+    setOddsValue(value);
+    validateOdds(value);
+  };
+
+  const handleIterationsChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const value = event.target.value;
+    setIterationsValue(value);
+    validateIterations(value);
   };
 
   return (
@@ -70,10 +99,7 @@ function CalcForm({ setLowest, setNumberOfLowest, setPlural }) {
             error={!oddsValid && oddsValue !== ''}
             type="number"
             value={oddsValue}
-            onChange={event => { 
-              setOddsValue(event.target.value);
-              validateOdds(event.target.value);
-            }}
+            onChange={handleOddsChange}
             startAdornment={<InputAdornment position='start'>1 in</InputAdornment>} />
         </FormControl>
       </Grid>
@@ -84,10 +110,7 @@ function CalcForm({ setLowest, setNumberOfLowest, setPlural }) {
             error={!iterationsValid && iterationsValue !== ''}
             id="iterations"
             value={iterationsValue}
-            onChange={event => { 
-              setIterationsValue(event.target.value);
-              validateIterations(event.target.value);
-            }}
+            onChange={handleIterationsChange}
             type="number" />
         </FormControl>
       </Grid>
@@ -103,12 +126,6 @@ function CalcForm({ setLowest, setNumberOfLowest, setPlural }) {
       </Grid>
     </>
   );
-}
-
-CalcForm.propTypes = {
-  setLowest: PropTypes.func.isRequired,
-  setNumberOfLowest: PropTypes.func.isRequired,
-  setPlural: PropTypes.func.isRequired,
 };
 
 export default CalcForm;

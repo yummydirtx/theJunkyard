@@ -17,19 +17,35 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-export function getRandomTriesGeometric(p) {
+/**
+ * Generates a random number of tries using the geometric distribution.
+ * This simulates the number of lottery tickets needed to win.
+ * 
+ * @param p - The logarithm of (1 - probability of winning)
+ * @returns The number of tries needed to win
+ */
+export function getRandomTriesGeometric(p: number): number {
   // Generate a uniform random number between 0 and 1
-  let U = Math.random();
+  const U = Math.random();
   // Use the inverse CDF of the geometric distribution to get the number of tries
   return Math.ceil(Math.log(U) / p);
 }
 
-export function calcBasic(odds, iterations) {
+/**
+ * Calculates lottery simulation results by running multiple iterations
+ * and finding the lowest number of tickets needed to win.
+ * 
+ * @param odds - The odds of winning (e.g., 1000 for 1 in 1000)
+ * @param iterations - The number of simulation iterations to run
+ * @returns A tuple containing [lowestTries, numberOfLowest]
+ */
+export function calcBasic(odds: number, iterations: number): [number, number] {
   let lowestTries = Number.MAX_VALUE;
   let numberOfLowest = 0;
-  let p = Math.log(1 - (1 / odds));
+  const p = Math.log(1 - (1 / odds));
+  
   for (let i = 0; i < iterations; i++) {
-    let tries = getRandomTriesGeometric(p);
+    const tries = getRandomTriesGeometric(p);
     if (tries < lowestTries) {
       lowestTries = tries;
       numberOfLowest = 1;
@@ -37,6 +53,6 @@ export function calcBasic(odds, iterations) {
       numberOfLowest++;
     }
   }
+  
   return [lowestTries, numberOfLowest];
 }
-

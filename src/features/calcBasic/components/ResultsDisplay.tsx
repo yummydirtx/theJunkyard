@@ -17,11 +17,27 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import PropTypes from 'prop-types';
+import React from 'react';
 import Grid from '@mui/material/Grid';
 import { Typography } from '@mui/material';
 
-function ResultsDisplay({ lowest, numberOfLowest, plural }) {
+/**
+ * Props interface for the ResultsDisplay component
+ */
+interface ResultsDisplayProps {
+  /** The lowest number of tickets bought to win */
+  lowest: number;
+  /** The number of times the lowest occurred */
+  numberOfLowest: number;
+  /** Plural suffix for display ('s' or '') */
+  plural: string;
+}
+
+/**
+ * ResultsDisplay component shows the results of the lottery simulation.
+ * It displays either a welcome message or the calculation results.
+ */
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lowest, numberOfLowest, plural }) => {
   if (lowest === 0) {
     return (
       <Grid size={12} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -39,12 +55,6 @@ function ResultsDisplay({ lowest, numberOfLowest, plural }) {
       </Typography>
     </Grid>
   );
-}
-
-ResultsDisplay.propTypes = {
-  lowest: PropTypes.number.isRequired,
-  numberOfLowest: PropTypes.number.isRequired,
-  plural: PropTypes.string.isRequired,
 };
 
 export default ResultsDisplay;

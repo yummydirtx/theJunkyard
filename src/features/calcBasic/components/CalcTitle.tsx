@@ -17,9 +17,14 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React from 'react';
 import { Grid, Typography } from '@mui/material';
 
-export default function CalcTitle() {
+/**
+ * CalcTitle component displays the title and description for the calcBasic application.
+ * It provides information about what the application does and how to use it.
+ */
+const CalcTitle: React.FC = () => {
     return (
         <Grid size={12}>
             <Typography variant='h2'
@@ -39,4 +44,6 @@ export default function CalcTitle() {
             </Typography>
         </Grid>
     );
-}
+};
+
+export default CalcTitle;
