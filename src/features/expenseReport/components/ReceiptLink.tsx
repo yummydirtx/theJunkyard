@@ -40,16 +40,18 @@ if (getApps().length === 0) {
 const functions = app ? getFunctions(app) : null;
 const storage = app ? getStorage(app) : null; // Initialize storage
 
+interface ReceiptLinkProps {
+  receiptUri?: string;
+  shareId?: string;
+  expenseId?: string;
+  isSharedView?: boolean;
+}
+
 /**
  * Displays a link to view a receipt. Fetches a signed URL for shared reports,
  * or a standard download URL for non-shared views.
- * @param {object} props
- * @param {string} props.receiptUri - The gs:// URI of the receipt.
- * @param {string} [props.shareId] - The share ID (required if isSharedView is true).
- * @param {string} [props.expenseId] - The expense ID (required if isSharedView is true).
- * @param {boolean} [props.isSharedView=false] - Indicates if the link is being rendered in a shared context.
  */
-export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedView = false }) {
+export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedView = false }: ReceiptLinkProps) {
     const [downloadUrl, setDownloadUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -68,12 +70,12 @@ export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedVi
                     const result = await getReceiptDownloadUrl({ shareId, expenseId });
                     console.log("[ReceiptLink] Signed URL result:", result.data);
 
-                    if (result.data && result.data.downloadUrl) {
-                        setDownloadUrl(result.data.downloadUrl);
+                    if (result.data && (result.data as any).downloadUrl) {
+                        setDownloadUrl((result.data as any).downloadUrl);
                     } else {
                         throw new Error("No download URL received from function.");
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error("[ReceiptLink] Error fetching signed URL:", err);
                     setError(err.message || 'Failed to get receipt link.');
                 } finally {
@@ -91,7 +93,7 @@ export default function ReceiptLink({ receiptUri, shareId, expenseId, isSharedVi
                     const url = await getDownloadURL(storageRef);
                     console.log("[ReceiptLink] Direct URL result:", url);
                     setDownloadUrl(url);
-                } catch (err) {
+                } catch (err: any) {
                     console.error("[ReceiptLink] Error fetching direct download URL:", err);
                     // Handle potential errors like object not found or permission issues
                     if (err.code === 'storage/object-not-found') {

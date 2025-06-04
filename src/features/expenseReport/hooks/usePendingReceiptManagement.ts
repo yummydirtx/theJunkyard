@@ -17,16 +17,30 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { collection, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { useRef, useState, useEffect, useCallback, MutableRefObject } from 'react';
+import { collection, addDoc, deleteDoc, doc, serverTimestamp, Firestore } from "firebase/firestore";
 
-export function usePendingReceiptManagement(db, activeUser, onDeleteStorageFile, isSubmittingSuccessRef) {
-    const unsubmittedReceiptUriRef = useRef(null);
-    const pendingReceiptDocIdRef = useRef(null);
+interface UsePendingReceiptManagementReturn {
+    unsubmittedReceiptUriRef: MutableRefObject<string | null>;
+    pendingReceiptDocIdRef: MutableRefObject<string | null>;
+    unsubmittedReceiptUri: string | null;
+    setUnsubmittedReceiptUri: (uri: string | null) => void;
+    createPendingReceiptDoc: (gsUri: string) => Promise<string>;
+    deletePendingReceiptDoc: (docId: string) => Promise<void>;
+}
+
+export function usePendingReceiptManagement(
+    db: Firestore, 
+    activeUser: { uid: string } | null, 
+    onDeleteStorageFile: (uri: string) => Promise<void>, 
+    isSubmittingSuccessRef: MutableRefObject<boolean>
+): UsePendingReceiptManagementReturn {
+    const unsubmittedReceiptUriRef = useRef<string | null>(null);
+    const pendingReceiptDocIdRef = useRef<string | null>(null);
     // Tracks the current URI being managed by the hook
-    const [unsubmittedReceiptUri, setUnsubmittedReceiptUri] = useState(null);
+    const [unsubmittedReceiptUri, setUnsubmittedReceiptUri] = useState<string | null>(null);
 
-    const deletePendingReceiptDoc = useCallback(async (docId) => {
+    const deletePendingReceiptDoc = useCallback(async (docId: string): Promise<void> => {
         if (!docId || !db || !activeUser) return;
         console.log("Hook: Deleting pending receipt document:", docId);
         try {
@@ -39,7 +53,7 @@ export function usePendingReceiptManagement(db, activeUser, onDeleteStorageFile,
         }
     }, [db, activeUser]);
 
-    const createPendingReceiptDoc = useCallback(async (gsUri) => {
+    const createPendingReceiptDoc = useCallback(async (gsUri: string): Promise<string> => {
         if (!gsUri || !activeUser || !db) {
             console.error("Hook: Cannot create pending doc, missing gsUri, user, or db");
             throw new Error("Missing required data to create pending document.");

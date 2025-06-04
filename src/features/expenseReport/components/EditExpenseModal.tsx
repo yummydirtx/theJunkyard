@@ -27,16 +27,36 @@ import DialogTitle from '@mui/material/DialogTitle';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { useEffect, useState } from 'react';
+import { Expense } from '../types/index';
 
-export default function EditExpenseModal({ open, onClose, expense, onSave }) {
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [error, setError] = useState('');
+interface ExpenseUpdateData {
+    description: string;
+    amount: number;
+}
+
+interface EditExpenseModalProps {
+    /** Whether the modal is open */
+    open: boolean;
+    
+    /** Function to close the modal */
+    onClose: () => void;
+    
+    /** The expense to edit */
+    expense: Expense | null;
+    
+    /** Function called when saving changes */
+    onSave: (expenseId: string, data: ExpenseUpdateData) => void;
+}
+
+export default function EditExpenseModal({ open, onClose, expense, onSave }: EditExpenseModalProps) {
+    const [description, setDescription] = useState<string>('');
+    const [amount, setAmount] = useState<string>('');
+    const [error, setError] = useState<string>('');
 
     useEffect(() => {
         if (expense) {
             setDescription(expense.description || '');
-            setAmount(expense.amount !== undefined ? expense.amount.toString() : '');
+            setAmount(expense.amount !== undefined ? expense.amount.toString() : (expense.totalAmount !== undefined ? expense.totalAmount.toString() : ''));
             setError(''); // Clear error when a new expense is loaded
         } else {
             // Reset form if expense is null (e.g., modal closed then reopened without selection)
@@ -46,10 +66,10 @@ export default function EditExpenseModal({ open, onClose, expense, onSave }) {
         }
     }, [expense]); // Re-run effect when the expense prop changes
 
-    const handleSave = () => {
+    const handleSave = (): void => {
         setError(''); // Clear previous errors
         const parsedAmount = parseFloat(amount);
-
+        
         if (!description.trim()) {
             setError('Description cannot be empty.');
             return;
@@ -60,14 +80,16 @@ export default function EditExpenseModal({ open, onClose, expense, onSave }) {
         }
 
         // Call the onSave prop with the updated data
-        onSave(expense.id, {
-            description: description.trim(),
-            amount: parsedAmount,
-        });
+        if (expense) {
+            onSave(expense.id, {
+                description: description.trim(),
+                amount: parsedAmount,
+            });
+        }
         // onClose(); // Let the parent component handle closing on successful save
     };
 
-    const handleAmountChange = (e) => {
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         // Allow only numbers and a single decimal point
         const value = e.target.value;
         if (/^\d*\.?\d{0,2}$/.test(value) || value === '') {

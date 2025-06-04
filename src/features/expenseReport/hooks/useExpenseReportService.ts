@@ -18,20 +18,21 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 import { useAuth } from '../../../contexts/AuthContext';
 import ExpenseReportService from '../services/expenseReportService';
 import { useFinancialEvents } from '../../../shared/hooks/useFinancialEvents';
 import { financialEventBus } from '../../../shared/events/financialEventBus';
+import { UseExpenseReportServiceReturn, Expense, NewExpenseData } from '../types';
 
 /**
  * Custom hook to manage user expenses using service abstraction.
  * It handles fetching, adding, deleting, and updating expenses for the authenticated user.
  * It also calculates the total amount of pending expenses.
  *
- * @returns {object} An object containing:
- *  - `expenses` {Array<object>}: The list of user's expenses.
+ * @returns {UseExpenseReportServiceReturn} An object containing:
+ *  - `expenses` {Array<Expense>}: The list of user's expenses.
  *  - `loadingExpenses` {boolean}: Loading state for fetching expenses.
  *  - `addExpense` {function}: Function to add a new expense.
  *  - `deleteExpense` {function}: Function to delete an expense.
@@ -39,22 +40,19 @@ import { financialEventBus } from '../../../shared/events/financialEventBus';
  *  - `deleteStorageFile` {function}: Helper function to delete a file from Firebase Storage.
  *  - `totalPendingAmount` {number}: The total sum of amounts for expenses with 'pending' status.
  */
-function useExpenseReportService() {
+function useExpenseReportService(): UseExpenseReportServiceReturn {
     const { activeUser, app } = useAuth();
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+    const db: Firestore = getFirestore(app);
+    const storage: FirebaseStorage = getStorage(app);
 
     // Create service instance
     const expenseService = useMemo(() => {
         return db ? new ExpenseReportService(db, storage) : null;
     }, [db, storage]);
 
-    /** @state {Array<object>} expenses - List of expenses for the current user. */
-    const [expenses, setExpenses] = useState([]);
-    /** @state {boolean} loadingExpenses - True if expenses are currently being fetched. */
-    const [loadingExpenses, setLoadingExpenses] = useState(false);
-    /** @state {number} totalPendingAmount - Sum of amounts for all pending expenses. */
-    const [totalPendingAmount, setTotalPendingAmount] = useState(0);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [loadingExpenses, setLoadingExpenses] = useState<boolean>(false);
+    const [totalPendingAmount, setTotalPendingAmount] = useState<number>(0);
 
     // Effect to subscribe to expenses when the active user or service changes.
     useEffect(() => {
@@ -63,11 +61,11 @@ function useExpenseReportService() {
 
             const unsubscribe = expenseService.subscribeToUserExpenses(
                 activeUser.uid,
-                (fetchedExpenses) => {
+                (fetchedExpenses: Expense[]) => {
                     setExpenses(fetchedExpenses);
                     setLoadingExpenses(false);
                 },
-                (error) => {
+                (error: Error) => {
                     console.error("Error fetching expenses: ", error);
                     setLoadingExpenses(false);
                 }
@@ -92,7 +90,7 @@ function useExpenseReportService() {
     useEffect(() => {
         if (!activeUser) return;
 
-        const handleBudgetEvent = (event) => {
+        const handleBudgetEvent = (event: any) => {
             // When budget entries are added/updated/deleted, we might want to show notifications
             // or update related expense data if there are integrations
             if (event.payload?.userId === activeUser.uid) {
@@ -108,11 +106,9 @@ function useExpenseReportService() {
 
     /**
      * Deletes a file from Firebase Storage given its GS URI.
-     * @async
      * @param {string} gsUri - The GS URI of the file to delete (e.g., gs://bucket/path/to/file).
-     * @returns {Promise<void>}
      */
-    const deleteStorageFile = useCallback(async (gsUri) => {
+    const deleteStorageFile = useCallback(async (gsUri: string): Promise<void> => {
         if (!expenseService) {
             console.log("Service not available, skipping deletion.");
             return;
@@ -122,16 +118,10 @@ function useExpenseReportService() {
 
     /**
      * Adds a new expense document to Firestore for the authenticated user.
-     * @async
-     * @param {object} newExpense - The expense object to add.
-     * @param {string} newExpense.description - Description of the expense.
-     * @param {number} newExpense.amount - Amount of the expense.
-     * @param {string} [newExpense.receiptUri] - Optional GS URI of the uploaded receipt.
-     * @param {Array<object>} [newExpense.items] - Optional list of itemized details for the expense.
-     * @returns {Promise<void>}
+     * @param {NewExpenseData} newExpense - The expense object to add.
      * @throws {Error} If user is not authenticated or if there's an error adding the document.
      */
-    const addExpense = useCallback(async (newExpense) => {
+    const addExpense = useCallback(async (newExpense: NewExpenseData): Promise<void> => {
         if (!activeUser || !expenseService) {
             throw new Error("User not authenticated or service unavailable.");
         }
@@ -143,7 +133,7 @@ function useExpenseReportService() {
                 receiptUri: newExpense.receiptUri || null,
                 items: newExpense.items || null,
             });
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error adding expense: ", e);
             throw e;
         }
@@ -151,11 +141,9 @@ function useExpenseReportService() {
 
     /**
      * Deletes an expense document from Firestore and its associated receipt from Storage (if any).
-     * @async
      * @param {string} expenseId - The ID of the expense document to delete.
-     * @returns {Promise<void>}
      */
-    const deleteExpense = useCallback(async (expenseId) => {
+    const deleteExpense = useCallback(async (expenseId: string): Promise<void> => {
         if (!activeUser || !expenseService) {
             console.error("User not logged in or service not available.");
             return;
@@ -178,13 +166,11 @@ function useExpenseReportService() {
 
     /**
      * Updates an existing expense document in Firestore.
-     * @async
      * @param {string} expenseId - The ID of the expense document to update.
-     * @param {object} updatedData - An object containing the fields to update.
-     * @returns {Promise<void>}
+     * @param {Partial<Expense>} updatedData - An object containing the fields to update.
      * @throws {Error} If user is not authenticated, service is unavailable, or input is invalid.
      */
-    const updateExpense = useCallback(async (expenseId, updatedData) => {
+    const updateExpense = useCallback(async (expenseId: string, updatedData: Partial<Expense>): Promise<void> => {
         if (!activeUser || !expenseService) {
             throw new Error("User not authenticated or service unavailable.");
         }
@@ -195,11 +181,38 @@ function useExpenseReportService() {
         try {
             await expenseService.updateExpense(activeUser.uid, expenseId, updatedData);
             console.log("Expense document successfully updated:", expenseId);
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error updating expense: ", expenseId, e);
             throw e;
         }
     }, [activeUser, expenseService]);
+
+    const generateShareLink = useCallback(async (): Promise<string> => {
+        if (!expenseService || !activeUser) {
+            throw new Error("Service not available or user not authenticated.");
+        }
+        return await expenseService.createSharedExpenseReport(activeUser.uid, expenses);
+    }, [expenseService, activeUser, expenses]);
+
+    const getSharedExpenses = useCallback(async (shareId: string): Promise<Expense[]> => {
+        if (!expenseService) {
+            throw new Error("Service not available.");
+        }
+        const result = await expenseService.getSharedExpenses(shareId);
+        return result?.expenses || [];
+    }, [expenseService]);
+
+    const updateExpenseStatus = useCallback(async (
+        shareId: string, 
+        expenseId: string, 
+        status: Expense['status'], 
+        denialReason?: string
+    ): Promise<void> => {
+        if (!expenseService) {
+            throw new Error("Service not available.");
+        }
+        await expenseService.updateSharedExpenseStatus(shareId, expenseId, status, denialReason);
+    }, [expenseService]);
 
     return {
         expenses,
@@ -208,7 +221,10 @@ function useExpenseReportService() {
         deleteExpense,
         updateExpense,
         deleteStorageFile,
-        totalPendingAmount
+        totalPendingAmount,
+        generateShareLink,
+        getSharedExpenses,
+        updateExpenseStatus
     };
 }
 

@@ -26,7 +26,7 @@ import {
   updateProfile,
   User
 } from 'firebase/auth';
-import app from '../../services/firebase/config';
+import app from '../../../services/firebase/config';
 
 const auth = getAuth(app);
 

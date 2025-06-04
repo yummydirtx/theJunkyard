@@ -31,34 +31,51 @@ import ParsedItemsList from './ParsedItemsList';
 import ReceiptUpload from './ReceiptUpload';
 import { usePendingReceiptManagement } from '../hooks/usePendingReceiptManagement';
 import { useReceiptProcessor } from '../hooks/useReceiptProcessor';
+import { ExpenseItem } from '../types';
+
+interface ExpenseFormData {
+    description: string;
+    amount: number;
+    receiptUri: string;
+    items: ExpenseItem[];
+}
+
+interface ExpenseFormProps {
+    /**
+     * Callback function invoked when a new expense is successfully submitted.
+     * Receives an object with { description, amount, receiptUri, items }.
+     */
+    onAddExpense: (expense: ExpenseFormData) => Promise<void>;
+    
+    /**
+     * Callback function to delete a file from storage by its gs:// URI.
+     */
+    onDeleteStorageFile: (gsUri: string) => Promise<void>;
+}
 
 /**
  * A form component for adding new expenses, optionally parsing details from an uploaded receipt using Vertex AI.
- * @param {object} props - Component props.
- * @param {function} props.onAddExpense - Callback function invoked when a new expense is successfully submitted.
- *                                        Receives an object with { description, amount, receiptUri, items }.
- * @param {function} props.onDeleteStorageFile - Callback function to delete a file from storage by its gs:// URI.
  */
-export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
+export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }: ExpenseFormProps) {
     const { app, activeUser } = useAuth();
     const db = getFirestore(app);
 
     // --- State Variables ---
     // Form input fields
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [receiptGsUri, setReceiptGsUri] = useState(''); // Final URI for submission
-    const [items, setItems] = useState([]);
-    const [receiptUploadKey, setReceiptUploadKey] = useState(0);
+    const [description, setDescription] = useState<string>('');
+    const [amount, setAmount] = useState<string>('');
+    const [receiptGsUri, setReceiptGsUri] = useState<string>(''); // Final URI for submission
+    const [items, setItems] = useState<ExpenseItem[]>([]);
+    const [receiptUploadKey, setReceiptUploadKey] = useState<number>(0);
 
     // UI and process flow control for submission
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(''); // For submission errors or general form errors
-    const [info, setInfo] = useState('');   // For submission success messages
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [error, setError] = useState<string>(''); // For submission errors or general form errors
+    const [info, setInfo] = useState<string>('');   // For submission success messages
+    const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
     // Ref to prevent cleanup effect during successful submission phase
-    const isSubmittingSuccessRef = useRef(false);
+    const isSubmittingSuccessRef = useRef<boolean>(false);
 
     // --- Custom Hooks ---
     const {
@@ -75,20 +92,25 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
         parsingInfo,  // Info from parsing process
         handleReceiptUploadAndParse,
         resetParsingState, // Import reset function
-    } = useReceiptProcessor(
+    } = useReceiptProcessor({
         app,
-        onDeleteStorageFile,
-        pendingReceiptDocIdRef,
-        unsubmittedReceiptUriRef,
-        setHookUnsubmittedReceiptUri,
-        createPendingReceiptDoc, // Pass the function directly
-        deletePendingReceiptDoc, // Pass the function directly
-        setReceiptGsUri, // Callback to set form's receipt URI
-        setDescription,  // Callback to set form's description
-        setAmount,       // Callback to set form's amount
-        setItems         // Callback to set form's items
-    );
-
+        refs: {
+            pendingReceiptDocIdRef,
+            unsubmittedReceiptUriRef
+        },
+        receiptCallbacks: {
+            onDeleteStorageFile,
+            createPendingReceiptDoc,
+            deletePendingReceiptDoc,
+            hookSetUnsubmittedReceiptUri: setHookUnsubmittedReceiptUri
+        },
+        formCallbacks: {
+            setFormReceiptGsUri: setReceiptGsUri,
+            setFormDescription: setDescription,
+            setFormAmount: setAmount,
+            setFormItems: setItems
+        }
+    });
 
     // --- Effects ---
     // Reset general info/error messages when the user manually changes description or amount,
@@ -107,7 +129,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     /**
      * Handles the final submission. Deletes the pending receipt doc on success.
      */
-    const handleAdd = async () => {
+    const handleAdd = async (): Promise<void> => {
         setError('');
         setInfo('');
 
@@ -125,7 +147,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
         isSubmittingSuccessRef.current = false;
 
         try {
-            const expenseData = {
+            const expenseData: ExpenseFormData = {
                 description: description.trim(),
                 amount: parsedAmount,
                 receiptUri: receiptGsUri,
@@ -174,7 +196,7 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
      * Deletes any unsubmitted uploaded receipt and its pending Firestore document.
      * Resets all form fields and relevant state.
      */
-    const handleCancel = async () => {
+    const handleCancel = async (): Promise<void> => {
         console.log("Cancel clicked.");
         // 1. Delete GCS file if an unsubmitted one exists
         const uriToDelete = unsubmittedReceiptUriRef.current;
@@ -218,9 +240,8 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
         console.log("Form cancelled and reset.");
     };
 
-
     /** Toggles the visibility of the main form content area. */
-    const toggleExpand = () => {
+    const toggleExpand = (): void => {
         setIsExpanded(!isExpanded);
     };
 
@@ -229,12 +250,12 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     /**
      * Handles changes within the editable items list.
      */
-    const handleItemChange = (index, field, value) => {
+    const handleItemChange = (index: number, field: keyof ExpenseItem, value: string | number): void => {
         const updatedItems = [...items];
         if (field === 'price') {
-            const numValue = value === '' ? '' : parseFloat(value);
+            const numValue = value === '' ? 0 : parseFloat(value as string);
             if (value === '' || (!isNaN(numValue) && numValue >= 0)) {
-                 updatedItems[index] = { ...updatedItems[index], [field]: value === '' ? undefined : numValue };
+                 updatedItems[index] = { ...updatedItems[index], [field]: numValue };
             } else {
                 console.warn("Invalid price input:", value);
                 return;
@@ -248,15 +269,15 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
     /**
      * Adds a new, empty item to the items list.
      */
-    const handleAddItem = () => {
-        setItems([...items, { description: '', price: undefined }]);
+    const handleAddItem = (): void => {
+        setItems([...items, { description: '', price: 0 }]);
     };
 
     /**
      * Removes an item from the list by its index.
-     * @param {number} indexToRemove - The index of the item to remove.
+     * @param indexToRemove - The index of the item to remove.
      */
-    const handleRemoveItem = (indexToRemove) => {
+    const handleRemoveItem = (indexToRemove: number): void => {
         setItems(items.filter((_, index) => index !== indexToRemove));
     };
 
@@ -305,7 +326,6 @@ export default function ExpenseForm({ onAddExpense, onDeleteStorageFile }) {
                     isProcessing={isProcessing}
                 />
                 {/* Conditional rendering for Add Item button if items list is empty is now inside ParsedItemsList */}
-
 
                 <TextField
                     label="Amount ($)"

@@ -25,9 +25,10 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useParams } from 'react-router-dom';
 import ReceiptLink from './ReceiptLink';
+import { Expense } from '../types';
 
 // Helper to get status chip color
-const getStatusColor = (status) => {
+const getStatusColor = (status: string) => {
     switch (status) {
         case 'reimbursed': return 'success';
         case 'denied': return 'error';
@@ -37,11 +38,11 @@ const getStatusColor = (status) => {
 };
 
 // Helper to format Firestore Timestamp or Date object
-const formatDate = (timestamp) => {
+const formatDate = (timestamp: any) => {
     if (!timestamp) return '';
     // Firestore Timestamps have a toDate() method
     const date = timestamp.toDate ? timestamp.toDate() : timestamp;
-    if (!(date instanceof Date) || isNaN(date)) return ''; // Check if it's a valid Date
+    if (!(date instanceof Date) || isNaN(date.getTime())) return ''; // Check if it's a valid Date
 
     // Simple date format (e.g., MM/DD/YYYY)
     return date.toLocaleDateString(undefined, {
@@ -51,22 +52,24 @@ const formatDate = (timestamp) => {
     });
 };
 
+interface ExpenseListItemContentProps {
+  expense: Expense;
+  showDenialReason?: boolean;
+  isSharedView?: boolean;
+}
+
 /**
  * Renders the primary and secondary text content for an expense list item.
- * @param {object} props
- * @param {object} props.expense - The expense object.
- * @param {boolean} [props.showDenialReason=false] - Whether to display the denial reason inline.
- * @param {boolean} [props.isSharedView=false] - Indicates if rendered in shared context.
  */
-export default function ExpenseListItemContent({ expense, showDenialReason = false, isSharedView = false }) {
+export default function ExpenseListItemContent({ expense, showDenialReason = false, isSharedView = false }: ExpenseListItemContentProps) {
     // Get shareId if this component is used within a route that has it
     // Alternatively, ensure shareId is passed down from SharedExpenseReport
-    const { shareId } = useParams(); // Get shareId from URL params if applicable
+    const { shareId } = useParams<{ shareId: string }>(); // Get shareId from URL params if applicable
 
     if (!expense) return null;
 
     // Determine which date to show based on status
-    const dateToShow = expense.status === 'pending' ? expense.createdAt : expense.processedAt;
+    const dateToShow = expense.status === 'pending' ? expense.submittedAt : expense.processedAt;
     const formattedDate = formatDate(dateToShow);
     const dateLabel = expense.status === 'pending' ? 'Created:' : 'Processed:';
 
@@ -92,7 +95,7 @@ export default function ExpenseListItemContent({ expense, showDenialReason = fal
                 <>
                     {/* Amount and Date */}
                     <Typography component="span" variant="body2" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
-                        {`$${(expense.amount || 0).toFixed(2)}`}
+                        {`$${(expense.totalAmount || expense.amount || 0).toFixed(2)}`}
                     </Typography>
                     {formattedDate && (
                         <Typography component="span" variant="caption" sx={{ ml: 1.5, color: 'text.secondary' }}>

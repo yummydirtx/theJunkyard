@@ -31,11 +31,9 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import IconButton from '@mui/material/IconButton';
-import Footer from '../../../components/layout/Footer';
 import ExpenseTotal from '../components/ExpenseTotal';
 import { useTitle } from '../../../hooks/useTitle';
-import { getFunctions } from "firebase/functions";
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFunctions, Functions } from "firebase/functions";
 import { useSharedExpenses } from '../hooks/useSharedExpenses';
 import SharedExpenseActions from '../components/SharedExpenseActions';
 import DenialReasonModal from '../components/DenialReasonModal';
@@ -48,30 +46,12 @@ import ListItemText from '@mui/material/ListItemText';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Collapse from '@mui/material/Collapse';
-import PageLayout from '../../../components/layout/PageLayout'; // Import PageLayout
-
-const firebaseConfig = {
-    apiKey: "AIzaSyCNWHnPGjQlu4Dt-WFJsGej11O9tnP9HuI",
-    authDomain: "thejunkyard-b1858.firebaseapp.com",
-    projectId: "thejunkyard-b1858",
-};
-
-// Safely initialize Firebase App to avoid "already exists" error
-let app;
-if (getApps().length === 0) {
-    try {
-        app = initializeApp(firebaseConfig);
-        console.log("[SharedExpenseReport] Firebase app initialized.");
-    } catch (e) {
-        console.error("Firebase initialization error on shared page:", e);
-    }
-} else {
-    app = getApp();
-    console.log("[SharedExpenseReport] Firebase app already initialized, getting instance.");
-}
+import PageLayout from '../../../components/layout/PageLayout';
+import { ExpenseItem, SharedExpenseReportProps } from '../types';
+import app from '../../../services/firebase/config';
 
 const modalStyle = {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
@@ -81,23 +61,21 @@ const modalStyle = {
     boxShadow: 24,
     p: 4,
     maxHeight: '80vh',
-    overflowY: 'auto',
+    overflowY: 'auto' as const,
 };
 
 /**
  * SharedExpenseReport component displays a list of expenses from a shared report.
  * It allows users with the link to view expenses and, if they have appropriate permissions (handled server-side),
  * mark expenses as reimbursed or denied.
- * @param {object} props - The component's props.
- * @param {string} props.mode - The current color mode ('light' or 'dark').
- * @param {function} props.setMode - Function to toggle the color mode.
  */
-export default function SharedExpenseReport({ mode, setMode }) {
+export default function SharedExpenseReport({ mode, setMode }: SharedExpenseReportProps): React.JSX.Element {
     useTitle('theJunkyard: Shared Expense Report');
-    const { shareId } = useParams();
+    const { shareId } = useParams<{ shareId: string }>();
     const defaultTheme = createTheme({ palette: { mode } });
-    const functions = app ? getFunctions(app) : null;
+    const functions: Functions | null = app ? getFunctions(app) : null;
 
+    // Only call useSharedExpenses if we have both shareId and functions
     const {
         expenses,
         loading,
@@ -117,20 +95,16 @@ export default function SharedExpenseReport({ mode, setMode }) {
         confirmDenial,
         closeDenialModal,
         displayedTotalAmount
-    } = useSharedExpenses(shareId, functions);
+    } = useSharedExpenses(shareId || '', functions!);
 
-    /** @state {boolean} modalOpen - Controls the visibility of the expense items modal. */
-    const [modalOpen, setModalOpen] = useState(false);
-    /** @state {Array<object>} selectedExpenseItems - Stores the items of an expense selected for viewing in the modal. */
-    const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
-    /** @state {boolean} expensesOpen - Controls the visibility of the expense list. */
-    const [expensesOpen, setExpensesOpen] = useState(true);
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [selectedExpenseItems, setSelectedExpenseItems] = useState<ExpenseItem[]>([]);
+    const [expensesOpen, setExpensesOpen] = useState<boolean>(true);
 
     /**
      * Opens the modal to display the detailed items of a selected expense.
-     * @param {Array<object>} items - The list of items for the selected expense.
      */
-    const handleOpenItemsModal = (items) => {
+    const handleOpenItemsModal = (items: ExpenseItem[] | undefined): void => {
         setSelectedExpenseItems(items || []);
         setModalOpen(true);
     };
@@ -138,22 +112,23 @@ export default function SharedExpenseReport({ mode, setMode }) {
     /**
      * Closes the expense items modal and clears the selected items.
      */
-    const handleCloseItemsModal = () => {
+    const handleCloseItemsModal = (): void => {
         setModalOpen(false);
         setSelectedExpenseItems([]);
     };
 
     // Memoized value to determine if all pending expenses are currently selected.
     // Used for the "select all" checkbox state.
-    const allPendingSelected = useMemo(() =>
+    const allPendingSelected = useMemo((): boolean =>
         pendingExpenses.length > 0 && pendingExpenses.every(exp => selectedExpenses.has(exp.id)),
         [pendingExpenses, selectedExpenses]
     );
+    
     // Memoized value to determine if some (but not all) pending expenses are selected.
     // Used for the "select all" checkbox indeterminate state.
-    const somePendingSelected = useMemo(() =>
+    const somePendingSelected = useMemo((): boolean =>
         pendingExpenses.some(exp => selectedExpenses.has(exp.id)) && !allPendingSelected,
-        [pendingExpenses, selectedExpenses, allPendingSelected] // Added allPendingSelected to dependency array
+        [pendingExpenses, selectedExpenses, allPendingSelected]
     );
 
     return (
@@ -188,9 +163,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
                         <Box sx={{ p: 2, border: '1px dashed grey', mb: 3, bgcolor: 'background.paper' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 }}>
                                 <Checkbox
-                                    // Checkbox is indeterminate if some (but not all) pending items are selected.
                                     indeterminate={somePendingSelected}
-                                    // Checkbox is checked if all pending items are selected.
                                     checked={allPendingSelected}
                                     onChange={handleSelectAllPending}
                                     disabled={updating || pendingExpenses.length === 0}
@@ -221,7 +194,6 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                 };
                                                 const isSelected = selectedExpenses.has(expense.id);
 
-                                                // Encapsulates the main content of a list item for reusability.
                                                 const listItemContent = (
                                                     <>
                                                         <ListItemIcon sx={{ minWidth: 'auto', mr: 1.5, pl: 1, pt: 1.5 }}>
@@ -242,15 +214,16 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                             <ExpenseListItemContent
                                                                 expense={expense}
                                                                 showDenialReason={false}
-                                                                isSharedView={true} // Explicitly pass true
+                                                                isSharedView={true}
                                                             />
                                                             {expense.items && expense.items.length > 0 && (
                                                                 <IconButton
                                                                     edge="end"
                                                                     aria-label="view items"
-                                                                    // Stop propagation to prevent the ListItemButton's onClick from firing
-                                                                    // when only the icon button is clicked.
-                                                                    onClick={(e) => { e.stopPropagation(); handleOpenItemsModal(expense.items); }}
+                                                                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => { 
+                                                                        e.stopPropagation(); 
+                                                                        handleOpenItemsModal(expense.items); 
+                                                                    }}
                                                                     sx={{ ml: 'auto' }}
                                                                     disabled={updating}
                                                                 >
@@ -261,7 +234,6 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                     </>
                                                 );
 
-                                                // Render pending expenses as interactive ListItemButtons.
                                                 return expense.status === 'pending' ? (
                                                     <ListItemButton
                                                         key={expense.id}
@@ -273,7 +245,6 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                                         {listItemContent}
                                                     </ListItemButton>
                                                 ) : (
-                                                    // Render non-pending (e.g., reimbursed, denied) expenses as non-interactive ListItems with reduced opacity.
                                                     <ListItem
                                                         key={expense.id}
                                                         {...commonItemProps}
@@ -294,7 +265,6 @@ export default function SharedExpenseReport({ mode, setMode }) {
                         )}
                     </>
                 )}
-                <Footer />
             </Container>
 
             <Modal
@@ -318,7 +288,7 @@ export default function SharedExpenseReport({ mode, setMode }) {
                                 <React.Fragment key={index}>
                                     <ListItem disableGutters>
                                         <ListItemText
-                                            primary={item.description || '(No description)'}
+                                            primary={item.description || item.name || '(No description)'}
                                             secondary={item.price !== undefined ? `$${item.price.toFixed(2)}` : null}
                                         />
                                     </ListItem>

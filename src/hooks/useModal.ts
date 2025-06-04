@@ -17,19 +17,25 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
-export default function FormHeader({ isExpanded, toggleExpand }) {
-    return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={toggleExpand}>
-            <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>Add New Expense</Typography>
-            <IconButton onClick={(e) => { e.stopPropagation(); toggleExpand(); }} size="small">
-                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-        </Box>
-    );
+export type UseModalReturn = [boolean, () => void, () => void];
+
+/**
+ * Custom hook for managing the state of a modal (open/closed).
+ * Provides a boolean state and functions to open and close the modal.
+ *
+ * @param initialState - The initial state of the modal (whether it's open or closed).
+ * @returns A tuple containing:
+ *  - `isOpen` {boolean}: The current open/closed state of the modal.
+ *  - `open` {function}: Function to set the modal state to open (true).
+ *  - `close` {function}: Function to set the modal state to closed (false).
+ */
+export default function useModal(initialState: boolean = false): UseModalReturn {
+    const [isOpen, setIsOpen] = useState<boolean>(initialState);
+    
+    const open = (): void => setIsOpen(true);
+    const close = (): void => setIsOpen(false);
+    
+    return [isOpen, open, close];
 }

@@ -25,13 +25,21 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
 
+interface DenialReasonModalProps {
+  open: boolean;
+  onClose: () => void;
+  reason: string;
+  onReasonChange: (reason: string) => void;
+  onConfirm: () => void;
+}
+
 export default function DenialReasonModal({
     open,
     onClose,
     reason,
     onReasonChange,
     onConfirm
-}) {
+}: DenialReasonModalProps) {
     return (
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>Denial Reason (Optional)</DialogTitle>

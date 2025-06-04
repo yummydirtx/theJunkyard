@@ -22,6 +22,15 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 
+interface SharedExpenseActionsProps {
+  updating: boolean;
+  updateError: string;
+  updateSuccess: string;
+  onMarkReimbursed: () => void;
+  onOpenDenialModal: () => void;
+  selectedCount: number;
+}
+
 export default function SharedExpenseActions({
     updating,
     updateError,
@@ -29,7 +38,7 @@ export default function SharedExpenseActions({
     onMarkReimbursed,
     onOpenDenialModal,
     selectedCount
-}) {
+}: SharedExpenseActionsProps) {
     const disableActions = updating || selectedCount === 0;
 
     return (

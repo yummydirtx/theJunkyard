@@ -17,22 +17,22 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React, { useState } from 'react';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react'; // Import useState
-// Import Collapse and icons
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Collapse from '@mui/material/Collapse';
+import { ShareLinkManagerProps } from '../types';
 
-export default function ShareLinkManager({
+const ShareLinkManager: React.FC<ShareLinkManagerProps> = ({
     shareLink,
     generateLink,
     generatingLink,
@@ -40,12 +40,12 @@ export default function ShareLinkManager({
     copyToClipboard,
     copied,
     disabled
-}) {
+}) => {
     // State for expansion, default to collapsed
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
     // Handler to toggle expansion
-    const toggleExpand = () => {
+    const toggleExpand = (): void => {
         setIsExpanded(!isExpanded);
     };
 
@@ -80,7 +80,7 @@ export default function ShareLinkManager({
                                 {shareLink}
                             </Link>
                             <Tooltip title={copied ? "Copied!" : "Copy link"} placement="top">
-                                <IconButton onClick={copyToClipboard} size="small" color={copied ? "success" : "primary"}>
+                                <IconButton onClick={() => copyToClipboard(shareLink)} size="small" color={copied ? "success" : "primary"}>
                                     <ContentCopyIcon fontSize="inherit" />
                                 </IconButton>
                             </Tooltip>
@@ -93,4 +93,6 @@ export default function ShareLinkManager({
             </Collapse>
         </Box>
     );
-}
+};
+
+export default ShareLinkManager;

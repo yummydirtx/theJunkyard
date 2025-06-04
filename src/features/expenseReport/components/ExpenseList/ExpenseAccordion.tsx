@@ -23,17 +23,21 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import List from '@mui/material/List';
 import Typography from '@mui/material/Typography';
+import { ReactNode } from 'react';
+import { Expense } from '../../types';
+
+interface ExpenseAccordionProps {
+  title: string;
+  count: number;
+  expenses: Expense[];
+  renderItem: (expense: Expense) => ReactNode;
+  addTopMargin?: boolean;
+}
 
 /**
  * Renders a collapsible accordion section for a list of expenses.
- * @param {object} props
- * @param {string} props.title - The title for the accordion summary (e.g., "Denied Expenses").
- * @param {number} props.count - The number of expenses in this section.
- * @param {Array<object>} props.expenses - The array of expense objects to list.
- * @param {function} props.renderItem - Function that takes an expense object and returns the JSX for the list item.
- * @param {boolean} props.addTopMargin - Whether to add top margin (mt: 2).
  */
-export default function ExpenseAccordion({ title, count, expenses, renderItem, addTopMargin }) {
+export default function ExpenseAccordion({ title, count, expenses, renderItem, addTopMargin }: ExpenseAccordionProps) {
     if (!expenses || expenses.length === 0) {
         return null;
     }

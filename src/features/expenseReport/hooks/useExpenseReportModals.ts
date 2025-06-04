@@ -19,15 +19,16 @@
 
 import { useState } from 'react';
 import useModal from '../../../hooks/useModal';
+import { UseExpenseReportModalsReturn, Expense } from '../types';
 
-export default function useExpenseReportModals() {
+export default function useExpenseReportModals(): UseExpenseReportModalsReturn {
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);
     const [signUpModalOpen, openSignUpModal, closeSignUpModal] = useModal(false);
 
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [expenseToEdit, setExpenseToEdit] = useState(null);
+    const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+    const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
 
-    const openEditExpenseModal = (expense) => {
+    const openEditExpenseModal = (expense: Expense): void => {
         if (expense && expense.status === 'pending') {
             setExpenseToEdit(expense);
             setEditModalOpen(true);
@@ -36,14 +37,20 @@ export default function useExpenseReportModals() {
         }
     };
 
-    const closeEditExpenseModal = () => {
+    const closeEditExpenseModal = (): void => {
         setEditModalOpen(false);
         setExpenseToEdit(null); // Reset expenseToEdit when closing
     };
 
+    // Explicitly define function signatures to match expected return types
+    const loginOpen = (): void => openLoginModal();
+    const loginClose = (): void => closeLoginModal();
+    const signUpOpen = (): void => openSignUpModal();
+    const signUpClose = (): void => closeSignUpModal();
+    
     return {
-        loginModal: { isOpen: loginModalOpen, open: openLoginModal, close: closeLoginModal },
-        signUpModal: { isOpen: signUpModalOpen, open: openSignUpModal, close: closeSignUpModal },
+        loginModal: { isOpen: loginModalOpen, open: loginOpen, close: loginClose },
+        signUpModal: { isOpen: signUpModalOpen, open: signUpOpen, close: signUpClose },
         editExpenseModal: {
             isOpen: editModalOpen,
             open: openEditExpenseModal,

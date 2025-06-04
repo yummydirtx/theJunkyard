@@ -41,7 +41,7 @@ import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
  * @property {function} updateActiveUser - Function to manually update parts of the activeUser state.
  * @property {object} db - Firestore database instance.
  * @property {object} auth - Firebase Auth instance.
- * @property {object} app - Firebase App instance.
+ * @property {import('firebase/app').FirebaseApp} app - Firebase App instance.
  */
 
 /**
@@ -55,7 +55,7 @@ export const AuthContext = createContext(null);
  * Manages the `activeUser` and `loading` state based on Firebase Auth.
  * @param {object} props - The component's props.
  * @param {React.ReactNode} props.children - The child components that can access the context.
- * @param {object} props.app - The initialized Firebase app instance.
+ * @param {import('firebase/app').FirebaseApp} props.app - The initialized Firebase app instance.
  */
 export const AuthProvider = ({ children, app }) => {
     /** @state {UserProfile|null} activeUser - The currently authenticated user object or null. */

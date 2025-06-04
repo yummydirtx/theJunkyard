@@ -45,27 +45,9 @@ import {
   TransactionStatus
 } from '../../../shared/types/financial';
 import { financialEventBus, FinancialEvent } from '../../../shared/events/financialEventBus';
+import { Expense, ExpenseItem } from '../types';
 
-// Types aligned with useUserExpenses hook data structure
-export interface ExpenseItem {
-  name: string;
-  price: number;
-  quantity?: number;
-}
-
-export interface Expense {
-  id: string;
-  userId: string;
-  description: string;
-  amount: number;
-  receiptUri?: string | null;
-  items?: ExpenseItem[] | null;
-  status: 'pending' | 'approved' | 'denied';
-  denialReason?: string | null;
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
-}
-
+// Service-specific types that don't conflict with main types
 export interface NewExpenseData {
   description: string;
   amount: number;
@@ -100,6 +82,11 @@ export class ExpenseReportService {
           id: doc.id,
           status: data.status || 'pending',
           denialReason: data.denialReason || null,
+          amount: data.amount || data.totalAmount || 0, // Handle legacy totalAmount field
+          date: data.date || new Date().toISOString(),
+          submittedAt: data.submittedAt?.toDate() || data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          receiptUri: data.receiptUri || data.receiptUrl, // Handle legacy field
         } as Expense);
       });
       callback(expenses);
@@ -121,7 +108,7 @@ export class ExpenseReportService {
       items: newExpense.items || null,
       status: 'pending' as TransactionStatus,
       denialReason: null,
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
     };
 
     const docRef = await addDoc(collection(this.db, "users", userId, "expenses"), expenseData);
@@ -156,7 +143,7 @@ export class ExpenseReportService {
     
     const payload = {
       ...updatedData,
-      updatedAt: serverTimestamp(),
+      updatedAt: new Date(),
     };
 
     await updateDoc(expenseDocRef, payload);
@@ -173,7 +160,7 @@ export class ExpenseReportService {
           expenseId,
           previousStatus: currentData.status,
           newStatus: updatedData.status,
-          amount: { value: currentData.amount || 0 },
+          amount: { value: currentData.amount || 0 }, // Use amount field
           description: currentData.description,
         },
       };

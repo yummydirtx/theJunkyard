@@ -29,8 +29,17 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import { ExpenseItem } from '../types';
 
-export default function ParsedItemsList({ items, onItemChange, onAddItem, onRemoveItem, isProcessing }) {
+interface ParsedItemsListProps {
+  items: ExpenseItem[];
+  onItemChange: (index: number, field: keyof ExpenseItem, value: string | number) => void;
+  onAddItem: () => void;
+  onRemoveItem: (index: number) => void;
+  isProcessing: boolean;
+}
+
+export default function ParsedItemsList({ items, onItemChange, onAddItem, onRemoveItem, isProcessing }: ParsedItemsListProps) {
     if (items.length === 0 && !isProcessing) {
         return (
             <Button
@@ -63,7 +72,7 @@ export default function ParsedItemsList({ items, onItemChange, onAddItem, onRemo
                                         variant="outlined"
                                         size="small"
                                         fullWidth
-                                        value={item.description || ''}
+                                        value={item.description || item.name || ''}
                                         onChange={(e) => onItemChange(index, 'description', e.target.value)}
                                         disabled={isProcessing}
                                     />

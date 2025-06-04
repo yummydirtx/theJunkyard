@@ -27,10 +27,11 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
+import { ExpenseItem } from '../../types';
 
-// Style for the modal (copied from ExpenseList.jsx)
+// Style for the modal
 const modalStyle = {
-  position: 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -40,17 +41,19 @@ const modalStyle = {
   boxShadow: 24,
   p: 4,
   maxHeight: '80vh',
-  overflowY: 'auto',
+  overflowY: 'auto' as const,
 };
+
+interface ExpenseItemsModalProps {
+  open: boolean;
+  onClose: () => void;
+  items?: ExpenseItem[];
+}
 
 /**
  * Modal to display itemized details of an expense.
- * @param {object} props
- * @param {boolean} props.open - Whether the modal is open.
- * @param {function} props.onClose - Function to call when closing the modal.
- * @param {Array<object>} props.items - Array of item objects ({ description, price }).
  */
-export default function ExpenseItemsModal({ open, onClose, items = [] }) {
+export default function ExpenseItemsModal({ open, onClose, items = [] }: ExpenseItemsModalProps) {
     return (
         <Modal
             open={open}
@@ -73,7 +76,7 @@ export default function ExpenseItemsModal({ open, onClose, items = [] }) {
                             <React.Fragment key={index}>
                                 <ListItem disableGutters>
                                     <ListItemText
-                                        primary={item.description || '(No description)'}
+                                        primary={item.description || item.name || '(No description)'}
                                         secondary={item.price !== undefined ? `$${item.price.toFixed(2)}` : null}
                                     />
                                 </ListItem>

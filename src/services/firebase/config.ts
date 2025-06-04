@@ -40,11 +40,16 @@ if (getApps().length === 0) {
   app = getApp();
 }
 
-// Initialize App Check
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_API_KEY),
-  isTokenAutoRefreshEnabled: true // Enables automatic token refresh for Firebase App Check.
-});
+// Initialize App Check (only if reCAPTCHA key is available)
+let appCheck;
+if (import.meta.env.VITE_RECAPTCHA_API_KEY) {
+  appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_API_KEY),
+    isTokenAutoRefreshEnabled: true // Enables automatic token refresh for Firebase App Check.
+  });
+} else {
+  console.warn('App Check not initialized: VITE_RECAPTCHA_API_KEY environment variable not set');
+}
 
 // Initialize Analytics
 const analytics = getAnalytics(app);

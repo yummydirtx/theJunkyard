@@ -19,35 +19,36 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Button from '@mui/material/Button';
-import Input from '@mui/material/Input'; // Or use styled input
+import Input from '@mui/material/Input';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 // Import Firebase Storage functions and Auth context
 import { getStorage, ref, uploadBytes } from "firebase/storage";
-import { useAuth } from '../../../contexts/AuthContext'; // Import useAuth
+import { useAuth } from '../../../contexts/AuthContext';
+
+interface ReceiptUploadProps {
+  onUploadComplete: (gsUri: string, mimeType: string) => void;
+  disabled?: boolean;
+}
 
 /**
  * A component that allows users to select and upload a receipt file (image or PDF)
  * to Firebase Storage. It performs basic validation and reports the upload status
  * and the resulting Google Cloud Storage URI.
- * @param {object} props - Component props.
- * @param {function} props.onUploadComplete - Callback function invoked after a successful upload.
- *                                            Receives (gsUri: string, mimeType: string).
- * @param {boolean} [props.disabled=false] - If true, disables the upload button.
  */
-export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
+export default function ReceiptUpload({ onUploadComplete, disabled = false }: ReceiptUploadProps) {
     const { app, activeUser } = useAuth(); // Get Firebase app instance and authenticated user from context
     const storage = getStorage(app); // Initialize Firebase Storage
 
     // --- State Variables ---
     const [selectedFileName, setSelectedFileName] = useState(''); // Name of the file selected by the user
     const [uploading, setUploading] = useState(false); // True while the file is being uploaded
-    const [error, setError] = useState(null); // Stores error messages related to file selection or upload
+    const [error, setError] = useState<string | null>(null); // Stores error messages related to file selection or upload
 
     // --- Refs ---
-    const fileInputRef = useRef(null); // Ref to the hidden file input element
+    const fileInputRef = useRef<HTMLInputElement>(null); // Ref to the hidden file input element
 
     // --- Effect to clear file input on mount/remount ---
     useEffect(() => {
@@ -64,10 +65,9 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
     /**
      * Handles the file selection event from the hidden input.
      * Validates the selected file (type, size) and initiates the upload process if valid.
-     * @param {React.ChangeEvent<HTMLInputElement>} event - The file input change event.
      */
-    const handleFileChange = async (event) => {
-        const file = event.target.files[0]; // Get the selected file
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]; // Get the selected file
 
         // Reset state if no file is selected (e.g., user cancels the dialog)
         if (!file) {
@@ -127,7 +127,7 @@ export default function ReceiptUpload({ onUploadComplete, disabled = false }) {
             // Call the callback function with the gs:// URI and MIME type
             onUploadComplete(gsUri, file.type);
 
-        } catch (uploadError) {
+        } catch (uploadError: any) {
             console.error('Upload failed:', uploadError);
             setError(`Upload failed: ${uploadError.message}`);
             setSelectedFileName(''); // Clear filename on error

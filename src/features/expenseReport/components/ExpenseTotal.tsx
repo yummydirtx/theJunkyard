@@ -20,12 +20,14 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
+interface ExpenseTotalProps {
+  totalAmount: number;
+}
+
 /**
  * Displays the calculated total amount of all expenses.
- * @param {object} props - Component props.
- * @param {number} props.totalAmount - The total amount to display.
  */
-export default function ExpenseTotal({ totalAmount }) {
+export default function ExpenseTotal({ totalAmount }: ExpenseTotalProps) {
     return (
         <Box sx={{ mt: 2 }}>
             <Typography variant="h5">Total: ${totalAmount.toFixed(2)}</Typography>

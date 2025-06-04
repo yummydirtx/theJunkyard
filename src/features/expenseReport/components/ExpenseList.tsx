@@ -28,21 +28,45 @@ import ExpenseAccordion from './ExpenseList/ExpenseAccordion';
 import ExpenseActionMenu from './ExpenseList/ExpenseActionMenu';
 import ExpenseItemsModal from './ExpenseList/ExpenseItemsModal';
 import ExpenseListItemContent from './ExpenseListItemContent';
+import { Expense, ExpenseItem } from '../types/index';
+
+type ExpenseStatus = Expense['status'];
+
+interface ExpenseListProps {
+    /** Array of expense objects. */
+    expenses: Expense[];
+    
+    /** Callback function invoked when the delete button is clicked. Receives the expense `id`. */
+    onDeleteExpense?: (expenseId: string) => void;
+    
+    /** Callback function invoked when the edit action is selected. Receives the expense object. */
+    onEditExpense?: (expense: Expense) => void;
+    
+    /** Callback function invoked when a status change action is selected. Receives (expenseId, newStatus). */
+    onUpdateStatus?: (expenseId: string, newStatus: ExpenseStatus) => void;
+    
+    /** If true, hides the delete/edit actions and accordion structure. */
+    isSharedView?: boolean;
+    
+    /** Function to open the action menu. */
+    handleMenuOpen: (event: React.MouseEvent<HTMLElement>, expenseId: string) => void;
+    
+    /** Function to close the action menu. */
+    handleMenuClose: () => void;
+    
+    /** Function called after menu closes. */
+    handleMenuExited: () => void;
+    
+    /** Anchor element for the menu. */
+    anchorEl: HTMLElement | null;
+    
+    /** ID of the expense for the open menu. */
+    menuExpenseId: string | null;
+}
 
 /**
  * Displays a list of expenses, organizing them into pending, denied, and reimbursed sections.
  * Uses sub-components for modal, action menu, and accordions.
- * @param {object} props - Component props.
- * @param {Array<object>} props.expenses - Array of expense objects.
- * @param {function} [props.onDeleteExpense] - Callback function invoked when the delete button is clicked. Receives the expense `id`.
- * @param {function} [props.onEditExpense] - Callback function invoked when the edit action is selected. Receives the expense object.
- * @param {function} [props.onUpdateStatus] - Callback function invoked when a status change action is selected. Receives (expenseId, newStatus).
- * @param {boolean} [props.isSharedView=false] - If true, hides the delete/edit actions and accordion structure.
- * @param {function} props.handleMenuOpen - Function to open the action menu.
- * @param {function} props.handleMenuClose - Function to close the action menu.
- * @param {function} props.handleMenuExited - Function called after menu closes.
- * @param {HTMLElement | null} props.anchorEl - Anchor element for the menu.
- * @param {string | null} props.menuExpenseId - ID of the expense for the open menu.
  */
 export default function ExpenseList({
     expenses,
@@ -56,17 +80,18 @@ export default function ExpenseList({
     handleMenuExited,
     anchorEl,
     menuExpenseId
-}) {
+}: ExpenseListProps) {
     // State for Item Details Modal (remains local)
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedExpenseItems, setSelectedExpenseItems] = useState([]);
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [selectedExpenseItems, setSelectedExpenseItems] = useState<ExpenseItem[]>([]);
 
     // Modal Handlers (remain the same)
-    const handleOpenItemsModal = (items) => {
+    const handleOpenItemsModal = (items: ExpenseItem[]): void => {
         setSelectedExpenseItems(items || []);
         setModalOpen(true);
     };
-    const handleCloseItemsModal = () => {
+    
+    const handleCloseItemsModal = (): void => {
         setModalOpen(false);
         setSelectedExpenseItems([]);
     };
@@ -77,7 +102,7 @@ export default function ExpenseList({
     const reimbursedExpenses = isSharedView ? [] : expenses.filter(exp => exp.status === 'reimbursed');
 
     // Helper function to render a list item (passed to Accordion and used directly)
-    const renderListItem = (expense) => {
+    const renderListItem = (expense: Expense) => {
         const hasItems = expense.items && expense.items.length > 0;
         const canDelete = !isSharedView && onDeleteExpense;
         const canEdit = !isSharedView && onEditExpense && expense.status === 'pending';

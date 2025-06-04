@@ -24,7 +24,7 @@ import { centerCrop, makeAspectCrop } from 'react-image-crop';
  * @param {string} dataurl - The Data URL string.
  * @returns {Blob|null} The Blob object or null if conversion fails.
  */
-export function dataURLtoBlob(dataurl) {
+export function dataURLtoBlob(dataurl: string): Blob | null {
     // Check if dataurl is valid
     if (!dataurl || !dataurl.includes(',')) {
         console.error("Invalid data URL provided to dataURLtoBlob:", dataurl);
@@ -64,9 +64,9 @@ export function dataURLtoBlob(dataurl) {
  * @returns {import('react-image-crop').Crop} The calculated crop object.
  */
 export function centerAspectCrop(
-  mediaWidth,
-  mediaHeight,
-  aspect,
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number,
 ) {
   // Use react-image-crop's built-in functions, imported at the top level now
   return centerCrop(
@@ -94,9 +94,9 @@ export function centerAspectCrop(
  * @returns {Promise<Blob>} A promise that resolves with the cropped and processed Blob.
  */
 export async function getCroppedImg(
-  image,
-  pixelCrop,
-  fileName,
+  image: HTMLImageElement,
+  pixelCrop: any,
+  fileName: string,
   fileType = 'image/png' // Keep param for potential future use, but ignore for export
 ) {
   // console.log('getCroppedImg started.');
@@ -202,7 +202,7 @@ export async function getCroppedImg(
       0, 0, destWidth, destHeight
     );
     // console.log('initialCtx.drawImage completed.');
-  } catch (drawError) {
+  } catch (drawError: any) {
       console.error('Error during initialCtx.drawImage:', drawError);
       console.error('DrawImage parameters were:', {
           sx: cropX, sy: cropY, sWidth: sourceCropWidth, sHeight: sourceCropHeight,
@@ -257,7 +257,7 @@ export async function getCroppedImg(
            return reject(new Error('Failed to convert Data URL to Blob.'));
         }
 
-      } catch (error) {
+      } catch (error: any) {
           console.error(`Attempt ${attempt + 1}: Error during Data URL generation or conversion for canvas size ${currentCanvas.width}x${currentCanvas.height}:`, error);
           if (error.name === 'QuotaExceededError') {
              console.error(`Attempt ${attempt + 1}: QuotaExceededError encountered.`);
@@ -270,9 +270,9 @@ export async function getCroppedImg(
 
       if (blob.size <= maxSizeBytes) {
         const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
-        blob.name = `${baseName}.jpeg`; // Ensure the blob has the correct extension
-        // console.log(`Success: Final size is within limit. Setting blob name to ${blob.name}. Resolving promise.`);
-        return resolve(blob); // Use return here to exit the loop and resolve
+        const fileBlob = new File([blob], `${baseName}.jpeg`, { type: blob.type });
+        // console.log(`Success: Final size is within limit. Setting blob name to ${fileBlob.name}. Resolving promise.`);
+        return resolve(fileBlob); // Use return here to exit the loop and resolve
       }
 
       // console.log(`Attempt ${attempt + 1}: Blob size (${blob.size}) exceeds limit (${maxSizeBytes}). Resizing needed.`);

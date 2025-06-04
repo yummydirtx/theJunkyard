@@ -203,7 +203,7 @@ function AppAppBar({ mode, toggleColorMode }) {
                 </MenuItem>
                 <MenuItem onClick={() => window.open("/expensereport", "_self")} sx={{ py: '6px', px: '12px' }}>
                   <Typography variant="body2" color="text.primary">
-                    Expense Report (beta)
+                    Expense Report
                   </Typography>
                 </MenuItem>
                 <MenuItem onClick={() => window.open("https://anteaterfind.com", "_blank")} sx={{ py: '6px', px: '12px' }}>
@@ -337,7 +337,7 @@ function AppAppBar({ mode, toggleColorMode }) {
             Manual Budget
           </MenuItem>
           <MenuItem onClick={() => window.open("/expensereport", "_self")}>
-            Expense Report (beta)
+            Expense Report
           </MenuItem>
           <MenuItem onClick={() => window.open("https://anteaterfind.com", "_blank")}>
             AnteaterFind <LaunchIcon sx={{ fontSize: 'inherit', verticalAlign: 'middle', ml: 0.5 }} />
