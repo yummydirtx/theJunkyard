@@ -1,6 +1,7 @@
 {
   "name": "thejunkyard",
   "version": "5.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "start": "vite --host",
