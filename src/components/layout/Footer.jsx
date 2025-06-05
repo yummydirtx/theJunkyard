@@ -24,7 +24,7 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Logo from '../../assets/websitelogo.png';
-import FacebookIcon from '@mui/icons-material/GitHub';
+import GithubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 const logoStyle = {
@@ -122,7 +122,7 @@ export default function Footer() {
               aria-label="GitHub"
               sx={{ alignSelf: 'center' }}
             >
-              <FacebookIcon />
+              <GithubIcon />
             </IconButton>
             <IconButton
               color="inherit"
