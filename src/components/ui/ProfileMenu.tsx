@@ -17,7 +17,8 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState } from 'react'; // Removed useContext
+import React, { useState } from 'react';
+import { SxProps, Theme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
@@ -30,33 +31,39 @@ import AccountSettingsModal from '../../features/authentication/components/Accou
 import { useAuth } from '../../contexts/AuthContext';
 
 /**
+ * Props for the ProfileMenu component.
+ */
+interface ProfileMenuProps {
+    /** Custom styles to be applied to the IconButton. */
+    sx?: SxProps<Theme>;
+}
+
+/**
  * ProfileMenu component displays an avatar icon button that, when clicked,
  * opens a menu with options for account settings and signing out.
  * It relies on `AuthContext` to get the active user's information and sign-out functionality.
- * @param {object} props - The component's props.
- * @param {object} [props.sx={}] - Custom styles to be applied to the IconButton.
  */
-export default function ProfileMenu({ sx = {} }) {
-    /** @state {HTMLElement|null} anchorEl - The DOM element that the menu is anchored to. */
-    const [anchorEl, setAnchorEl] = useState(null);
+export default function ProfileMenu({ sx = {} }: ProfileMenuProps) {
+    /** The DOM element that the menu is anchored to. */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const open = Boolean(anchorEl);
-    /** @state {boolean} accountSettingsOpen - Controls the visibility of the AccountSettingsModal. */
-    const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+    /** Controls the visibility of the AccountSettingsModal. */
+    const [accountSettingsOpen, setAccountSettingsOpen] = useState<boolean>(false);
 
     const { activeUser, signOut, loading } = useAuth();
 
     /**
      * Handles the click event on the avatar button to open the profile menu.
-     * @param {React.MouseEvent<HTMLElement>} event - The click event.
+     * @param event - The click event.
      */
-    const handleClick = (event) => {
+    const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
         setAnchorEl(event.currentTarget);
     };
 
     /**
      * Handles closing the profile menu.
      */
-    const handleClose = () => {
+    const handleClose = (): void => {
         setAnchorEl(null);
     };
 
@@ -64,7 +71,7 @@ export default function ProfileMenu({ sx = {} }) {
      * Handles the sign-out action. It calls the `signOut` function from `AuthContext`
      * and closes the profile menu.
      */
-    const handleSignOut = () => {
+    const handleSignOut = (): void => {
         signOut();
         handleClose();
     };
@@ -72,7 +79,7 @@ export default function ProfileMenu({ sx = {} }) {
     /**
      * Opens the Account Settings modal and closes the profile menu.
      */
-    const openAccountSettings = () => {
+    const openAccountSettings = (): void => {
         setAccountSettingsOpen(true);
         handleClose();
     };
@@ -109,7 +116,7 @@ export default function ProfileMenu({ sx = {} }) {
                 slotProps={{
                     paper: {
                         elevation: 0,
-                        sx: (theme) => ({
+                        sx: (theme: Theme) => ({
                             overflow: 'visible',
                             filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                             mt: 1.5,
@@ -173,7 +180,6 @@ export default function ProfileMenu({ sx = {} }) {
             <AccountSettingsModal
                 open={accountSettingsOpen}
                 onClose={() => setAccountSettingsOpen(false)}
-                user={activeUser} // Pass the activeUser to ensure settings are for the correct user.
             />
         </>
     );

@@ -17,20 +17,34 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { TextField, InputAdornment } from '@mui/material';
+import React from 'react';
+import { TextField, InputAdornment, TextFieldProps } from '@mui/material';
+
+/**
+ * Props for the MoneyInput component.
+ */
+interface MoneyInputProps extends Omit<TextFieldProps, 'onChange' | 'value'> {
+    /** The current value of the input. */
+    value: string | number;
+    /** Callback function invoked when the input value changes. Receives the sanitized string value. */
+    onChange: (value: string) => void;
+    /** The label for the input field. */
+    label?: string;
+    /** The placeholder text for the input field. */
+    placeholder?: string;
+    /** Helper text displayed below the input field. */
+    helperText?: string;
+    /** If true, the input is marked as required. */
+    required?: boolean;
+    /** If true, the input is disabled. */
+    disabled?: boolean;
+    /** If true, the component takes up the full width of its container. */
+    fullWidth?: boolean;
+}
 
 /**
  * MoneyInput is a TextField specialized for currency input.
  * It includes a '$' start adornment and basic validation to allow only numbers and a decimal point.
- * @param {object} props - The component's props.
- * @param {string|number} props.value - The current value of the input.
- * @param {function} props.onChange - Callback function invoked when the input value changes. Receives the sanitized string value.
- * @param {string} [props.label="Amount"] - The label for the input field.
- * @param {string} [props.placeholder="0.00"] - The placeholder text for the input field.
- * @param {string} [props.helperText=""] - Helper text displayed below the input field.
- * @param {boolean} [props.required=false] - If true, the input is marked as required.
- * @param {boolean} [props.disabled=false] - If true, the input is disabled.
- * @param {boolean} [props.fullWidth=true] - If true, the component takes up the full width of its container.
  */
 export default function MoneyInput({ 
     value, 
@@ -42,13 +56,13 @@ export default function MoneyInput({
     disabled = false,
     fullWidth = true,
     ...props 
-}) {
+}: MoneyInputProps) {
     /**
      * Handles changes to the input field.
      * Sanitizes the input to allow only numbers and a single decimal point.
-     * @param {React.ChangeEvent<HTMLInputElement>} event - The input change event.
+     * @param event - The input change event.
      */
-    const handleMoneyChange = (event) => {
+    const handleMoneyChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         // Allow only numbers and a single decimal point.
         const sanitizedValue = event.target.value.replace(/[^0-9.]/g, '');
         // Further validation could be added here (e.g., only one decimal point).

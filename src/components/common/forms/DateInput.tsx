@@ -17,9 +17,31 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { forwardRef, useState, useEffect, useRef } from 'react';
-import { TextField, InputAdornment } from '@mui/material';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
+import { TextField, InputAdornment, TextFieldProps } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+
+/**
+ * Props for the DateInput component.
+ */
+interface DateInputProps extends Omit<TextFieldProps, 'onChange' | 'value' | 'type'> {
+    /** The date value in 'YYYY-MM-DD' format. */
+    value: string;
+    /** Callback function invoked when the date changes. Receives the change event from the native input. */
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    /** The label for the TextField. */
+    label?: string;
+    /** If true, the input is marked as required. */
+    required?: boolean;
+    /** If true, the input is disabled. */
+    disabled?: boolean;
+    /** The current theme mode ('light' or 'dark'), used for icon coloring. */
+    mode?: 'light' | 'dark';
+    /** Optional callback for when the calendar icon is clicked. */
+    onCalendarClick?: (event?: React.MouseEvent) => void;
+    /** If true, the component takes up the full width of its container. */
+    fullWidth?: boolean;
+}
 
 /**
  * DateInput is a custom component that provides a user-friendly date input field.
@@ -27,34 +49,24 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
  * date input (type="date") for the actual date picking, which expects YYYY-MM-DD format.
  * This approach combines a consistent visual style with native date picker functionality.
  * The component is forwardRef-enabled to allow parent components to interact with the underlying native input.
- * @param {object} props - The component's props.
- * @param {string} props.value - The date value in 'YYYY-MM-DD' format.
- * @param {function} props.onChange - Callback function invoked when the date changes. Receives the change event from the native input.
- * @param {string} [props.label="Date"] - The label for the TextField.
- * @param {boolean} [props.required=false] - If true, the input is marked as required.
- * @param {boolean} [props.disabled=false] - If true, the input is disabled.
- * @param {string} [props.mode='light'] - The current theme mode ('light' or 'dark'), used for icon coloring.
- * @param {function} [props.onCalendarClick] - Optional callback for when the calendar icon is clicked.
- * @param {boolean} [props.fullWidth=true] - If true, the component takes up the full width of its container.
- * @param {React.Ref} ref - Forwarded ref to the underlying native date input element.
  */
-const DateInput = forwardRef(({ 
+const DateInput = forwardRef<HTMLInputElement, DateInputProps>(({ 
     value,
     onChange,
     label = "Date", 
     required = false,
     disabled = false,
-    mode = 'light', // Theme mode for icon color
-    onCalendarClick,// Optional callback for calendar icon click
+    mode = 'light',
+    onCalendarClick,
     fullWidth = true,
     ...props
 }, ref) => {
     // Use internal ref if no external ref is provided for the hidden native input
-    const innerRef = useRef(null);
+    const innerRef = useRef<HTMLInputElement>(null);
     const actualRef = ref || innerRef;
     
-    /** @state {string} displayValue - Formatted date string for display (e.g., MM/DD/YYYY). */
-    const [displayValue, setDisplayValue] = useState('');
+    /** Formatted date string for display (e.g., MM/DD/YYYY). */
+    const [displayValue, setDisplayValue] = useState<string>('');
     
     // Effect to update the displayValue whenever the 'YYYY-MM-DD' value prop changes.
     // It parses 'YYYY-MM-DD' and formats it to 'MM/DD/YYYY' for the visible TextField.
@@ -91,17 +103,17 @@ const DateInput = forwardRef(({
      * Handles clicks on the calendar icon or the TextField itself.
      * It programmatically focuses and attempts to open the native date picker
      * of the hidden input element.
-     * @param {React.MouseEvent} [e] - The click event.
+     * @param e - The click event.
      */
-    const handleCalendarClick = (e) => {
+    const handleCalendarClick = (e?: React.MouseEvent): void => {
         if (e) {
             e.stopPropagation();
         }
-        if (actualRef && actualRef.current) {
+        if (actualRef && 'current' in actualRef && actualRef.current) {
             actualRef.current.focus();
             try {
-                 if (typeof actualRef.current.showPicker === 'function') {
-                    actualRef.current.showPicker();
+                 if (typeof (actualRef.current as any).showPicker === 'function') {
+                    (actualRef.current as any).showPicker();
                  }
             } catch (error) {
                 console.error("Could not call showPicker():", error);
@@ -117,9 +129,9 @@ const DateInput = forwardRef(({
 
     /**
      * Passes the change event from the hidden native date input to the parent component's onChange handler.
-     * @param {React.ChangeEvent<HTMLInputElement>} e - The change event from the native date input.
+     * @param e - The change event from the native date input.
      */
-    const handleDateChange = (e) => {
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         if (onChange) {
             onChange(e);
         }
@@ -163,7 +175,7 @@ const DateInput = forwardRef(({
                 It is positioned over the TextField and made invisible. */}
             <input
                 type="date"
-                ref={actualRef} // Attach the ref here
+                ref={actualRef as React.RefObject<HTMLInputElement>} // Attach the ref here
                 value={value || ''} // Bind to the 'YYYY-MM-DD' value
                 onChange={handleDateChange} // Handle native input changes
                 required={required}
@@ -183,5 +195,7 @@ const DateInput = forwardRef(({
         </div>
     );
 });
+
+DateInput.displayName = 'DateInput';
 
 export default DateInput;

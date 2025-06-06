@@ -2,3 +2,4 @@
 export { default as MoneyInput } from './MoneyInput';
 export { default as DateInput } from './DateInput';
 export { default as ColorPicker, categoryColors } from './ColorPicker';
+export type { CategoryColor } from './ColorPicker';

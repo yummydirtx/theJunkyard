@@ -17,20 +17,44 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import { alpha } from '@mui/material/styles';
+import { alpha, SxProps, Theme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppAppBar from './AppAppBar';
 import Footer from './Footer';
+import ToggleColorMode from '../ui/ToggleColorMode';
 
-export default function PageLayout({ children, mode, setMode, sx }) {
+/**
+ * Props for the PageLayout component.
+ */
+interface PageLayoutProps {
+    /** The content to render within the layout. */
+    children: React.ReactNode;
+    /** The current color mode. */
+    mode: 'light' | 'dark';
+    /** Function to set/toggle the color mode. */
+    setMode: (mode: 'light' | 'dark') => void;
+    /** Additional styles to apply to the main content area. */
+    sx?: SxProps<Theme>;
+}
+
+/**
+ * PageLayout component provides the main layout structure for the application.
+ * It includes the app bar, main content area with theming, and footer.
+ */
+export default function PageLayout({ children, mode, setMode, sx }: PageLayoutProps) {
   const defaultTheme = createTheme({ palette: { mode } });
+
+  const toggleColorMode = () => {
+    setMode(mode === 'light' ? 'dark' : 'light');
+  };
 
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
-      <AppAppBar mode={mode} toggleColorMode={setMode} />
+      <AppAppBar mode={mode} toggleColorMode={toggleColorMode} />
       <Box
         sx={{
           width: '100%',

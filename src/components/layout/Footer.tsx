@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
@@ -50,15 +50,15 @@ function Copyright() {
  * It includes a function to scroll to specific sections on the landing page.
  */
 export default function Footer() {
-  /** @state {boolean} open - State to potentially control a mobile menu or similar, currently unused in the scroll logic directly. */
-  const [open, setOpen] = React.useState(false);
+  /** State to potentially control a mobile menu or similar, currently unused in the scroll logic directly. */
+  const [open, setOpen] = useState<boolean>(false);
 
   /**
    * Scrolls to a specific section on the page by its ID.
    * If the section is not found, it navigates to the home page.
-   * @param {string} sectionId - The ID of the HTML element to scroll to.
+   * @param sectionId - The ID of the HTML element to scroll to.
    */
-  const scrollToSection = (sectionId) => {
+  const scrollToSection = (sectionId: string): void => {
     const sectionElement = document.getElementById(sectionId);
     const offset = 128; // Offset to account for fixed headers or other UI elements.
     if (sectionElement) {
@@ -99,9 +99,7 @@ export default function Footer() {
         >
           <div>
             <img
-              src={
-                Logo
-              }
+              src={Logo}
               style={logoStyle}
               alt="logo of sitemark"
             />

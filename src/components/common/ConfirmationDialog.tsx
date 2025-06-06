@@ -17,6 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -26,17 +27,30 @@ import {
   Typography
 } from '@mui/material';
 
+export interface ConfirmationDialogProps {
+    /** Controls the visibility of the dialog */
+    open: boolean;
+    /** Callback function invoked when the dialog is closed (either by cancel or confirm) */
+    onClose: (confirmed: boolean) => void;
+    /** Callback function invoked when the confirm button is clicked */
+    onConfirm: () => void;
+    /** The title of the confirmation dialog */
+    title: string;
+    /** The message/question to display to the user */
+    message: string;
+}
+
 /**
  * A reusable confirmation dialog component.
  * It prompts the user with a message and provides "Cancel" and "Confirm" actions.
- * @param {object} props - The component's props.
- * @param {boolean} props.open - Controls the visibility of the dialog.
- * @param {function} props.onClose - Callback function invoked when the dialog is closed (either by cancel or confirm).
- * @param {function} props.onConfirm - Callback function invoked when the confirm button is clicked.
- * @param {string} props.title - The title of the confirmation dialog.
- * @param {string} props.message - The message/question to display to the user.
  */
-export default function ConfirmationDialog({ open, onClose, onConfirm, title, message }) {
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ 
+    open, 
+    onClose, 
+    onConfirm, 
+    title, 
+    message 
+}) => {
   return (
     <Dialog open={open} onClose={() => onClose(false)}>
       <DialogTitle>{title}</DialogTitle>
@@ -45,8 +59,12 @@ export default function ConfirmationDialog({ open, onClose, onConfirm, title, me
       </DialogContent>
       <DialogActions>
         <Button onClick={() => onClose(false)}>Cancel</Button>
-        <Button onClick={() => { onConfirm(); onClose(false); }} color="error">Confirm</Button>
+        <Button onClick={() => { onConfirm(); onClose(false); }} color="error">
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );
-}
+};
+
+export default ConfirmationDialog;

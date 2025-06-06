@@ -17,20 +17,27 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import PropTypes from 'prop-types';
+import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import WbSunnyRoundedIcon from '@mui/icons-material/WbSunnyRounded';
 import ModeNightRoundedIcon from '@mui/icons-material/ModeNightRounded';
 
 /**
+ * Props for the ToggleColorMode component.
+ */
+interface ToggleColorModeProps {
+    /** The current color mode. */
+    mode: 'light' | 'dark';
+    /** Function to call when the button is clicked to toggle the mode. */
+    toggleColorMode: () => void;
+}
+
+/**
  * ToggleColorMode component provides a button to switch between light and dark themes.
  * It displays a sun icon for dark mode (to switch to light) and a moon icon for light mode (to switch to dark).
- * @param {object} props - The component's props.
- * @param {('light' | 'dark')} props.mode - The current color mode.
- * @param {function} props.toggleColorMode - Function to call when the button is clicked to toggle the mode.
  */
-function ToggleColorMode({ mode, toggleColorMode }) {
+function ToggleColorMode({ mode, toggleColorMode }: ToggleColorModeProps) {
   return (
     <Box sx={{ maxWidth: '32px' }}>
       <Button
@@ -38,6 +45,7 @@ function ToggleColorMode({ mode, toggleColorMode }) {
         onClick={toggleColorMode}
         size="small"
         aria-label="button to toggle theme"
+        data-testid="toggle-color-mode"
         sx={{ minWidth: '32px', height: '32px', p: '4px' }}
       >
         {mode === 'dark' ? (
@@ -49,12 +57,5 @@ function ToggleColorMode({ mode, toggleColorMode }) {
     </Box>
   );
 }
-
-ToggleColorMode.propTypes = {
-  /** The current color mode, either 'dark' or 'light'. */
-  mode: PropTypes.oneOf(['dark', 'light']).isRequired,
-  /** Function to be called to toggle the color mode. */
-  toggleColorMode: PropTypes.func.isRequired,
-};
 
 export default ToggleColorMode;
