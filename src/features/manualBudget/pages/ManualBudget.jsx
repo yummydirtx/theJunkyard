@@ -250,7 +250,7 @@ export default function ManualBudget({ setMode, mode }) {
                 flexDirection: 'column',
                 overflow: 'hidden'
             }}>
-                {!overallLoading && activeUser && !needsNamePrompt && (
+                {(
                     <BudgetPageHeader
                         currentMonth={currentMonth}
                         onMonthChipClick={monthSelectorModal.open} // Corrected: use monthSelectorModal.open
