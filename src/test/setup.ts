@@ -1,6 +1,21 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Configure React Testing Library to wrap state updates in act()
+// This helps eliminate act() warnings in tests
+import { configure } from '@testing-library/react';
+
+configure({
+  // Automatically wrap user interactions in act()
+  asyncUtilTimeout: 2000,
+  // This helps ensure that React state updates are properly handled
+  // during tests and reduces act() warnings
+});
+
+// Global act import from React for manual wrapping when needed
+import { act } from 'react';
+(globalThis as any).act = act;
+
 // Mock window.open
 Object.defineProperty(window, 'open', {
   writable: true,

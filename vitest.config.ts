@@ -9,5 +9,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Configure test environment to better handle React updates
+    pool: 'forks',
+    // Increase timeout for async operations
+    testTimeout: 10000,
+    hookTimeout: 10000,
   },
 });

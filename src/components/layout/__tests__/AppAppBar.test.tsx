@@ -92,7 +92,12 @@ const mockTheme = createTheme();
 
 const renderWithTheme = (component: React.ReactElement) => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <ThemeProvider theme={mockTheme}>
         {component}
       </ThemeProvider>

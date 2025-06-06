@@ -111,42 +111,46 @@ export default function ColorPicker({ selectedColor, onChange, disabled = false 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {categoryColors.map((color) => (
                     <Tooltip key={color.value} title={color.name}>
+                        <span>
+                            <Button
+                                sx={{
+                                    bgcolor: color.value,
+                                    minWidth: '36px',
+                                    height: '36px',
+                                    p: 0,
+                                    borderRadius: '50%',
+                                    border: selectedColor === color.value ? '3px solid #000' : 'none',
+                                    '&:hover': {
+                                        bgcolor: color.value,
+                                        opacity: 0.8,
+                                    }
+                                }}
+                                onClick={() => handleColorSelect(color.value)}
+                                disabled={disabled}
+                                aria-label={`Select ${color.name} color`}
+                            />
+                        </span>
+                    </Tooltip>
+                ))}
+                <Tooltip title="Custom Color">
+                    <span>
                         <Button
                             sx={{
-                                bgcolor: color.value,
                                 minWidth: '36px',
                                 height: '36px',
                                 p: 0,
                                 borderRadius: '50%',
-                                border: selectedColor === color.value ? '3px solid #000' : 'none',
+                                border: !categoryColors.some(c => c.value === selectedColor) ? '3px solid #000' : 'none',
+                                background: 'linear-gradient(135deg, #ff5722 0%, #2196f3 50%, #4caf50 100%)',
                                 '&:hover': {
-                                    bgcolor: color.value,
                                     opacity: 0.8,
                                 }
                             }}
-                            onClick={() => handleColorSelect(color.value)}
+                            onClick={handleOpenColorPicker}
                             disabled={disabled}
-                            aria-label={`Select ${color.name} color`}
+                            aria-label="Select custom color"
                         />
-                    </Tooltip>
-                ))}
-                <Tooltip title="Custom Color">
-                    <Button
-                        sx={{
-                            minWidth: '36px',
-                            height: '36px',
-                            p: 0,
-                            borderRadius: '50%',
-                            border: !categoryColors.some(c => c.value === selectedColor) ? '3px solid #000' : 'none',
-                            background: 'linear-gradient(135deg, #ff5722 0%, #2196f3 50%, #4caf50 100%)',
-                            '&:hover': {
-                                opacity: 0.8,
-                            }
-                        }}
-                        onClick={handleOpenColorPicker}
-                        disabled={disabled}
-                        aria-label="Select custom color"
-                    />
+                    </span>
                 </Tooltip>
             </Box>
             
