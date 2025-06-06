@@ -10,7 +10,11 @@ const defaultBucket = storage.bucket();
  * Generates a short-lived signed URL for a specific expense receipt,
  * verifying access via the shareId.
  */
-const getReceiptDownloadUrl = onCall(async (request) => {
+const getReceiptDownloadUrl = onCall(
+  {
+    enforceAppCheck: true, // Enable App Check enforcement
+  },
+  async (request) => {
   const { shareId, expenseId } = request.data;
   logger.info("[getReceiptDownloadUrl] Function called with:", { shareId, expenseId });
 
