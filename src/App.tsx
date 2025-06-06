@@ -24,6 +24,16 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import app from './services/firebase/config';
+import { FirebaseApp } from 'firebase/app'; // Import FirebaseApp type
+
+// Define a type for the theme mode
+type ThemeMode = 'light' | 'dark';
+
+// Define props for components that receive mode and toggleColorMode
+interface ThemeProps {
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode | ((prevMode: ThemeMode) => ThemeMode)) => void;
+}
 
 // Lazy load pages for better initial load performance.
 const LandingPage = lazy(() => import('./features/landingPage/pages/LandingPage'));
@@ -33,18 +43,18 @@ const ManualBudget = lazy(() => import('./features/manualBudget/pages/ManualBudg
 const ExpenseReport = lazy(() => import('./features/expenseReport/pages/ExpenseReport'));
 const SharedExpenseReport = lazy(() => import('./features/expenseReport/pages/SharedExpenseReport'));
 
-export default function App() {
-  const [mode, setMode] = React.useState(() => {
+export default function App(): React.ReactElement {
+  const [mode, setMode] = React.useState<ThemeMode>(() => {
     // Attempt to retrieve the saved theme mode from localStorage.
-    const localMode = localStorage.getItem('mode');
+    const localMode = localStorage.getItem('mode') as ThemeMode | null;
     if (localMode) return localMode;
     // If no mode is saved in localStorage, default to the user's system preference.
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
 
-  const toggleColorMode = () => {
-    setMode((prev) => {
-      const newMode = prev === 'dark' ? 'light' : 'dark';
+  const toggleColorMode = (): void => {
+    setMode((prev: ThemeMode) => {
+      const newMode: ThemeMode = prev === 'dark' ? 'light' : 'dark';
       // Persist the newly selected theme mode to localStorage.
       localStorage.setItem('mode', newMode);
       // Note: Saving the theme preference to Firestore for logged-in users
@@ -54,7 +64,7 @@ export default function App() {
   };
 
   // Suspense fallback component
-  const LoadingFallback = () => (
+  const LoadingFallback = (): React.ReactElement => (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <CircularProgress />
     </Box>
@@ -62,7 +72,7 @@ export default function App() {
 
   return (
     // Wrap the entire routing structure with AuthProvider to make auth state available
-    <AuthProvider app={app}>
+    <AuthProvider app={app as FirebaseApp}>
       <BrowserRouter
         future={{
           v7_startTransition: true,
@@ -72,12 +82,12 @@ export default function App() {
         {/* Use Suspense to handle lazy loading of route components */}
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            <Route path='/' element={<LandingPage setMode={toggleColorMode} mode={mode} />} />
-            <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode} mode={mode} />} />
-            <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode} mode={mode} />} />
-            <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode} mode={mode} />} />
-            <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode} mode={mode} />} />
-            <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode} />} />
+            <Route path='/' element={<LandingPage setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+            <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+            <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} app={app as FirebaseApp} />} />
+            <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+            <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+            <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode as ThemeProps['setMode']} />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
