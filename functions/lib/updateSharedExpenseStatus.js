@@ -9,7 +9,11 @@ const db = admin.firestore();
  * Updates the status (reimbursed/denied) of specified expenses via a share link.
  * Also deletes the receipt from storage if reimbursed or denied.
  */
-const updateSharedExpenseStatus = onCall(async (request) => {
+const updateSharedExpenseStatus = onCall(
+  {
+    enforceAppCheck: true, // Enable App Check enforcement
+  },
+  async (request) => {
   const { shareId, expenseIds, action, reason } = request.data;
   logger.info("[updateSharedExpenseStatus] Function called with:", { shareId, expenseIds, action, reason });
 

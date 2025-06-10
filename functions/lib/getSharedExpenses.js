@@ -8,7 +8,11 @@ const db = admin.firestore();
  * Fetches expenses associated with a given shareId. Publicly accessible.
  * Only returns expenses that are 'pending'.
  */
-const getSharedExpenses = onCall(async (request) => {
+const getSharedExpenses = onCall(
+  {
+    enforceAppCheck: true, // Enable App Check enforcement
+  },
+  async (request) => {
   const { shareId } = request.data;
   logger.info("[getSharedExpenses] Function called with shareId:", shareId);
 
