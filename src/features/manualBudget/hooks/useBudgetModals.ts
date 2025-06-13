@@ -1,3 +1,4 @@
+// filepath: /Users/alexfrutkin/Documents/Code/theJunkyard/src/features/manualBudget/hooks/useBudgetModals.ts
 // Copyright (c) 2025 Alex Frutkin
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -18,6 +19,24 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import useModal from '../../../hooks/useModal';
+
+interface ModalControl {
+    isOpen: boolean;
+    open: () => void;
+    close: () => void;
+}
+
+interface BudgetModals {
+    loginModal: ModalControl;
+    signUpModal: ModalControl;
+    addCategoryModal: ModalControl;
+    confirmDialog: ModalControl;
+    addEntryModal: ModalControl;
+    budgetGraphsModal: ModalControl;
+    monthSelectorModal: ModalControl;
+    editCategoryModal: ModalControl;
+    recurringExpenseModal: ModalControl;
+}
 
 export default function useBudgetModals() {
     const [loginModalOpen, openLoginModal, closeLoginModal] = useModal(false);

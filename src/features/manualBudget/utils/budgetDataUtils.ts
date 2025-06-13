@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, Firestore, DocumentData } from 'firebase/firestore';
 
 /**
  * Budget-specific utilities for Firestore operations and manual budget logic
@@ -25,32 +25,64 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
  */
 
 /**
- * Update category in Firestore
- * @param {Object} db - Firestore database reference
- * @param {string} userId - User ID 
- * @param {string} monthId - Month ID in YYYY-MM format
- * @param {string} categoryName - Category name
- * @param {Object} data - Category data to update
+ * Category data interface for type safety
  */
-export const updateCategory = async (db, userId, monthId, categoryName, data) => {
+export interface CategoryData {
+    goal?: number;
+    total?: number;
+    color?: string;
+    createdAt?: any;
+    [key: string]: any;
+}
+
+/**
+ * Month data interface for type safety
+ */
+export interface MonthData {
+    total?: number;
+    goal?: number;
+    createdAt?: any;
+    [key: string]: any;
+}
+
+/**
+ * Update category in Firestore
+ * @param db - Firestore database reference
+ * @param userId - User ID 
+ * @param monthId - Month ID in YYYY-MM format
+ * @param categoryName - Category name
+ * @param data - Category data to update
+ */
+export const updateCategory = async (
+    db: Firestore, 
+    userId: string, 
+    monthId: string, 
+    categoryName: string, 
+    data: Partial<CategoryData>
+): Promise<void> => {
     const categoryPath = `manualBudget/${userId}/months/${monthId}/categories/${categoryName}`;
     await updateDoc(doc(db, categoryPath), data);
 };
 
 /**
  * Get category data from Firestore
- * @param {Object} db - Firestore database reference 
- * @param {string} userId - User ID
- * @param {string} monthId - Month ID in YYYY-MM format
- * @param {string} categoryName - Category name
- * @returns {Object} Category data
+ * @param db - Firestore database reference 
+ * @param userId - User ID
+ * @param monthId - Month ID in YYYY-MM format
+ * @param categoryName - Category name
+ * @returns Category data
  */
-export const getCategoryData = async (db, userId, monthId, categoryName) => {
+export const getCategoryData = async (
+    db: Firestore, 
+    userId: string, 
+    monthId: string, 
+    categoryName: string
+): Promise<CategoryData | null> => {
     const categoryPath = `manualBudget/${userId}/months/${monthId}/categories/${categoryName}`;
     const categoryDoc = await getDoc(doc(db, categoryPath));
     
     if (categoryDoc.exists()) {
-        return categoryDoc.data();
+        return categoryDoc.data() as CategoryData;
     }
     
     return null;
@@ -58,29 +90,38 @@ export const getCategoryData = async (db, userId, monthId, categoryName) => {
 
 /**
  * Update month totals in Firestore
- * @param {Object} db - Firestore database reference
- * @param {string} userId - User ID
- * @param {string} monthId - Month ID in YYYY-MM format
- * @param {Object} data - Month data to update
+ * @param db - Firestore database reference
+ * @param userId - User ID
+ * @param monthId - Month ID in YYYY-MM format
+ * @param data - Month data to update
  */
-export const updateMonth = async (db, userId, monthId, data) => {
+export const updateMonth = async (
+    db: Firestore, 
+    userId: string, 
+    monthId: string, 
+    data: Partial<MonthData>
+): Promise<void> => {
     const monthPath = `manualBudget/${userId}/months/${monthId}`;
     await updateDoc(doc(db, monthPath), data);
 };
 
 /**
  * Get month data from Firestore
- * @param {Object} db - Firestore database reference
- * @param {string} userId - User ID
- * @param {string} monthId - Month ID in YYYY-MM format
- * @returns {Object} Month data
+ * @param db - Firestore database reference
+ * @param userId - User ID
+ * @param monthId - Month ID in YYYY-MM format
+ * @returns Month data
  */
-export const getMonthData = async (db, userId, monthId) => {
+export const getMonthData = async (
+    db: Firestore, 
+    userId: string, 
+    monthId: string
+): Promise<MonthData | null> => {
     const monthPath = `manualBudget/${userId}/months/${monthId}`;
     const monthDoc = await getDoc(doc(db, monthPath));
     
     if (monthDoc.exists()) {
-        return monthDoc.data();
+        return monthDoc.data() as MonthData;
     }
     
     return null;
