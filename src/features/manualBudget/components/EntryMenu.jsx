@@ -76,7 +76,9 @@ export default function EntryMenu({
   currentMonth,
   selectedCategory,
   onEntryUpdated,
-  mode
+  mode,
+  updateEntry, // Optional TanStack Query mutation function
+  deleteEntry  // Optional TanStack Query mutation function
 }) {
   /** @state {HTMLElement|null} anchorEl - Anchor element for the entry options menu. */
   const [anchorEl, setAnchorEl] = useState(null);
@@ -132,41 +134,58 @@ export default function EntryMenu({
     if (!editAmount || !editDate) return; // Basic validation
 
     const newAmount = parseAmount(editAmount);
-    const amountDifference = newAmount - entry.amount; // Calculate difference for total updates
 
     try {
-      // Parse the date string back into a Date object for Firestore
-      const [year, month, day] = editDate.split('-').map(num => parseInt(num, 10));
-      const dateObject = new Date(year, month - 1, day);
+      if (updateEntry) {
+        // Use TanStack Query mutation (preferred)
+        const [year, month, day] = editDate.split('-').map(num => parseInt(num, 10));
+        const dateObject = new Date(year, month - 1, day);
+        
+        updateEntry({
+          id: entry.id,
+          amount: newAmount,
+          date: dateObject,
+          description: editDescription.trim()
+        });
+        
+        setEditModalOpen(false);
+      } else {
+        // Fallback to direct Firebase approach for backward compatibility
+        const amountDifference = newAmount - entry.amount; // Calculate difference for total updates
 
-      // Update the entry document in Firestore
-      const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
-      await updateDoc(doc(db, entryPath), {
-        amount: newAmount,
-        date: dateObject,
-        description: editDescription.trim()
-      });
+        // Parse the date string back into a Date object for Firestore
+        const [year, month, day] = editDate.split('-').map(num => parseInt(num, 10));
+        const dateObject = new Date(year, month - 1, day);
 
-      // If the amount changed, update the category and month totals accordingly
-      if (amountDifference !== 0) {
-        // Update category total
-        const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
-        const categoryDoc = await getDoc(doc(db, categoryPath));
-        const categoryData = categoryDoc.data();
-        const newCategoryTotal = (categoryData.total || 0) + amountDifference;
-        await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
+        // Update the entry document in Firestore
+        const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
+        await updateDoc(doc(db, entryPath), {
+          amount: newAmount,
+          date: dateObject,
+          description: editDescription.trim()
+        });
 
-        // Update overall month total
-        const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
-        const monthDoc = await getDoc(doc(db, monthPath));
-        const monthData = monthDoc.data();
-        const newMonthTotal = (monthData.total || 0) + amountDifference;
-        await updateDoc(doc(db, monthPath), { total: newMonthTotal });
+        // If the amount changed, update the category and month totals accordingly
+        if (amountDifference !== 0) {
+          // Update category total
+          const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
+          const categoryDoc = await getDoc(doc(db, categoryPath));
+          const categoryData = categoryDoc.data();
+          const newCategoryTotal = (categoryData.total || 0) + amountDifference;
+          await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
+
+          // Update overall month total
+          const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
+          const monthDoc = await getDoc(doc(db, monthPath));
+          const monthData = monthDoc.data();
+          const newMonthTotal = (monthData.total || 0) + amountDifference;
+          await updateDoc(doc(db, monthPath), { total: newMonthTotal });
+        }
+
+        // Notify the parent component to refresh the entry list
+        onEntryUpdated();
+        setEditModalOpen(false); // Close the modal on success
       }
-
-      // Notify the parent component to refresh the entry list
-      onEntryUpdated();
-      setEditModalOpen(false); // Close the modal on success
     } catch (error) {
       console.error('Error updating entry:', error);
     }
@@ -185,32 +204,39 @@ export default function EntryMenu({
 
   /**
    * Handles the confirmation of entry deletion.
-   * Deletes the entry from Firestore and updates category/month totals.
+   * Uses TanStack Query mutation if available, otherwise falls back to direct Firebase approach.
    * @async
    */
   const handleDeleteConfirm = async () => {
     try {
-      // Delete the entry document from Firestore
-      const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
-      await deleteDoc(doc(db, entryPath));
+      if (deleteEntry) {
+        // Use TanStack Query mutation (preferred)
+        deleteEntry(entry.id);
+        setDeleteDialogOpen(false);
+      } else {
+        // Fallback to direct Firebase approach for backward compatibility
+        // Delete the entry document from Firestore
+        const entryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries/${entry.id}`;
+        await deleteDoc(doc(db, entryPath));
 
-      // Update the category total by subtracting the deleted entry's amount
-      const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
-      const categoryDoc = await getDoc(doc(db, categoryPath));
-      const categoryData = categoryDoc.data();
-      const newCategoryTotal = (categoryData.total || 0) - entry.amount;
-      await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
+        // Update the category total by subtracting the deleted entry's amount
+        const categoryPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}`;
+        const categoryDoc = await getDoc(doc(db, categoryPath));
+        const categoryData = categoryDoc.data();
+        const newCategoryTotal = (categoryData.total || 0) - entry.amount;
+        await updateDoc(doc(db, categoryPath), { total: newCategoryTotal });
 
-      // Update the overall month total by subtracting the deleted entry's amount
-      const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
-      const monthDoc = await getDoc(doc(db, monthPath));
-      const monthData = monthDoc.data();
-      const newMonthTotal = (monthData.total || 0) - entry.amount;
-      await updateDoc(doc(db, monthPath), { total: newMonthTotal });
+        // Update the overall month total by subtracting the deleted entry's amount
+        const monthPath = `manualBudget/${user.uid}/months/${currentMonth}`;
+        const monthDoc = await getDoc(doc(db, monthPath));
+        const monthData = monthDoc.data();
+        const newMonthTotal = (monthData.total || 0) - entry.amount;
+        await updateDoc(doc(db, monthPath), { total: newMonthTotal });
 
-      // Notify the parent component to refresh the entry list
-      onEntryUpdated();
-      setDeleteDialogOpen(false); // Close the dialog on success
+        // Notify the parent component to refresh the entry list
+        onEntryUpdated();
+        setDeleteDialogOpen(false); // Close the dialog on success
+      }
     } catch (error) {
       console.error('Error deleting entry:', error);
     }

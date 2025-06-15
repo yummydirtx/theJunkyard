@@ -22,6 +22,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import * as React from 'react';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import app from './services/firebase/config';
 import { FirebaseApp } from 'firebase/app'; // Import FirebaseApp type
@@ -39,7 +40,7 @@ interface ThemeProps {
 const LandingPage = lazy(() => import('./features/landingPage/pages/LandingPage'));
 const CalcBasic = lazy(() => import('./features/calcBasic/pages/CalcBasic'));
 const YTThumb = lazy(() => import('./features/ytThumb/pages/YTThumb'));
-const ManualBudget = lazy(() => import('./features/manualBudget/pages/ManualBudget'));
+const ManualBudget = lazy(() => import('./features/manualBudget/pages/ManualBudgetWithQuery'));
 const ExpenseReport = lazy(() => import('./features/expenseReport/pages/ExpenseReport'));
 const SharedExpenseReport = lazy(() => import('./features/expenseReport/pages/SharedExpenseReport'));
 
@@ -51,6 +52,17 @@ export default function App(): React.ReactElement {
     // If no mode is saved in localStorage, default to the user's system preference.
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
+
+  // Create a QueryClient instance
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+        retry: 1,
+      },
+    },
+  }));
 
   const toggleColorMode = (): void => {
     setMode((prev: ThemeMode) => {
@@ -72,25 +84,27 @@ export default function App(): React.ReactElement {
 
   return (
     // Wrap the entire routing structure with AuthProvider to make auth state available
-    <AuthProvider app={app as FirebaseApp}>
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true
-        }}
-      >
-        {/* Use Suspense to handle lazy loading of route components */}
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            <Route path='/' element={<LandingPage setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
-            <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
-            <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} app={app as FirebaseApp} />} />
-            <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
-            <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
-            <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode as ThemeProps['setMode']} />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider app={app as FirebaseApp}>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
+          {/* Use Suspense to handle lazy loading of route components */}
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path='/' element={<LandingPage setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+              <Route path='/calcbasic-web' element={<CalcBasic setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+              <Route path='/ytthumb' element={<YTThumb setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} app={app as FirebaseApp} />} />
+              <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+              <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
+              <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode as ThemeProps['setMode']} />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

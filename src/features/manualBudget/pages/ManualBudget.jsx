@@ -164,6 +164,10 @@ export default function ManualBudget({ setMode, mode }) {
 
     const handleEntryAdded = useCallback(() => {
         setShouldRefreshGraphs(true); // Signal graphs to refresh
+        // Refresh the entry list to show the new entry
+        if (entryListRef.current) {
+            entryListRef.current.refreshEntries();
+        }
         addEntryModal.close();
     }, [addEntryModal]);
 

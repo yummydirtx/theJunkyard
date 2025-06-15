@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useImperativeHandle, forwardRef } from 'react';
 import {
     Box,
     Typography,
@@ -28,91 +28,62 @@ import {
     Divider,
     CircularProgress
 } from '@mui/material';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
+import { useEntries } from '../hooks/queries/useEntries';
 import EntryMenu from './EntryMenu';
+
+interface EntryListProps {
+    currentMonth: string;
+    selectedCategory: string;
+    mode: 'light' | 'dark';
+}
+
+export interface EntryListRef {
+    refreshEntries: () => void;
+}
 
 /**
  * EntryList component displays a list of budget entries for a selected category and month.
- * It allows fetching, displaying, and managing (via EntryMenu) individual entries.
- * It is a forwardRef component to allow parent components to trigger a refresh of entries.
- * @param {object} props - The component's props.
- * @param {object} props.db - Firestore database instance.
- * @param {object} props.user - The authenticated user object.
- * @param {string} props.currentMonth - The current budget month (YYYY-MM).
- * @param {string} props.selectedCategory - The name of the currently selected category.
- * @param {string} props.mode - The current color mode ('light' or 'dark').
- * @param {React.Ref} ref - Forwarded ref to expose `refreshEntries` method.
+ * This TypeScript version uses TanStack Query for data fetching and caching.
  */
-const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }, ref) => {
-    /** @state {Array<object>} entries - List of budget entries for the selected category. */
-    const [entries, setEntries] = useState([]);
-    /** @state {boolean} loading - Indicates if entries are currently being fetched. */
-    const [loading, setLoading] = useState(false);
-
-    /**
-     * Fetches budget entries from Firestore for the selected category and month.
-     * Orders entries by date and then by creation timestamp, both in descending order.
-     * @async
-     */
-    const fetchEntries = async () => {
-        if (!selectedCategory || !user || !db) return;
-
-        setLoading(true);
-        try {
-            const entriesPath = `manualBudget/${user.uid}/months/${currentMonth}/categories/${selectedCategory}/entries`;
-            const entriesQuery = query(
-                collection(db, entriesPath),
-                orderBy('date', 'desc'),
-                orderBy('createdAt', 'desc')
-            );
-
-            const entriesSnapshot = await getDocs(entriesQuery);
-            const entriesList = entriesSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                // Convert Firestore timestamps to JavaScript Dates
-                date: doc.data().date?.toDate() || new Date(),
-                createdAt: doc.data().createdAt?.toDate() || new Date()
-            }));
-
-            setEntries(entriesList);
-        } catch (error) {
-            console.error('Error fetching entries:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+const EntryListWithQuery = forwardRef<EntryListRef, EntryListProps>(({ 
+    currentMonth, 
+    selectedCategory, 
+    mode 
+}, ref) => {
+    const { 
+        entries, 
+        isLoading,
+        refetch,
+        updateEntry,
+        deleteEntry 
+    } = useEntries(currentMonth, selectedCategory);
 
     // Expose the refreshEntries function to parent components via ref.
     useImperativeHandle(ref, () => ({
-        refreshEntries: fetchEntries
+        refreshEntries: () => {
+            refetch();
+        }
     }));
-
-    useEffect(() => {
-        // Reset entries when category changes to avoid showing stale data.
-        setEntries([]);
-
-        if (!selectedCategory || !user || !db) return;
-
-        fetchEntries();
-    }, [db, user, currentMonth, selectedCategory]);
 
     /**
      * Formats a date object or string into a localized date string.
-     * @param {Date|string} date - The date to format.
-     * @returns {string} Formatted date string.
      */
-    const formatDate = (date) => {
+    const formatDate = (date: Date | string): string => {
         return new Date(date).toLocaleDateString();
     };
 
     /**
      * Formats a numerical amount into a currency string (e.g., $1,234.56).
-     * @param {number} amount - The amount to format.
-     * @returns {string} Formatted currency string.
      */
-    const formatAmount = (amount) => {
+    const formatAmount = (amount: number): string => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    /**
+     * Handles entry updates from the EntryMenu component
+     */
+    const handleEntryUpdated = () => {
+        refetch();
     };
 
     if (!selectedCategory) {
@@ -139,7 +110,7 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
             </Typography>
 
             <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
-                {loading ? (
+                {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                         <CircularProgress />
                     </Box>
@@ -166,12 +137,12 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
                                     <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
                                         <EntryMenu
                                             entry={entry}
-                                            db={db}
-                                            user={user}
                                             currentMonth={currentMonth}
                                             selectedCategory={selectedCategory}
-                                            onEntryUpdated={fetchEntries}
+                                            onEntryUpdated={handleEntryUpdated}
                                             mode={mode}
+                                            updateEntry={updateEntry}
+                                            deleteEntry={deleteEntry}
                                         />
                                     </Box>
                                 </ListItem>
@@ -189,4 +160,6 @@ const EntryList = forwardRef(({ db, user, currentMonth, selectedCategory, mode }
     );
 });
 
-export default EntryList;
+EntryListWithQuery.displayName = 'EntryListWithQuery';
+
+export default EntryListWithQuery;

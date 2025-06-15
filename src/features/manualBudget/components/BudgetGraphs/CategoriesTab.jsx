@@ -1,14 +1,11 @@
 // Copyright (c) 2025 Alex Frutkin
 // 
-// Permission is hereby granted, free of charge, to any person obtaining a copy of
-// this software and associated documentation files (theJunkyard), to deal in
-// theJunkyard without restriction, including without limitation the rights to
-// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-// theJunkyard, and to permit persons to whom theJunkyard is furnished to do so,
-// subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of theJunkyard.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 // 
 // THEJUNKYARD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -59,6 +56,11 @@ const CategoriesTab = ({ budgetData, legendProps, chartTextColor, categoryColors
     
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const filteredData = budgetData?.categoriesData?.filter(item => item.value > 0) || [];
+    const budgetData_forDisplay = filteredData.length > 0 ? filteredData : (budgetData?.categoriesData?.filter(item => item.budget > 0) || []);
+    
+    const isShowingBudgets = filteredData.length === 0 && budgetData_forDisplay.length > 0;
 
     /**
      * Handles clicks on the pie slices of the category chart.
@@ -127,54 +129,69 @@ const CategoriesTab = ({ budgetData, legendProps, chartTextColor, categoryColors
             <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom align="center">
                 Spending Distribution by Category
             </Typography>
-            <Box ref={categoryChartRef}>
-                <ResponsiveContainer width="100%" height={isMobile ? 250 : 400}>
-                    <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                        <Pie
-                            data={budgetData.categoriesData.filter(item => item.value > 0)}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={!isMobile}
-                            label={isMobile ? 
-                                false : 
-                                ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`
-                            }
-                            labelStyle={{ fill: chartTextColor }}
-                            outerRadius={isMobile ? 80 : 150}
-                            innerRadius={isMobile ? 30 : 0}
-                            fill="#8884d8"
-                            dataKey="value"
-                            paddingAngle={isMobile ? 2 : 0}
-                            onClick={handlePieClick}
-                            cursor={isMobile ? "pointer" : undefined}
-                        >
-                            {budgetData.categoriesData.filter(item => item.value > 0).map((entry, index) => (
-                                <Cell
-                                    key={`cell-${entry.name}`}
-                                    fill={categoryColors[entry.name]}
-                                    stroke={selectedPieIndex === index && isMobile ? 
-                                        theme.palette.mode === 'dark' ? '#ffffff' : '#000000' : undefined}
-                                    strokeWidth={selectedPieIndex === index && isMobile ? 2 : 0}
-                                />
-                            ))}
-                        </Pie>
-                        <Tooltip content={<PieTooltip totalSpent={budgetData.totalSpent} />} />
-                        <Legend 
-                            {...legendProps}
-                            formatter={(value, entry, index) => {
-                                if (isMobile && value.length > 12) {
-                                    return value.substring(0, 10) + '...';
-                                }
-                                return value;
-                            }}
-                        />
-                    </PieChart>
-                </ResponsiveContainer>
-                
-                {isMobile && renderCategoryDetails()}
-            </Box>
             
-            {isMobile && selectedPieIndex === null && (
+            {/* Show message if no spending data */}
+            {(!budgetData?.categoriesData || budgetData.categoriesData.filter(item => item.value > 0).length === 0) ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body1" color="text.secondary">
+                        No spending data available for this month.
+                    </Typography>
+                    {budgetData?.categoriesData && budgetData.categoriesData.length > 0 && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            You have {budgetData.categoriesData.length} categories set up. Add some expenses to see the spending distribution.
+                        </Typography>
+                    )}
+                </Box>
+            ) : (
+                <Box ref={categoryChartRef}>
+                    <ResponsiveContainer width="100%" height={isMobile ? 250 : 400}>
+                        <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                            <Pie
+                                data={budgetData.categoriesData.filter(item => item.value > 0)}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={!isMobile}
+                                label={isMobile ? 
+                                    false : 
+                                    ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`
+                                }
+                                labelStyle={{ fill: chartTextColor }}
+                                outerRadius={isMobile ? 80 : 150}
+                                innerRadius={isMobile ? 30 : 0}
+                                fill="#8884d8"
+                                dataKey="value"
+                                paddingAngle={isMobile ? 2 : 0}
+                                onClick={handlePieClick}
+                                cursor={isMobile ? "pointer" : undefined}
+                            >
+                                {budgetData.categoriesData.filter(item => item.value > 0).map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${entry.name}`}
+                                        fill={categoryColors[entry.name]}
+                                        stroke={selectedPieIndex === index && isMobile ? 
+                                            theme.palette.mode === 'dark' ? '#ffffff' : '#000000' : undefined}
+                                        strokeWidth={selectedPieIndex === index && isMobile ? 2 : 0}
+                                    />
+                                ))}
+                            </Pie>
+                            <Tooltip content={<PieTooltip totalSpent={budgetData.totalSpent} />} />
+                            <Legend 
+                                {...legendProps}
+                                formatter={(value, entry, index) => {
+                                    if (isMobile && value.length > 12) {
+                                        return value.substring(0, 10) + '...';
+                                    }
+                                    return value;
+                                }}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    
+                    {isMobile && renderCategoryDetails()}
+                </Box>
+            )}
+            
+            {isMobile && selectedPieIndex === null && budgetData?.categoriesData?.filter(item => item.value > 0).length > 0 && (
                 <Typography variant="body2" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
                     Tap on a slice to see category details
                 </Typography>

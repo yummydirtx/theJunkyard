@@ -50,8 +50,20 @@ import { generateRandomColor, isValidMonth } from './BudgetGraphs/utils';
  * @param {string} props.currentMonth - The current budget month (YYYY-MM) for which to display data.
  * @param {string} [props.selectedCategory] - The currently selected category, if any, for detailed view.
  * @param {string} props.mode - The current color mode ('light' or 'dark').
+ * @param {boolean} [props.shouldRefreshGraphs] - Flag to trigger data refresh.
+ * @param {function} [props.onGraphsRefreshed] - Callback when graphs have been refreshed.
  */
-export default function BudgetGraphsModal({ open, onClose, db, user, currentMonth, selectedCategory, mode }) {
+export default function BudgetGraphsModal({ 
+    open, 
+    onClose, 
+    db, 
+    user, 
+    currentMonth, 
+    selectedCategory, 
+    mode,
+    shouldRefreshGraphs,
+    onGraphsRefreshed
+}) {
     /** @state {number} tabValue - The index of the currently active tab. */
     const [tabValue, setTabValue] = useState(0);
     /** @state {boolean} loading - Indicates if budget data is currently being fetched. */
@@ -104,6 +116,16 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
             fetchBudgetData();
         }
     }, [open, user, currentMonth, selectedCategory]); // selectedCategory dependency ensures re-fetch if it changes while modal is open.
+
+    // Effect to refresh data when shouldRefreshGraphs flag is set
+    useEffect(() => {
+        if (shouldRefreshGraphs && open && user && isValidMonth(currentMonth)) {
+            fetchBudgetData();
+            if (onGraphsRefreshed) {
+                onGraphsRefreshed();
+            }
+        }
+    }, [shouldRefreshGraphs, open, user, currentMonth]);
 
     /**
      * Fetches budget data for the current month from Firestore.
@@ -209,8 +231,8 @@ export default function BudgetGraphsModal({ open, onClose, db, user, currentMont
                         id="budget-graphs-modal-title" 
                         variant={isMobile ? "h6" : "h5"} 
                         component="h2" 
-                        gutterBottom 
                         align="center"
+                        sx={{ mb: 2 }}
                     >
                         Budget Visualization
                     </Typography>
