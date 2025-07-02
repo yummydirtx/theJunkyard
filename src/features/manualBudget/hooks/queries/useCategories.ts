@@ -18,11 +18,113 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, writeBatch, getDocs, collection, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { manualBudgetKeys } from '../../queries/queryKeys';
 import { queryFunctions } from '../../queries/queryFunctions';
 import { BudgetCategory } from '../../types';
+
+/**
+ * Helper function to get available months for a user
+ */
+const getAvailableMonths = async (db: any, userId: string): Promise<string[]> => {
+  const monthsCollectionRef = collection(db, `manualBudget/${userId}/months`);
+  const monthsSnapshot = await getDocs(monthsCollectionRef);
+  const monthsList = monthsSnapshot.docs.map(doc => doc.id);
+  return monthsList.sort((a, b) => b.localeCompare(a)); // Sort newest first
+};
+
+/**
+ * Helper function to find the most recent previous month with categories
+ */
+const findMostRecentPreviousMonth = async (db: any, userId: string, currentMonth: string): Promise<string | null> => {
+  const availableMonths = await getAvailableMonths(db, userId);
+  
+  // Filter months that are before the current month
+  const previousMonths = availableMonths.filter(month => month < currentMonth);
+  
+  // Return the most recent (first in the sorted array)
+  return previousMonths.length > 0 ? previousMonths[0] : null;
+};
+
+/**
+ * Helper function to apply recurring expenses to a month
+ */
+const applyRecurringExpensesToMonth = async (
+  db: any, 
+  userId: string, 
+  targetMonth: string, 
+  recurringDefs: any[], 
+  monthCategoryNames: string[]
+): Promise<{ addedTotal: number }> => {
+  if (!recurringDefs || recurringDefs.length === 0) {
+    return { addedTotal: 0 };
+  }
+
+  const batch = writeBatch(db);
+  const [year, monthIndexBase1] = targetMonth.split('-').map(Number);
+  const monthIndexBase0 = monthIndexBase1 - 1;
+  let addedRecurringExpensesTotalAmount = 0;
+  const categoryRecurringAmounts: Record<string, number> = {};
+
+  for (const def of recurringDefs) {
+    if (!monthCategoryNames.includes(def.categoryId)) {
+      continue; // Skip if category doesn't exist in this month
+    }
+
+    let expenseDate: Date;
+    if (def.recurrenceType === 'lastDay') {
+      expenseDate = new Date(year, monthIndexBase0 + 1, 0); // Last day of month
+    } else {
+      const lastDayOfMonth = new Date(year, monthIndexBase0 + 1, 0).getDate();
+      const day = Math.min(def.dayOfMonth || 1, lastDayOfMonth);
+      expenseDate = new Date(year, monthIndexBase0, day);
+    }
+
+    const entryData = {
+      amount: def.amount,
+      date: expenseDate,
+      description: `Recurring: ${def.description}`,
+      createdAt: serverTimestamp(),
+      isRecurring: true,
+      recurringExpenseDefId: def.id
+    };
+
+    const entryRef = doc(collection(db, `manualBudget/${userId}/months/${targetMonth}/categories/${def.categoryId}/entries`));
+    batch.set(entryRef, entryData);
+    addedRecurringExpensesTotalAmount += def.amount;
+    categoryRecurringAmounts[def.categoryId] = (categoryRecurringAmounts[def.categoryId] || 0) + def.amount;
+  }
+
+  if (addedRecurringExpensesTotalAmount > 0) {
+    await batch.commit();
+
+    // Update category totals
+    const categoryUpdatePromises = [];
+    for (const categoryId in categoryRecurringAmounts) {
+      const amountToAdd = categoryRecurringAmounts[categoryId];
+      const categoryDocRef = doc(db, `manualBudget/${userId}/months/${targetMonth}/categories/${categoryId}`);
+      categoryUpdatePromises.push(
+        getDoc(categoryDocRef).then(categorySnap => {
+          if (categorySnap.exists()) {
+            const currentCategoryTotal = categorySnap.data().total || 0;
+            return updateDoc(categoryDocRef, { total: currentCategoryTotal + amountToAdd });
+          }
+        })
+      );
+    }
+    await Promise.all(categoryUpdatePromises);
+
+    // Update month total
+    const monthDocRef = doc(db, `manualBudget/${userId}/months/${targetMonth}`);
+    const monthSnap = await getDoc(monthDocRef);
+    const currentMonthTotalSpent = monthSnap.exists() ? (monthSnap.data().total || 0) : 0;
+    const finalMonthTotalSpent = currentMonthTotalSpent + addedRecurringExpensesTotalAmount;
+    await updateDoc(monthDocRef, { total: finalMonthTotalSpent });
+  }
+
+  return { addedTotal: addedRecurringExpensesTotalAmount };
+};
 
 /**
  * Hook for managing budget categories with TanStack Query
@@ -38,7 +140,96 @@ export function useCategories(month: string) {
     error,
   } = useQuery({
     queryKey: manualBudgetKeys.categories(activeUser?.uid || '', month),
-    queryFn: () => queryFunctions.fetchCategories(db!, activeUser!.uid, month),
+    queryFn: async () => {
+      const currentCategories = await queryFunctions.fetchCategories(db!, activeUser!.uid, month);
+      
+      // If no categories exist for this month, try to copy from the most recent previous month
+      if (currentCategories.length === 0) {
+        const previousMonth = await findMostRecentPreviousMonth(db!, activeUser!.uid, month);
+        
+        if (previousMonth) {
+          const previousCategories = await queryFunctions.fetchCategories(db!, activeUser!.uid, previousMonth);
+          
+          if (previousCategories.length > 0) {
+            // Copy categories from previous month with reset spent amounts
+            const batch = writeBatch(db!);
+            const resetCategories = previousCategories.map(cat => ({
+              ...cat,
+              spent: 0,
+              total: 0,
+            }));
+
+            // Calculate total goal for the month
+            const totalGoal = resetCategories.reduce((sum, cat) => sum + (cat.budget || 0), 0);
+
+            // Create month document first
+            const monthDocRef = doc(db!, `manualBudget/${activeUser!.uid}/months/${month}`);
+            batch.set(monthDocRef, {
+              total: 0,
+              goal: totalGoal,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }, { merge: true });
+
+            // Create category documents
+            for (const category of resetCategories) {
+              const categoryDocRef = doc(db!, `manualBudget/${activeUser!.uid}/months/${month}/categories`, category.name);
+              batch.set(categoryDocRef, {
+                goal: category.budget, // Map budget to goal field
+                color: category.color || '#1976d2',
+                total: 0,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              });
+            }
+            
+            await batch.commit();
+
+            // Apply recurring expenses after categories are created
+            try {
+              const recurringExpenses = await queryFunctions.fetchRecurringExpenses(db!, activeUser!.uid);
+              if (recurringExpenses.length > 0) {
+                const categoryNames = resetCategories.map(cat => cat.name);
+                const { addedTotal } = await applyRecurringExpensesToMonth(
+                  db!, 
+                  activeUser!.uid, 
+                  month, 
+                  recurringExpenses, 
+                  categoryNames
+                );
+                
+                // Update the month total if recurring expenses were added
+                if (addedTotal > 0) {
+                  const monthDocRef = doc(db!, `manualBudget/${activeUser!.uid}/months/${month}`);
+                  await updateDoc(monthDocRef, { 
+                    total: addedTotal,
+                    updatedAt: serverTimestamp() 
+                  });
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to apply recurring expenses:', error);
+            }
+
+            // Invalidate cache to ensure fresh data is loaded
+            queryClient.invalidateQueries({
+              queryKey: manualBudgetKeys.categories(activeUser!.uid, month),
+            });
+            queryClient.invalidateQueries({
+              queryKey: manualBudgetKeys.monthData(activeUser!.uid, month),
+            });
+            queryClient.invalidateQueries({
+              queryKey: manualBudgetKeys.summary(activeUser!.uid, month),
+            });
+            
+            // Fetch fresh categories after applying recurring expenses
+            return await queryFunctions.fetchCategories(db!, activeUser!.uid, month);
+          }
+        }
+      }
+      
+      return currentCategories;
+    },
     enabled: !!activeUser && !!db && !!month,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });

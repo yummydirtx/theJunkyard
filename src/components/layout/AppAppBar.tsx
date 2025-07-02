@@ -62,9 +62,9 @@ interface AppAppBarProps {
 function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
   /** @state {boolean} open - Controls the visibility of the mobile navigation drawer. */
   const [open, setOpen] = useState(false);
-  const { activeUser, loading, db, app } = useAuth() as { 
-    activeUser: any; 
-    loading: boolean; 
+  const { activeUser, loading, db, app } = useAuth() as {
+    activeUser: any;
+    loading: boolean;
     db: any;
     app: any;
   };
@@ -141,16 +141,23 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                 flexGrow: 1,
                 display: 'flex',
                 alignItems: 'center',
-                ml: '-18px',
                 px: 0,
               }}
             >
-              <img
-                src={logo}
-                style={logoStyle}
-                alt="logo of theJunkyard"
-                onClick={() => window.open("/", "_self")}
-              />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  mr: 2,
+                }}
+              >
+                <img
+                  src={logo}
+                  style={logoStyle}
+                  alt="logo of theJunkyard"
+                  onClick={() => window.open("/", "_self")}
+                />
+              </Box>
               <DesktopNavigation />
             </Box>
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
@@ -172,7 +179,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
             </Box>
             <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center' }}>
               {!loading && activeUser && (
-                 <ProfileMenu sx={{ p: 0}} />
+                <ProfileMenu sx={{ p: 0 }} />
               )}
               <Button
                 variant="text"
@@ -187,7 +194,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
           </Toolbar>
         </Container>
       </AppBar>
-      
+
       <MobileNavigation
         open={open}
         onClose={toggleDrawer(false)}
@@ -198,7 +205,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
         onOpenLoginModal={handleOpenLoginModal}
         onOpenSignUpModal={handleOpenSignUpModal}
       />
-      
+
       <LoginModal
         open={loginModalOpen}
         onClose={closeLoginModal}
