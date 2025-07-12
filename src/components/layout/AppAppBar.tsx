@@ -147,7 +147,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  ml: -2,
+                  ml: { xs: 0, md: -1 },
                   mr: 1,
                 }}
               >
