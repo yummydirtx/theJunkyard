@@ -29,7 +29,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 // Import icons for the new features
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'; // Added icon for Expense Report
+import KeyIcon from '@mui/icons-material/Key'; // Added icon for Keystone
 import AnteaterFindLogo from '../../../assets/anteaterfind.png';
 // Assume logos exist for Manual Budget & Expense Report, or replace with generic icons/images
 import ManualBudgetLogo from '../../../assets/manualbudget.png'; // Placeholder: Make sure this image exists
@@ -59,13 +59,12 @@ const items: FeatureItem[] = [
     imageLight: 'url(' + ManualBudgetLogo + ')', // Use Manual Budget image
   },
   {
-    icon: <ReceiptLongIcon />, // Use ReceiptLongIcon
-    title: 'Expense Report',
-    demoLink: './expensereport', // Link to the Expense Report page
-    githubLink: 'https://github.com/yummydirtx/theJunkyard',
+    icon: <KeyIcon />, // Use KeyIcon for Keystone
+    title: 'Keystone',
+    demoLink: 'https://gokeystone.org', // Link to the Keystone website
     description:
-      'Expense Report leverages React, Firebase (Firestore, Storage), and Google Cloud Vertex AI to streamline expense tracking. Users can manually input expenses or upload receipt images, which are processed by utilizing Vertex AI\'s generative models to automatically parse details and create itemized lists.', // Updated description
-    imageLight: 'url(' + ExpenseReportLogo + ')', // Use Expense Report image
+      'A full-stack application designed to solve the difficulty of tracking shared expenses and managing reimbursements for small organizations. Built with React Native, Next.js, Node.js, and PostgreSQL, featuring secure JWT authentication, Google Cloud Vertex AI for automatic receipt parsing (95% accuracy), and a unified UI component library deployed to both web and iOS platforms with 40+ registered users.', // Updated description based on resume
+    imageLight: 'url(' + ExpenseReportLogo + ')', // Keep existing ExpenseReportLogo as requested
   },
 ];
 

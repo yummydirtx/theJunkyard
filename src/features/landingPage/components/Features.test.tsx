@@ -44,8 +44,8 @@ describe('Features Component', () => {
     const manualBudgetElements = screen.getAllByText('Manual Budget');
     expect(manualBudgetElements.length).toBeGreaterThan(0);
     
-    const expenseReportElements = screen.getAllByText('Expense Report');
-    expect(expenseReportElements.length).toBeGreaterThan(0);
+    const keystoneElements = screen.getAllByText('Keystone');
+    expect(keystoneElements.length).toBeGreaterThan(0);
   });
 
   it('should render feature descriptions', () => {
@@ -57,8 +57,8 @@ describe('Features Component', () => {
     const manualBudgetDescriptions = screen.getAllByText(/Manual Budget is a personal finance tracking tool/);
     expect(manualBudgetDescriptions.length).toBeGreaterThan(0);
     
-    const expenseReportDescriptions = screen.getAllByText(/Expense Report leverages React, Firebase/);
-    expect(expenseReportDescriptions.length).toBeGreaterThan(0);
+    const keystoneDescriptions = screen.getAllByText(/A full-stack application designed to solve the difficulty/);
+    expect(keystoneDescriptions.length).toBeGreaterThan(0);
   });
 
   it('should have the correct section id', () => {
@@ -144,10 +144,10 @@ describe('Features Component', () => {
     // Check for Material-UI icons
     const searchIcon = document.querySelector('[data-testid="SearchIcon"]');
     const walletIcon = document.querySelector('[data-testid="AccountBalanceWalletIcon"]');
-    const receiptIcon = document.querySelector('[data-testid="ReceiptLongIcon"]');
+    const keyIcon = document.querySelector('[data-testid="KeyIcon"]');
     
     // At least one icon should be present
-    expect(searchIcon || walletIcon || receiptIcon).toBeTruthy();
+    expect(searchIcon || walletIcon || keyIcon).toBeTruthy();
   });
 
   it('should render with responsive grid layout', () => {
