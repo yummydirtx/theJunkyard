@@ -28,7 +28,7 @@ describe('Me Component', () => {
     const description = screen.getByText(/I'm a student at the University of California, Irvine/);
     expect(description).toBeInTheDocument();
     expect(description).toHaveTextContent('studying Software Engineering');
-    expect(description).toHaveTextContent('seeking internships for Summer 2025');
+    expect(description).toHaveTextContent('seeking internships for Summer 2026');
   });
 
   it('should render the profile picture', () => {

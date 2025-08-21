@@ -29,17 +29,24 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 // Import icons for the new features
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'; // Added icon for Expense Report
+import KeyIcon from '@mui/icons-material/Key'; // Added icon for Keystone
 import AnteaterFindLogo from '../../../assets/anteaterfind.png';
-// Assume logos exist for Manual Budget & Expense Report, or replace with generic icons/images
-import ManualBudgetLogo from '../../../assets/manualbudget.png'; // Placeholder: Make sure this image exists
-import ExpenseReportLogo from '../../../assets/expensereport.png'; // Placeholder: Make sure this image exists
+import ManualBudgetLogo from '../../../assets/manualbudget.png';
+import KeystoneScreenshot from '../../../assets/keystoness.png';
 import SearchIcon from '@mui/icons-material/Search';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { FeatureItem } from '../types/index';
 
 const items: FeatureItem[] = [
+  {
+    icon: <KeyIcon />, // Use KeyIcon for Keystone
+    title: 'Keystone',
+    demoLink: 'https://gokeystone.org', // Link to the Keystone website
+    description:
+      'A full-stack application designed to solve the difficulty of tracking shared expenses and managing reimbursements for small organizations. Built with React Native, Next.js, Node.js, and PostgreSQL, featuring secure JWT authentication, Google Cloud Vertex AI for automatic receipt parsing (95% accuracy), and a unified UI component library deployed to both web and iOS platforms with 40+ registered users.', // Updated description based on resume
+    imageLight: 'url(' + KeystoneScreenshot + ')',
+  },
   {
     icon: <SearchIcon />,
     title: 'AnteaterFind',
@@ -57,15 +64,6 @@ const items: FeatureItem[] = [
     description:
       'Manual Budget is a personal finance tracking tool built with React and Firebase (Firestore). It allows users to meticulously manage monthly budgets by category, record individual spending entries, and visualize financial data through interactive charts powered by Recharts.', // Updated description
     imageLight: 'url(' + ManualBudgetLogo + ')', // Use Manual Budget image
-  },
-  {
-    icon: <ReceiptLongIcon />, // Use ReceiptLongIcon
-    title: 'Expense Report',
-    demoLink: './expensereport', // Link to the Expense Report page
-    githubLink: 'https://github.com/yummydirtx/theJunkyard',
-    description:
-      'Expense Report leverages React, Firebase (Firestore, Storage), and Google Cloud Vertex AI to streamline expense tracking. Users can manually input expenses or upload receipt images, which are processed by utilizing Vertex AI\'s generative models to automatically parse details and create itemized lists.', // Updated description
-    imageLight: 'url(' + ExpenseReportLogo + ')', // Use Expense Report image
   },
 ];
 
