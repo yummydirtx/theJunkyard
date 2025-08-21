@@ -120,7 +120,7 @@ const Me: React.FC = () => {
             color="text.secondary"
             sx={{ mt: { xs: 1, sm: 1 }, alignSelf: 'left', width: { sm: '100%', md: '80%' } }}
           >
-            I'm a student at the University of California, Irvine studying Software Engineering. I'm passionate about software development, and I'm always looking for new opportunities to learn and grow. I'm currently seeking internships for Summer 2025.
+            I'm a student at the University of California, Irvine studying Software Engineering. I'm passionate about software development, and I'm always looking for new opportunities to learn and grow. I'm currently seeking internships for Summer 2026.
           </Typography>
         </Container>
       </Box>
