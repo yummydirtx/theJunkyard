@@ -79,36 +79,21 @@ const Features: React.FC = () => {
   const selectedFeature = items[selectedItemIndex] || items[0]; // Fallback to first item
 
   return (
-    <Container id="features" sx={{ pt: { xs: 4, sm: 6 }, pb: { xs: 8, sm: 12 } }}>
+    <Container id="features" sx={{ pt: { xs: 2, sm: 3 }, pb: { xs: 8, sm: 12 } }}>
       <Grid container spacing={6} direction={{ xs: 'column', sm: 'row' }}>
         <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 3 }}>
             <Typography
               component="h2"
-              variant="h3"
+              variant="h4"
               color="text.primary"
-              sx={{
-                fontWeight: 700,
-                mb: 2,
-                background: (theme) =>
-                  theme.palette.mode === 'light'
-                    ? 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)'
-                    : 'linear-gradient(90deg, #90caf9 0%, #42a5f5 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
+              sx={{ mb: 1 }}
             >
               Featured Projects
             </Typography>
             <Typography
-              variant="h6"
+              variant="body1"
               color="text.secondary"
-              sx={{
-                mb: { xs: 2, sm: 4 },
-                fontWeight: 400,
-                lineHeight: 1.6,
-              }}
             >
               A collection of projects showcasing my work. Click to explore each one.
             </Typography>
@@ -255,7 +240,7 @@ const Features: React.FC = () => {
             direction="column"
             justifyContent="center"
             alignItems="flex-start"
-            spacing={2}
+            spacing={1.5}
             useFlexGap
             sx={{ width: '100%', display: { xs: 'none', sm: 'flex' } }}
           >
@@ -266,7 +251,7 @@ const Features: React.FC = () => {
                 component={Button}
                 onClick={() => handleItemClick(index)}
                 sx={{
-                  p: 3.5,
+                  p: 2.5,
                   height: 'fit-content',
                   width: '100%',
                   background: 'none',
@@ -307,7 +292,7 @@ const Features: React.FC = () => {
                     textAlign: 'left',
                     flexDirection: { xs: 'column', md: 'row' },
                     alignItems: { md: 'center' },
-                    gap: 2.5,
+                    gap: 2,
                   }}
                 >
                   <Box
@@ -315,8 +300,8 @@ const Features: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       borderRadius: 2,
                       transition: 'all 0.3s ease',
                       bgcolor: (theme) =>
@@ -336,7 +321,7 @@ const Features: React.FC = () => {
                           : 'grey.400';
                       },
                       '& > svg': {
-                        fontSize: '1.75rem',
+                        fontSize: '1.5rem',
                       },
                     }}
                   >
@@ -347,7 +332,7 @@ const Features: React.FC = () => {
                       color="text.primary"
                       variant="h6"
                       fontWeight="700"
-                      sx={{ mb: 1.5, fontSize: '1.1rem' }}
+                      sx={{ mb: 0.75, fontSize: '1.05rem' }}
                     >
                       {title}
                     </Typography>
@@ -355,14 +340,14 @@ const Features: React.FC = () => {
                       color="text.secondary"
                       variant="body2"
                       sx={{
-                        my: 1,
-                        lineHeight: 1.7,
-                        fontSize: '0.9rem',
+                        my: 0.75,
+                        lineHeight: 1.6,
+                        fontSize: '0.875rem',
                       }}
                     >
                       {description}
                     </Typography>
-                    <Stack direction="row" spacing={2.5} sx={{ mt: 2 }}>
+                    <Stack direction="row" spacing={2.5} sx={{ mt: 1.5 }}>
                       {githubLink && ( // Use destructured variable
                         <Link
                           color="primary"

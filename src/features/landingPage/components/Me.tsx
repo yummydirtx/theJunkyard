@@ -45,7 +45,7 @@ const Me: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'left',
           pt: { xs: 12, sm: 15 },
-          pb: { xs: 2, sm: 3 },
+          pb: { xs: 1, sm: 1 },
         }}
       >
           <Typography
