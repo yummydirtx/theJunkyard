@@ -24,32 +24,30 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ProfilePic from '../../../assets/profilepic.jpeg';
-import Divider from '@mui/material/Divider';
 
 const Me: React.FC = () => {
   return (
-    <div>
-      <Box
-        id="me"
-        sx={(theme) => ({
-          width: '100%',
-          backgroundImage:
-            theme.palette.mode === 'light'
-              ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
-              : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
-          backgroundSize: '100% 40%',
-          backgroundRepeat: 'no-repeat',
-        })}
+    <Box
+      id="me"
+      sx={(theme) => ({
+        width: '100%',
+        backgroundImage:
+          theme.palette.mode === 'light'
+            ? 'linear-gradient(180deg, #CEE5FD, #FFF)'
+            : `linear-gradient(#02294F, ${alpha('#090E10', 0.0)})`,
+        backgroundSize: '100% 40%',
+        backgroundRepeat: 'no-repeat',
+      })}
+    >
+      <Container
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'left',
+          pt: { xs: 12, sm: 15 },
+          pb: { xs: 2, sm: 3 },
+        }}
       >
-        <Container
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'left',
-            pt: { xs: 12, sm: 15 },
-            pb: { xs: 8, sm: 8 },
-          }}
-        >
           <Typography
             variant='h2'
             sx={{
@@ -123,9 +121,7 @@ const Me: React.FC = () => {
             I'm a student at the University of California, Irvine studying Software Engineering. I'm passionate about software development, and I'm always looking for new opportunities to learn and grow. I'm currently seeking internships for Summer 2026.
           </Typography>
         </Container>
-      </Box>
-      <Divider />
-    </div>
+    </Box>
   );
 };
 

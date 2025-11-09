@@ -79,7 +79,7 @@ const Features: React.FC = () => {
   const selectedFeature = items[selectedItemIndex] || items[0]; // Fallback to first item
 
   return (
-    <Container id="features" sx={{ py: { xs: 8, sm: 12 } }}>
+    <Container id="features" sx={{ pt: { xs: 4, sm: 6 }, pb: { xs: 8, sm: 12 } }}>
       <Grid container spacing={6} direction={{ xs: 'column', sm: 'row' }}>
         <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
           <Box sx={{ mb: 4 }}>
