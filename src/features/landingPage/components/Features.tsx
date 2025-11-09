@@ -80,8 +80,8 @@ const Features: React.FC = () => {
 
   return (
     <Container id="features" sx={{ pt: { xs: 2, sm: 3 }, pb: { xs: 8, sm: 12 } }}>
-      <Grid container spacing={6} direction={{ xs: 'column', sm: 'row' }}>
-        <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
+      <Grid container spacing={6} direction={{ xs: 'column', lg: 'row' }}>
+        <Grid sx={{ width: { xs: '100%', lg: '45%' } }}>
           <Box sx={{ mb: 3 }}>
             <Typography
               component="h2"
@@ -98,7 +98,7 @@ const Features: React.FC = () => {
               A collection of projects showcasing my work. Click to explore each one.
             </Typography>
           </Box>
-          <Grid container gap={1.5} sx={{ display: { xs: 'auto', sm: 'none' }, mb: 3 }}>
+          <Grid container gap={1.5} sx={{ display: { xs: 'auto', lg: 'none' }, mb: 3 }}>
             {items.map(({ title }, index) => (
               <Chip
                 key={index}
@@ -133,7 +133,7 @@ const Features: React.FC = () => {
             component={Card}
             variant="outlined"
             sx={{
-              display: { xs: 'auto', sm: 'none' },
+              display: { xs: 'auto', lg: 'none' },
               mt: 4,
               borderRadius: 3,
               overflow: 'hidden',
@@ -242,7 +242,7 @@ const Features: React.FC = () => {
             alignItems="flex-start"
             spacing={1.5}
             useFlexGap
-            sx={{ width: '100%', display: { xs: 'none', sm: 'flex' } }}
+            sx={{ width: '100%', display: { xs: 'none', lg: 'flex' } }}
           >
             {items.map(({ icon, title, description, githubLink, demoLink }, index) => ( // Destructure links
               <Card
@@ -416,7 +416,7 @@ const Features: React.FC = () => {
             ))}
           </Stack>
         </Grid>
-        <Grid sx={{ display: { xs: 'none', sm: 'flex' }, width: { xs: '100%', md: '50%' }, alignItems: 'center', justifyContent: 'center' }}>
+        <Grid sx={{ display: { xs: 'none', lg: 'flex' }, width: { xs: '100%', lg: '50%' }, alignItems: 'center', justifyContent: 'center' }}>
           <Box
             sx={{
               width: '100%',
@@ -431,7 +431,7 @@ const Features: React.FC = () => {
               variant="outlined"
               sx={{
                 width: '100%',
-                display: { xs: 'none', sm: 'flex' },
+                display: { xs: 'none', lg: 'flex' },
                 flexDirection: 'column',
                 pointerEvents: 'none',
                 borderRadius: 4,
