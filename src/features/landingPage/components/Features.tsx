@@ -43,6 +43,7 @@ const items: FeatureItem[] = [
     icon: <KeyIcon />, // Use KeyIcon for Keystone
     title: 'Keystone',
     demoLink: 'https://gokeystone.org', // Link to the Keystone website
+    githubLink: 'https://github.com/yummydirtx/keystone',
     description:
       'A full-stack application designed to solve the difficulty of tracking shared expenses and managing reimbursements for small organizations. Built with React Native, Next.js, Node.js, and PostgreSQL, featuring secure JWT authentication, Google Cloud Vertex AI for automatic receipt parsing (95% accuracy), and a unified UI component library deployed to both web and iOS platforms with 40+ registered users.', // Updated description based on resume
     imageLight: 'url(' + KeystoneScreenshot + ')',
