@@ -18,13 +18,16 @@
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
 import React from 'react';
+import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import PageLayout from '../../../components/layout/PageLayout';
-import Features from '../components/Features';
+import AnimatedHero from '../components/AnimatedHero';
+import EnhancedFeatures from '../components/EnhancedFeatures';
 import Testimonials from '../components/Testimonials';
 import FAQ from '../components/FAQ';
-import Me from '../components/Me';
 import PastWebsites from '../components/PastWebsites';
+import FloatingBackground from '../components/FloatingBackground';
+import ScrollReveal from '../components/ScrollReveal';
 import { useTitle } from '../../../hooks/useTitle';
 import { LandingPageProps } from '../types/index';
 
@@ -36,16 +39,33 @@ const LandingPage: React.FC<LandingPageProps> = ({ setMode, mode }) => {
   useTitle('theJunkyard: Landing Page');
 
   return (
-    <PageLayout mode={mode} setMode={setMode} sx={{ bgcolor: 'background.default' }}>
-      <Me />
-      {/* Box with bgcolor is now part of PageLayout's sx prop or a nested Box if specific styling is needed */}
-      <Features />
-      <Divider />
-      <Testimonials />
-      <Divider />
-      <FAQ />
-      <Divider />
-      <PastWebsites />
+    <PageLayout mode={mode} setMode={setMode} sx={{ bgcolor: 'background.default', position: 'relative' }}>
+      <FloatingBackground />
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <AnimatedHero />
+        
+        <ScrollReveal direction="fade" delay={0.2}>
+          <EnhancedFeatures />
+        </ScrollReveal>
+        
+        <Divider sx={{ my: 4 }} />
+        
+        <ScrollReveal direction="up" delay={0.1}>
+          <Testimonials />
+        </ScrollReveal>
+        
+        <Divider sx={{ my: 4 }} />
+        
+        <ScrollReveal direction="up" delay={0.1}>
+          <FAQ />
+        </ScrollReveal>
+        
+        <Divider sx={{ my: 4 }} />
+        
+        <ScrollReveal direction="up" delay={0.1}>
+          <PastWebsites />
+        </ScrollReveal>
+      </Box>
     </PageLayout>
   );
 };
