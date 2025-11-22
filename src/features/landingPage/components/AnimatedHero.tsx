@@ -283,6 +283,7 @@ const AnimatedHero: React.FC = () => {
             animationDelay: '0.6s',
             animationFillMode: 'backwards',
             mt: 2,
+            mb: 8,
           }}
         >
           Currently seeking internships for Summer 2026 🚀
@@ -291,11 +292,9 @@ const AnimatedHero: React.FC = () => {
         {/* Scroll Indicator */}
         <Box
           sx={{
-            position: 'absolute',
-            bottom: 40,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            animation: `${float} 3s ease-in-out infinite`,
+            animation: `${fadeInUp} 1s ease-out, ${float} 3s ease-in-out infinite`,
+            animationDelay: '0.8s, 0.8s',
+            animationFillMode: 'backwards',
             cursor: 'pointer',
             '&:hover': {
               opacity: 0.7,
