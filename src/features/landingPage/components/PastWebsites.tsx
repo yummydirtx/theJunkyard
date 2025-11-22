@@ -32,8 +32,8 @@ import Yummydirt from '../../../assets/yummydirt.png';
 import YummyLogo from '../../../assets/yummylogo.png';
 import YummyMe from '../../../assets/yummyme.png';
 import MeLogo from '../../../assets/MeLogo.ico';
-import Lobster from '../../../assets/lobster.png';
-import LobsterTeck from '../../../assets/lobsterteck.png';
+import FrutkinLogo from '../../../assets/frutkinlogo.ico';
+import FrutkinCom from '../../../assets/frutkincom.png';
 import { PastWebsiteItem } from '../types/index';
 
 const items: PastWebsiteItem[] = [
@@ -54,12 +54,12 @@ const items: PastWebsiteItem[] = [
     imageLight: ('url(' + YummyMe + ')'),
   },
   {
-    icon: <img src={Lobster} alt="Lobster Logo" />,
-    title: 'LobsterTeck.tech (2022-forever)',
-    link: 'https://yummydirtx.github.io/lobsterteck/',
+    icon: <img src={FrutkinLogo} alt="Frutkin Logo" />,
+    title: 'Frutkin.com (2021-Present)',
+    link: 'https://frutkin.com',
     description:
-      'As a C suite executive at LobsterTeck, we patented and released world peace*. This website was created to showcase our flagship product, but we never actually got around to making a product. The website is still up, though!',
-    imageLight: 'url(' + LobsterTeck + ')',
+      'Frutkin.com is the official Frutkin family website, and I took initiative to recreate it using modern web development technologies. The site features information about our family and our professional endeavors.',
+    imageLight: 'url(' + FrutkinCom + ')',
   },
 ];
 
@@ -291,7 +291,6 @@ const PastWebsites: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>*We did not actually patent nor release world peace.</Typography>
     </Container>
   );
 };

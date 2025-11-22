@@ -99,7 +99,7 @@ const AnimatedHero: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         pt: { xs: 8, md: 10 },
-        pb: { xs: 8, md: 10 },
+        pb: { xs: 4, md: 0 },
         background: (theme) =>
           theme.palette.mode === 'light'
             ? 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)'
@@ -285,49 +285,10 @@ const AnimatedHero: React.FC = () => {
             animationDelay: '0.6s',
             animationFillMode: 'backwards',
             mt: 2,
-            mb: 8,
           }}
         >
           Currently seeking internships for Summer 2026 🚀
         </Typography>
-
-        {/* Scroll Indicator */}
-        <Box
-          sx={{
-            animation: `${fadeInUp} 1s ease-out, ${float} 3s ease-in-out infinite`,
-            animationDelay: '0.8s, 0.8s',
-            animationFillMode: 'backwards',
-            cursor: 'pointer',
-            '&:hover': {
-              opacity: 0.7,
-            },
-          }}
-          onClick={() => {
-            document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        >
-          <Box
-            sx={{
-              width: 30,
-              height: 50,
-              border: '2px solid rgba(255, 255, 255, 0.5)',
-              borderRadius: '20px',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 8,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.8)',
-                animation: `${float} 2s ease-in-out infinite`,
-              },
-            }}
-          />
-        </Box>
       </Container>
     </Box>
   );
