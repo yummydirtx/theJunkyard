@@ -98,6 +98,8 @@ const AnimatedHero: React.FC = () => {
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
+        pt: { xs: 8, md: 10 },
+        pb: { xs: 8, md: 10 },
         background: (theme) =>
           theme.palette.mode === 'light'
             ? 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)'
