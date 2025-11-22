@@ -502,6 +502,28 @@ const EnhancedFeatures: React.FC = () => {
                 borderColor: (theme) =>
                   theme.palette.mode === 'light' ? 'grey.200' : 'grey.800',
                 boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+                transformStyle: 'preserve-3d',
+                animation: 'swivelSubtle 10s ease-in-out infinite',
+                transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
+                '&:hover': {
+                  transform: 'perspective(1000px) rotateY(-3deg) rotateX(1deg) scale(1.02)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                  animation: 'none',
+                },
+                '@keyframes swivelSubtle': {
+                  '0%, 100%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
+                  },
+                  '25%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                  '50%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3.5deg) translateY(-3px)',
+                  },
+                  '75%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                },
               }}
             >
               {/* Browser Chrome */}
