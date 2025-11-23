@@ -24,7 +24,6 @@ import PageLayout from '../../../components/layout/PageLayout';
 import AnimatedHero from '../components/AnimatedHero';
 import EnhancedFeatures from '../components/EnhancedFeatures';
 import Testimonials from '../components/Testimonials';
-import FAQ from '../components/FAQ';
 import PastWebsites from '../components/PastWebsites';
 import FloatingBackground from '../components/FloatingBackground';
 import ScrollReveal from '../components/ScrollReveal';
