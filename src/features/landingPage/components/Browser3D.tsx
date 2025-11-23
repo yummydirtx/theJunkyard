@@ -124,7 +124,7 @@ const Browser3D: React.FC<Browser3DProps> = ({ title, imageUrl, variant = 'deskt
           pointerEvents: 'auto',
           // Desktop-only animation
           ...(variant === 'desktop' && !isDragging && {
-            animation: 'swivel 8s ease-in-out infinite',
+            animation: 'swivel 12s ease-in-out infinite',
             '@keyframes swivel': {
               '0%, 100%': {
                 transform: 'perspective(1000px) rotateY(-10deg) rotateX(3deg) translateY(-5px)',
@@ -142,7 +142,7 @@ const Browser3D: React.FC<Browser3DProps> = ({ title, imageUrl, variant = 'deskt
           }),
           // Mobile-only animation
           ...(variant === 'mobile' && !isDragging && {
-            animation: 'swivelSubtle 10s ease-in-out infinite',
+            animation: 'swivelSubtle 12s ease-in-out infinite',
             '@keyframes swivelSubtle': {
               '0%, 100%': {
                 transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
