@@ -290,7 +290,7 @@ const AnimatedHero: React.FC = () => {
             mt: 2,
           }}
         >
-          Currently seeking internships for Summer 2026 🚀
+          Currently seeking internships for Summer 2026
         </Typography>
       </Container>
     </Box>
