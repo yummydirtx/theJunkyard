@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import PageLayout from '../../../components/layout/PageLayout';
@@ -36,6 +36,24 @@ import { LandingPageProps } from '../types/index';
  */
 const LandingPage: React.FC<LandingPageProps> = ({ setMode, mode }) => {
   useTitle('theJunkyard: Landing Page');
+
+  // Prevent browser from restoring scroll position on reload
+  useEffect(() => {
+    // Scroll to top immediately on mount
+    window.scrollTo(0, 0);
+    
+    // Override browser's scroll restoration behavior
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    
+    // Clean up on unmount
+    return () => {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
 
   return (
     <PageLayout mode={mode} setMode={setMode} sx={{ bgcolor: 'background.default', position: 'relative' }}>
