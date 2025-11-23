@@ -57,12 +57,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ setMode, mode }) => {
         <Divider sx={{ my: 4 }} />
         
         <ScrollReveal direction="up" delay={0.1}>
-          <FAQ />
-        </ScrollReveal>
-        
-        <Divider sx={{ my: 4 }} />
-        
-        <ScrollReveal direction="up" delay={0.1}>
           <PastWebsites />
         </ScrollReveal>
       </Box>
