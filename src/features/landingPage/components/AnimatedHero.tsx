@@ -188,6 +188,7 @@ const AnimatedHero: React.FC = () => {
               mb: 1,
               fontFamily: '"Inter", "Roboto", "Helvetica", sans-serif',
               letterSpacing: '-0.02em',
+              minHeight: { xs: '5rem', sm: '3.5rem', md: '5rem' },
             }}
           >
             {displayText}
@@ -234,16 +235,17 @@ const AnimatedHero: React.FC = () => {
         </Box>
 
         {/* Skill Tags */}
-        <Stack
-          direction="row"
-          spacing={2}
+        <Box
           sx={{
+            display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'center',
-            gap: 2,
+            gap: { xs: 1, sm: 1.5, md: 2 },
             animation: `${fadeInUp} 1s ease-out`,
             animationDelay: '0.4s',
             animationFillMode: 'backwards',
+            maxWidth: '100%',
+            px: { xs: 2, sm: 0 },
           }}
         >
           {skills.map((skill, index) => (
@@ -258,11 +260,12 @@ const AnimatedHero: React.FC = () => {
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 fontWeight: 600,
                 fontSize: { xs: '0.875rem', md: '1rem' },
-                px: 2,
-                py: 2.5,
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 2, md: 2.5 },
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '& .MuiChip-icon': {
                   color: '#fff',
+                  fontSize: { xs: '1rem', md: '1.25rem' },
                 },
                 '&:hover': {
                   background: 'rgba(255, 255, 255, 0.25)',
@@ -272,7 +275,7 @@ const AnimatedHero: React.FC = () => {
               }}
             />
           ))}
-        </Stack>
+        </Box>
 
         {/* CTA Text */}
         <Typography
