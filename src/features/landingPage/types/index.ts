@@ -49,6 +49,8 @@ export interface PastWebsiteItem {
   description: string;
   /** Background image URL for the website */
   imageLight: string;
+  /** Whether the website is still active (true) or archived (false) */
+  isActive?: boolean;
 }
 
 export interface TestimonialItem {

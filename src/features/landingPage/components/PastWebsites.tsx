@@ -17,17 +17,18 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { alpha } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import LanguageIcon from '@mui/icons-material/Language';
 import Yummydirt from '../../../assets/yummydirt.png';
 import YummyLogo from '../../../assets/yummylogo.png';
 import MaiSchool from '../../../assets/maischool.png';
@@ -44,6 +45,7 @@ const items: PastWebsiteItem[] = [
     description:
       'The official website for Mai School, a start-up providing personalized education for home and micro school students with an AI teacher that knows each child personally and works with parents and teachers. I was the lead developer in charge of building the website from scratch using Next.Js, Vercel, React, TypeScript, and Material-UI.',
     imageLight: ('url(' + MaiSchool + ')'),
+    isActive: true,
   },
   {
     icon: <img src={FrutkinLogo} alt="Frutkin Logo" width={50} />,
@@ -52,6 +54,7 @@ const items: PastWebsiteItem[] = [
     description:
       'Frutkin.com is the official Frutkin family website, and I took initiative to recreate it using modern web development technologies. The site features information about our family and our professional endeavors.',
     imageLight: 'url(' + FrutkinCom + ')',
+    isActive: true,
   },
   {
     icon: <img src={YummyLogo} alt="YummyDirt Logo" width={50} />,
@@ -60,238 +63,527 @@ const items: PastWebsiteItem[] = [
     description:
       'My first personal website, created in 2016. I was 10 years old at the beginning of this project, and I created it using a text editor, HTML, CSS, and very basic JavaScript. It was a fun project, and I learned a lot from it.',
     imageLight: ('url(' + Yummydirt + ')'),
+    isActive: false,
   },
 ];
 
 const PastWebsites: React.FC = () => {
-  const [selectedItemIndex, setSelectedItemIndex] = React.useState<number>(0);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number>(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-  const handleItemClick = (index: number): void => {
-    setSelectedItemIndex(index);
-  };
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-  const selectedFeature = items[selectedItemIndex];
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
+  const selectedFeature = items[selectedItemIndex] || items[0];
 
   return (
-    <Container id="websites" sx={{ pt: { xs: 4, sm: 4 }, pb: { sm: 2 } }}>
-      <Grid container spacing={6}>
-        <Grid sx={{ width: { xs: '100%', md: '45%' } }}>
-          <div>
-            <Typography component="h2" variant="h4" color="text.primary">
-              Past Websites
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: { xs: 2, sm: 4 } }}
-            >
-              Here is a collection of my past personal websites, of varying levels of quality and completion.
-            </Typography>
-          </div>
-          <Grid container gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
-            {items.map(({ title }, index) => (
-              <Chip
-                key={index}
-                label={title}
-                onClick={() => handleItemClick(index)}
-                sx={{
-                  borderColor: (theme) => {
-                    if (theme.palette.mode === 'light') {
-                      return selectedItemIndex === index ? 'primary.light' : '';
-                    }
-                    return selectedItemIndex === index ? 'primary.light' : '';
-                  },
-                  background: (theme) => {
-                    if (theme.palette.mode === 'light') {
-                      return selectedItemIndex === index ? 'none' : '';
-                    }
-                    return selectedItemIndex === index ? 'none' : '';
-                  },
-                  backgroundColor: selectedItemIndex === index ? 'primary.main' : '',
-                  '& .MuiChip-label': {
-                    color: selectedItemIndex === index ? '#fff' : '',
-                  },
-                }}
-              />
-            ))}
-          </Grid>
-          <Box
-            component={Card}
-            variant="outlined"
+    <Box
+      ref={sectionRef}
+      id="websites"
+      sx={{
+        py: { xs: 8, md: 12 },
+        position: 'relative',
+        background: (theme) =>
+          theme.palette.mode === 'light'
+            ? `linear-gradient(180deg, ${alpha('#fff', 0.9)} 0%, ${alpha('#f5f5f5', 0.9)} 100%)`
+            : `linear-gradient(180deg, ${alpha('#0a0a0a', 0.9)} 0%, ${alpha('#1a1a1a', 0.9)} 100%)`,
+      }}
+    >
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            textAlign: 'center',
+            mb: 6,
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+            transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          <Typography
+            variant="h2"
             sx={{
-              display: { xs: 'auto', sm: 'none' },
-              mt: 4,
+              fontSize: { xs: '2rem', md: '3rem' },
+              fontWeight: 800,
+              mb: 2,
+              background: (theme) =>
+                theme.palette.mode === 'light'
+                  ? 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)'
+                  : 'linear-gradient(45deg, #90caf9 30%, #42a5f5 90%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}
           >
-            <Box
-              sx={{
-                backgroundImage: items[selectedItemIndex].imageLight,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                minHeight: 280,
-              }}
-            />
-            <Box sx={{ px: 2, py: 2 }}>
-              <Typography color="text.primary" variant="body2" fontWeight="bold">
-                {selectedFeature.title}
-              </Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ my: 0.5 }}>
-                {selectedFeature.description}
-              </Typography>
-              <Link
-                color="primary"
-                variant="body2"
-                fontWeight="bold"
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  '& > svg': { transition: '0.2s' },
-                  '&:hover > svg': { transform: 'translateX(2px)' },
-                }}
-                onClick={(event: React.MouseEvent) => {
-                  window.open(selectedFeature.link, '_blank');
-                  event.stopPropagation();
-                }}
-              >
-                <span>Visit archive</span>
-                <ChevronRightRoundedIcon
-                  fontSize="small"
-                  sx={{ mt: '1px', ml: '2px' }}
-                />
-              </Link>
-            </Box>
-          </Box>
-          <Stack
-            direction="column"
-            justifyContent="center"
-            alignItems="flex-start"
-            spacing={2}
-            useFlexGap
-            sx={{ width: '100%', display: { xs: 'none', sm: 'flex' } }}
+            Past Websites
+          </Typography>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              maxWidth: '600px',
+              mx: 'auto',
+              fontSize: { xs: '1rem', md: '1.25rem' },
+            }}
           >
-            {items.map(({ icon, title, description, link }, index) => (
+            A collection of my past personal websites, showcasing my journey in web development
+          </Typography>
+        </Box>
+
+        {/* Desktop Layout: Side by Side */}
+        <Box
+          sx={{
+            display: { xs: 'none', lg: 'grid' },
+            gridTemplateColumns: '45% 55%',
+            gap: 6,
+            alignItems: 'center',
+          }}
+        >
+          {/* Left: Website Cards */}
+          <Stack spacing={2}>
+            {items.map((item, index) => (
               <Card
                 key={index}
-                variant="outlined"
                 component={Button}
-                onClick={() => handleItemClick(index)}
+                onClick={() => setSelectedItemIndex(index)}
                 sx={{
                   p: 3,
-                  height: 'fit-content',
-                  width: '100%',
-                  background: 'none',
-                  backgroundColor:
-                    selectedItemIndex === index ? 'action.selected' : undefined,
-                  borderColor: (theme) => {
-                    if (theme.palette.mode === 'light') {
-                      return selectedItemIndex === index
-                        ? 'primary.light'
-                        : 'grey.200';
-                    }
-                    return selectedItemIndex === index ? 'primary.dark' : 'grey.800';
+                  textAlign: 'left',
+                  background: (theme) =>
+                    selectedItemIndex === index
+                      ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(
+                          theme.palette.secondary.main,
+                          0.1
+                        )} 100%)`
+                      : alpha(theme.palette.background.paper, 0.6),
+                  backdropFilter: 'blur(20px)',
+                  border: '2px solid',
+                  borderColor: (theme) =>
+                    selectedItemIndex === index
+                      ? theme.palette.primary.main
+                      : alpha(theme.palette.divider, 0.1),
+                  borderRadius: 3,
+                  boxShadow: selectedItemIndex === index ? 4 : 0,
+                  transform: selectedItemIndex === index ? 'translateX(8px)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'translateX(8px)',
+                    boxShadow: 3,
+                    borderColor: 'primary.main',
+                    background: (theme) =>
+                      theme.palette.mode === 'light'
+                        ? 'rgba(25, 118, 210, 0.04)'
+                        : 'rgba(144, 202, 249, 0.04)',
                   },
                 }}
               >
-                <Box
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    textAlign: 'left',
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignItems: { md: 'center' },
-                    gap: 2.5,
-                  }}
-                >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                   <Box
                     sx={{
-                      color: (theme) => {
-                        if (theme.palette.mode === 'light') {
-                          return selectedItemIndex === index
-                            ? 'primary.main'
-                            : 'grey.300';
-                        }
-                        return selectedItemIndex === index
-                          ? 'primary.main'
-                          : 'grey.700';
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      background: (theme) =>
+                        selectedItemIndex === index
+                          ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
+                          : theme.palette.mode === 'light'
+                          ? 'grey.100'
+                          : 'grey.800',
+                      transition: 'all 0.3s ease',
+                      '& img': {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
                       },
-                      height: '48px',
-                      width: '48px',
                     }}
                   >
-                    {icon}
+                    {item.icon}
                   </Box>
-                  <Box sx={{ textTransform: 'none' }}>
-                    <Typography
-                      color="text.primary"
-                      variant="body2"
-                      fontWeight="bold"
-                    >
-                      {title}
+                  <Box sx={{ flex: 1, textTransform: 'none' }}>
+                    <Typography variant="h6" fontWeight="700" sx={{ mb: 0.75 }}>
+                      {item.title}
                     </Typography>
                     <Typography
-                      color="text.secondary"
                       variant="body2"
-                      sx={{ my: 0.5 }}
+                      color="text.secondary"
+                      sx={{ mb: 1.5, lineHeight: 1.6 }}
                     >
-                      {description}
+                      {item.description}
                     </Typography>
                     <Link
                       color="primary"
                       variant="body2"
-                      fontWeight="bold"
+                      fontWeight="600"
                       sx={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        '& > svg': { transition: '0.2s' },
-                        '&:hover > svg': { transform: 'translateX(2px)' },
+                        textDecoration: 'none',
+                        fontSize: '0.875rem',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                        },
                       }}
-                      onClick={(event: React.MouseEvent) => {
-                        window.open(link, '_blank');
-                        event.stopPropagation();
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(item.link, '_blank');
                       }}
                     >
-                      <span>Visit archive</span>
-                      <ChevronRightRoundedIcon
-                        fontSize="small"
-                        sx={{ mt: '1px', ml: '2px' }}
-                      />
+                      <LanguageIcon fontSize="small" sx={{ mr: 0.5 }} />
+                      <span>{item.isActive ? 'Visit Site' : 'Visit Archive'}</span>
+                      <ChevronRightRoundedIcon fontSize="small" sx={{ ml: 0.25 }} />
                     </Link>
                   </Box>
                 </Box>
               </Card>
             ))}
           </Stack>
-        </Grid>
-        <Grid
-          sx={{ 
-            display: { xs: 'none', sm: 'flex' }, 
-            width: { xs: '100%', md: '50%' } 
-          }}
-        >
-          <Card
-            variant="outlined"
+
+          {/* Right: 3D Browser Window */}
+          <Box
             sx={{
-              height: '100%',
-              width: '100%',
-              display: { xs: 'none', sm: 'flex' },
-              pointerEvents: 'none',
+              perspective: '1000px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Box
+            <Card
               sx={{
-                m: 'auto',
                 width: '100%',
-                height: 500,
-                backgroundSize: 'cover',
-                backgroundImage: items[selectedItemIndex].imageLight,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: 'none',
+                borderRadius: 4,
+                overflow: 'hidden',
+                border: '2px solid',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'light' ? 'grey.200' : 'grey.800',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                transformStyle: 'preserve-3d',
+                position: 'relative',
+                animation: {
+                  xs: 'swivelSubtle 10s ease-in-out infinite',
+                  lg: 'swivel 8s ease-in-out infinite',
+                },
+                transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
+                '&:hover': {
+                  transform: {
+                    xs: 'perspective(1000px) rotateY(-3deg) rotateX(1deg) scale(1.02)',
+                    lg: 'rotateY(-2deg) rotateX(1deg) scale(1.03) translateY(-5px)',
+                  },
+                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.4)',
+                  animation: 'none',
+                },
+                '@keyframes swivelSubtle': {
+                  '0%, 100%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
+                  },
+                  '25%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                  '50%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3.5deg) translateY(-3px)',
+                  },
+                  '75%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                },
+                '@keyframes swivel': {
+                  '0%, 100%': {
+                    transform: 'rotateY(-10deg) rotateX(3deg) translateY(-5px)',
+                  },
+                  '25%': {
+                    transform: 'rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                  '50%': {
+                    transform: 'rotateY(-10deg) rotateX(4deg) translateY(-8px)',
+                  },
+                  '75%': {
+                    transform: 'rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                },
               }}
-            />
+            >
+              {/* Browser Chrome */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.100' : 'grey.800',
+                  borderBottom: '1px solid',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.300' : 'grey.700',
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 0.75 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ff5f56' }} />
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ffbd2e' }} />
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#27c93f' }} />
+                </Box>
+                <Box
+                  sx={{
+                    flex: 1,
+                    mx: 2,
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'light' ? 'white' : 'grey.900',
+                    fontSize: '0.75rem',
+                    color: 'text.secondary',
+                    textAlign: 'center',
+                  }}
+                >
+                  {selectedFeature.title}
+                </Box>
+              </Box>
+              {/* Website Screenshot */}
+              <Box
+                sx={{
+                  width: '100%',
+                  aspectRatio: '16 / 10',
+                  backgroundSize: 'cover',
+                  backgroundImage: selectedFeature.imageLight,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'top center',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
+                  transition: 'all 0.5s ease-in-out',
+                }}
+              />
+            </Card>
+          </Box>
+        </Box>
+
+        {/* Mobile/Tablet Layout: Tabs + 3D Browser */}
+        <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+          {/* Tab Chips */}
+          <Box
+            sx={{
+              mb: 4,
+              display: 'flex',
+              justifyContent: 'center',
+              gap: { xs: 1, sm: 1.5 },
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+              px: { xs: 1, sm: 0 },
+              py: 1,
+              '&::-webkit-scrollbar': {
+                display: 'none',
+              },
+              scrollbarWidth: 'none',
+            }}
+          >
+            {items.map((item, index) => (
+              <Chip
+                key={index}
+                icon={<Box sx={{ width: 20, height: 20, overflow: 'hidden', borderRadius: '50%', '& img': { width: '100%', height: '100%', objectFit: 'cover' } }}>{item.icon}</Box>}
+                label={item.title.split(' ')[0]}
+                onClick={() => setSelectedItemIndex(index)}
+                sx={{
+                  px: { xs: 0.5, sm: 1.5 },
+                  py: { xs: 2, sm: 2.5 },
+                  fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  border: '2px solid',
+                  borderColor: (theme) =>
+                    selectedItemIndex === index
+                      ? theme.palette.primary.main
+                      : 'grey.300',
+                  backgroundColor: (theme) =>
+                    selectedItemIndex === index
+                      ? theme.palette.primary.main
+                      : 'background.paper',
+                  color: selectedItemIndex === index ? '#fff' : 'text.primary',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: selectedItemIndex === index ? 3 : 0,
+                  transform: selectedItemIndex === index ? 'translateY(-2px)' : 'none',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2,
+                    borderColor: 'primary.main',
+                  },
+                  '& .MuiChip-label': {
+                    color: selectedItemIndex === index ? '#fff' : 'text.primary',
+                    px: { xs: 0.25, sm: 1 },
+                    pl: { xs: 0.5, sm: 1 },
+                  },
+                  '& .MuiChip-icon': {
+                    color: selectedItemIndex === index ? '#fff' : 'inherit',
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    ml: { xs: 0.5, sm: 1 },
+                    mr: { xs: 0.25, sm: 0.5 },
+                  },
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* 3D Browser Window for Mobile */}
+          <Box
+            sx={{
+              perspective: '1000px',
+              mb: 3,
+            }}
+          >
+            <Card
+              sx={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '2px solid',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'light' ? 'grey.200' : 'grey.800',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+                transformStyle: 'preserve-3d',
+                animation: 'swivelSubtle 10s ease-in-out infinite',
+                transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
+                '&:hover': {
+                  transform: 'perspective(1000px) rotateY(-3deg) rotateX(1deg) scale(1.02)',
+                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                  animation: 'none',
+                },
+                '@keyframes swivelSubtle': {
+                  '0%, 100%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
+                  },
+                  '25%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                  '50%': {
+                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3.5deg) translateY(-3px)',
+                  },
+                  '75%': {
+                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
+                  },
+                },
+              }}
+            >
+              {/* Browser Chrome */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 2,
+                  py: 1.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.100' : 'grey.800',
+                  borderBottom: '1px solid',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.300' : 'grey.700',
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 0.75 }}>
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ff5f56' }} />
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ffbd2e' }} />
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#27c93f' }} />
+                </Box>
+                <Box
+                  sx={{
+                    flex: 1,
+                    mx: 1.5,
+                    px: 1.5,
+                    py: 0.4,
+                    borderRadius: 1,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'light' ? 'white' : 'grey.900',
+                    fontSize: '0.7rem',
+                    color: 'text.secondary',
+                    textAlign: 'center',
+                  }}
+                >
+                  {selectedFeature.title}
+                </Box>
+              </Box>
+              {/* Website Screenshot */}
+              <Box
+                sx={{
+                  width: '100%',
+                  aspectRatio: '16 / 10',
+                  backgroundSize: 'cover',
+                  backgroundImage: selectedFeature.imageLight,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'top center',
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
+                  transition: 'all 0.5s ease-in-out',
+                }}
+              />
+            </Card>
+          </Box>
+
+          {/* Selected Website Details */}
+          <Card
+            sx={{
+              p: 3,
+              background: (theme) => alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(20px)',
+              border: '1px solid',
+              borderColor: (theme) => alpha(theme.palette.divider, 0.1),
+              borderRadius: 3,
+            }}
+          >
+            <Typography variant="h5" fontWeight="700" sx={{ mb: 1.5 }}>
+              {selectedFeature.title}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 2, lineHeight: 1.7 }}
+            >
+              {selectedFeature.description}
+            </Typography>
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<LanguageIcon />}
+              endIcon={<ChevronRightRoundedIcon />}
+              onClick={() => window.open(selectedFeature.link, '_blank')}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              {selectedFeature.isActive ? 'Visit Site' : 'Visit Archive'}
+            </Button>
           </Card>
-        </Grid>
-      </Grid>
-    </Container>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
