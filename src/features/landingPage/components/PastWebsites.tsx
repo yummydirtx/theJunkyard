@@ -30,36 +30,36 @@ import Typography from '@mui/material/Typography';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import Yummydirt from '../../../assets/yummydirt.png';
 import YummyLogo from '../../../assets/yummylogo.png';
-import YummyMe from '../../../assets/yummyme.png';
-import MeLogo from '../../../assets/MeLogo.ico';
+import MaiSchool from '../../../assets/maischool.png';
+import MaiLogo from '../../../assets/Mai.ico';
 import FrutkinLogo from '../../../assets/frutkinlogo.ico';
 import FrutkinCom from '../../../assets/frutkincom.png';
 import { PastWebsiteItem } from '../types/index';
 
 const items: PastWebsiteItem[] = [
   {
-    icon: <img src={YummyLogo} alt="YummyDirt Logo" />,
-    title: 'yummydirt.com (2016-2018)',
-    link: 'https://web.archive.org/web/20161106100941/http://www.yummydirt.com/',
+    icon: <img src={MaiLogo} alt="Mai Logo" width={50} />,
+    title: 'Mai.School (2025-Present)',
+    link: 'https://mai.school',
     description:
-      'My first personal website, created in 2016. I was 10 years old at the beginning of this project, and I created it using a text editor, HTML, CSS, and very basic JavaScript. It was a fun project, and I learned a lot from it.',
-    imageLight: ('url(' + Yummydirt + ')'),
+      'The official website for Mai School, a start-up providing personalized education for home and micro school students with an AI teacher that knows each child personally and works with parents and teachers. I was the lead developer in charge of building the website from scratch using Next.Js, Vercel, React, TypeScript, and Material-UI.',
+    imageLight: ('url(' + MaiSchool + ')'),
   },
   {
-    icon: <img src={MeLogo} alt="Me Logo" />,
-    title: 'yummydirt.me (2022-2023)',
-    link: 'https://yummydirtx.github.io/',
-    description:
-      'This website was designed in raw HTML, CSS, and Javascript based on real Web 1.0 websites, with vintage graphics. It includes a bottom bar with a (slightly outdated) population counter, an engaging choose your own adventure game, and a beautiful art gallery.',
-    imageLight: ('url(' + YummyMe + ')'),
-  },
-  {
-    icon: <img src={FrutkinLogo} alt="Frutkin Logo" />,
+    icon: <img src={FrutkinLogo} alt="Frutkin Logo" width={50} />,
     title: 'Frutkin.com (2021-Present)',
     link: 'https://frutkin.com',
     description:
       'Frutkin.com is the official Frutkin family website, and I took initiative to recreate it using modern web development technologies. The site features information about our family and our professional endeavors.',
     imageLight: 'url(' + FrutkinCom + ')',
+  },
+  {
+    icon: <img src={YummyLogo} alt="YummyDirt Logo" width={50} />,
+    title: 'yummydirt.com (2016-2018)',
+    link: 'https://web.archive.org/web/20161106100941/http://www.yummydirt.com/',
+    description:
+      'My first personal website, created in 2016. I was 10 years old at the beginning of this project, and I created it using a text editor, HTML, CSS, and very basic JavaScript. It was a fun project, and I learned a lot from it.',
+    imageLight: ('url(' + Yummydirt + ')'),
   },
 ];
 
