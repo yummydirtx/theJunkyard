@@ -36,6 +36,7 @@ import MaiLogo from '../../../assets/Mai.ico';
 import FrutkinLogo from '../../../assets/frutkinlogo.ico';
 import FrutkinCom from '../../../assets/frutkincom.png';
 import { PastWebsiteItem } from '../types/index';
+import Browser3D from './Browser3D';
 
 const items: PastWebsiteItem[] = [
   {
@@ -262,124 +263,11 @@ const PastWebsites: React.FC = () => {
           </Stack>
 
           {/* Right: 3D Browser Window */}
-          <Box
-            sx={{
-              perspective: '1000px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Card
-              sx={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                pointerEvents: 'none',
-                borderRadius: 4,
-                overflow: 'hidden',
-                border: '2px solid',
-                borderColor: (theme) =>
-                  theme.palette.mode === 'light' ? 'grey.200' : 'grey.800',
-                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-                transformStyle: 'preserve-3d',
-                position: 'relative',
-                animation: {
-                  xs: 'swivelSubtle 10s ease-in-out infinite',
-                  lg: 'swivel 8s ease-in-out infinite',
-                },
-                transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
-                '&:hover': {
-                  transform: {
-                    xs: 'perspective(1000px) rotateY(-3deg) rotateX(1deg) scale(1.02)',
-                    lg: 'rotateY(-2deg) rotateX(1deg) scale(1.03) translateY(-5px)',
-                  },
-                  boxShadow: '0 30px 80px rgba(0, 0, 0, 0.4)',
-                  animation: 'none',
-                },
-                '@keyframes swivelSubtle': {
-                  '0%, 100%': {
-                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
-                  },
-                  '25%': {
-                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                  '50%': {
-                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3.5deg) translateY(-3px)',
-                  },
-                  '75%': {
-                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                },
-                '@keyframes swivel': {
-                  '0%, 100%': {
-                    transform: 'rotateY(-10deg) rotateX(3deg) translateY(-5px)',
-                  },
-                  '25%': {
-                    transform: 'rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                  '50%': {
-                    transform: 'rotateY(-10deg) rotateX(4deg) translateY(-8px)',
-                  },
-                  '75%': {
-                    transform: 'rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                },
-              }}
-            >
-              {/* Browser Chrome */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  px: 2,
-                  py: 1.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.100' : 'grey.800',
-                  borderBottom: '1px solid',
-                  borderColor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.300' : 'grey.700',
-                }}
-              >
-                <Box sx={{ display: 'flex', gap: 0.75 }}>
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ff5f56' }} />
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#ffbd2e' }} />
-                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#27c93f' }} />
-                </Box>
-                <Box
-                  sx={{
-                    flex: 1,
-                    mx: 2,
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 1,
-                    bgcolor: (theme) =>
-                      theme.palette.mode === 'light' ? 'white' : 'grey.900',
-                    fontSize: '0.75rem',
-                    color: 'text.secondary',
-                    textAlign: 'center',
-                  }}
-                >
-                  {selectedFeature.title}
-                </Box>
-              </Box>
-              {/* Website Screenshot */}
-              <Box
-                sx={{
-                  width: '100%',
-                  aspectRatio: '16 / 10',
-                  backgroundSize: 'cover',
-                  backgroundImage: selectedFeature.imageLight,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'top center',
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-                  transition: 'all 0.5s ease-in-out',
-                }}
-              />
-            </Card>
-          </Box>
+          <Browser3D 
+            title={selectedFeature.title}
+            imageUrl={selectedFeature.imageLight}
+            variant="desktop"
+          />
         </Box>
 
         {/* Mobile/Tablet Layout: Tabs + 3D Browser */}
@@ -450,100 +338,11 @@ const PastWebsites: React.FC = () => {
           </Box>
 
           {/* 3D Browser Window for Mobile */}
-          <Box
-            sx={{
-              perspective: '1000px',
-              mb: 3,
-            }}
-          >
-            <Card
-              sx={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: 3,
-                overflow: 'hidden',
-                border: '2px solid',
-                borderColor: (theme) =>
-                  theme.palette.mode === 'light' ? 'grey.200' : 'grey.800',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
-                transformStyle: 'preserve-3d',
-                animation: 'swivelSubtle 10s ease-in-out infinite',
-                transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s ease',
-                '&:hover': {
-                  transform: 'perspective(1000px) rotateY(-3deg) rotateX(1deg) scale(1.02)',
-                  boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-                  animation: 'none',
-                },
-                '@keyframes swivelSubtle': {
-                  '0%, 100%': {
-                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3deg) translateY(-2px)',
-                  },
-                  '25%': {
-                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                  '50%': {
-                    transform: 'perspective(1000px) rotateY(-6deg) rotateX(3.5deg) translateY(-3px)',
-                  },
-                  '75%': {
-                    transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg) translateY(0px)',
-                  },
-                },
-              }}
-            >
-              {/* Browser Chrome */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  px: 2,
-                  py: 1.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.100' : 'grey.800',
-                  borderBottom: '1px solid',
-                  borderColor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.300' : 'grey.700',
-                }}
-              >
-                <Box sx={{ display: 'flex', gap: 0.75 }}>
-                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ff5f56' }} />
-                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ffbd2e' }} />
-                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#27c93f' }} />
-                </Box>
-                <Box
-                  sx={{
-                    flex: 1,
-                    mx: 1.5,
-                    px: 1.5,
-                    py: 0.4,
-                    borderRadius: 1,
-                    bgcolor: (theme) =>
-                      theme.palette.mode === 'light' ? 'white' : 'grey.900',
-                    fontSize: '0.7rem',
-                    color: 'text.secondary',
-                    textAlign: 'center',
-                  }}
-                >
-                  {selectedFeature.title}
-                </Box>
-              </Box>
-              {/* Website Screenshot */}
-              <Box
-                sx={{
-                  width: '100%',
-                  aspectRatio: '16 / 10',
-                  backgroundSize: 'cover',
-                  backgroundImage: selectedFeature.imageLight,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'top center',
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'light' ? 'grey.50' : 'grey.900',
-                  transition: 'all 0.5s ease-in-out',
-                }}
-              />
-            </Card>
-          </Box>
+          <Browser3D 
+            title={selectedFeature.title}
+            imageUrl={selectedFeature.imageLight}
+            variant="mobile"
+          />
 
           {/* Selected Website Details */}
           <Card
