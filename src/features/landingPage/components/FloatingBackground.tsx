@@ -48,11 +48,12 @@ const FloatingBackground: React.FC = () => {
   return (
     <Box
       sx={{
-        position: 'fixed',
+        position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
+        minHeight: '100%',
         overflow: 'hidden',
         pointerEvents: 'none',
         zIndex: 0,
