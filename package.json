@@ -9,7 +9,8 @@
     "serve": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "generate:og": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
     "@emotion/react": "latest",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/ui": "^3.2.1",
+    "canvas": "^3.2.0",
     "jsdom": "^26.1.0",
     "vite": "^6.2.2",
     "vite-plugin-commonjs": "^0.10.4",
