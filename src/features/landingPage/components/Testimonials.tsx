@@ -35,9 +35,23 @@ const userTestimonials: TestimonialItem[] = [
   {
     avatar: <Avatar alt="Ayush Lenka" src="/static/images/avatar/1.jpg" />,
     name: 'Ayush Lenka',
-    occupation: 'Programming Master',
+    occupation: 'Software Engineer @ Kinective',
     testimonial:
-      "CS major approval right here from yours truly.",
+      "Alex has a rare ability to take complex problems and deliver polished, full-stack solutions. His work on Keystone and open-gamalta showcases both technical depth and real-world impact.",
+  },
+  {
+    avatar: <Avatar alt="Marcus Berg" src="/static/images/avatar/4.jpg" />,
+    name: 'Marcus Berg',
+    occupation: 'Treasurer @ UCI AEPi',
+    testimonial:
+      "Keystone pretty much automated my entire job as treasurer. It made accounting, reimbursements, budgeting so simple that I honestly didn't need to do much myself. My life became a lot easier.",
+  },
+  {
+    avatar: <Avatar alt="Mika Schreiman" src="/static/images/avatar/5.jpg" />,
+    name: 'Mika Schreiman',
+    occupation: 'Aquatics Coordinator',
+    testimonial:
+      "Manual Budget is awesome and I have literally used the YouTube Thumbnail Downloader like 35 times!",
   },
   {
     avatar: <Avatar alt="Matthew Cohen" src="/static/images/avatar/2.jpg" />,
@@ -54,25 +68,11 @@ const userTestimonials: TestimonialItem[] = [
       'You\'re clearly cool and talented.',
   },
   {
-    avatar: <Avatar alt="Amanda Riordan" src="/static/images/avatar/4.jpg" />,
-    name: 'Amanda Riordan',
-    occupation: 'Minecraft Expert',
-    testimonial:
-      "those could all be testimonials if you were devoted enough",
-  },
-  {
-    avatar: <Avatar alt="Mika Schreiman" src="/static/images/avatar/5.jpg" />,
-    name: 'Mika Schreiman',
-    occupation: 'Aquatics Coordinator',
-    testimonial:
-      "Manual Budget is awesome and I have literally used the YouTube Thumbnail Downloader like 35 times!",
-  },
-  {
     avatar: <Avatar alt="Alex Frutkin" src="/static/images/avatar/6.jpg" />,
     name: 'Alex Frutkin',
     occupation: 'CEO and Founder of theJunkyard',
     testimonial:
-      "Does anyone actually read these?",
+      "His sense of intense dedication and drive is truly inspiring. I'm so grateful to have him as... wait this is about me?",
   },
 ];
 
@@ -126,16 +126,16 @@ const Testimonials: React.FC = () => {
           Testimonials
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          See what people are saying about the Junkyard and its projects.
+          What friends, collaborators, and users have to say about my work.
         </Typography>
       </Box>
       <Grid container spacing={2} alignContent={'center'} justifyContent="center">
         {userTestimonials.map((testimonial, index) => (
-          <Grid 
-            key={index} 
-            sx={{ 
+          <Grid
+            key={index}
+            sx={{
               display: 'flex',
-              width: { xs: '100%', sm: '50%', md: '30%' } 
+              width: { xs: '100%', sm: '50%', md: '30%' }
             }}
           >
             <Card

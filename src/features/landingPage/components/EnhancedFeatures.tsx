@@ -27,13 +27,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import KeyIcon from '@mui/icons-material/Key';
 import SearchIcon from '@mui/icons-material/Search';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import AnteaterFindLogo from '../../../assets/anteaterfind.png';
-import ManualBudgetLogo from '../../../assets/manualbudget.png';
+import OpenGamaltaLogo from '../../../assets/opengamalta.png';
 import KeystoneScreenshot from '../../../assets/keystoness.png';
 import { FeatureItem } from '../types/index';
 import Browser3D from './Browser3D';
@@ -58,13 +58,12 @@ const items: FeatureItem[] = [
     imageLight: 'url(' + AnteaterFindLogo + ')',
   },
   {
-    icon: <AccountBalanceWalletIcon />,
-    title: 'Manual Budget',
-    demoLink: './manualbudget',
-    githubLink: 'https://github.com/yummydirtx/theJunkyard',
+    icon: <LightbulbIcon />,
+    title: 'open-gamalta',
+    githubLink: 'https://github.com/yummydirtx/open-gamalta',
     description:
-      'Manual Budget is a personal finance tracking tool built with React and Firebase (Firestore). It allows users to meticulously manage monthly budgets by category, record individual spending entries, and visualize financial data through interactive charts powered by Recharts.',
-    imageLight: 'url(' + ManualBudgetLogo + ')',
+      'An open source Python library for controlling Gamalta Bluetooth smart aquarium lights, reverse engineered from a previously undocumented proprietary protocol. Features full protocol support for power, color (RGBWC), brightness, modes, and lightning effects, built on asyncio with a clean API and auto-discovery.',
+    imageLight: 'url(' + OpenGamaltaLogo + ')',
   },
 ];
 
@@ -171,9 +170,9 @@ const EnhancedFeatures: React.FC = () => {
                   background: (theme) =>
                     selectedItemIndex === index
                       ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(
-                          theme.palette.secondary.main,
-                          0.1
-                        )} 100%)`
+                        theme.palette.secondary.main,
+                        0.1
+                      )} 100%)`
                       : alpha(theme.palette.background.paper, 0.6),
                   backdropFilter: 'blur(20px)',
                   border: '2px solid',
@@ -209,8 +208,8 @@ const EnhancedFeatures: React.FC = () => {
                         selectedItemIndex === index
                           ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
                           : theme.palette.mode === 'light'
-                          ? 'grey.100'
-                          : 'grey.800',
+                            ? 'grey.100'
+                            : 'grey.800',
                       color: selectedItemIndex === index ? '#fff' : 'grey.600',
                       transition: 'all 0.3s ease',
                       '& > svg': {
@@ -288,7 +287,7 @@ const EnhancedFeatures: React.FC = () => {
           </Stack>
 
           {/* Right: 3D Browser Window */}
-          <Browser3D 
+          <Browser3D
             title={selectedFeature.title}
             imageUrl={selectedFeature.imageLight}
             variant="desktop"
@@ -363,7 +362,7 @@ const EnhancedFeatures: React.FC = () => {
           </Box>
 
           {/* 3D Browser Window for Mobile */}
-          <Browser3D 
+          <Browser3D
             title={selectedFeature.title}
             imageUrl={selectedFeature.imageLight}
             variant="mobile"
