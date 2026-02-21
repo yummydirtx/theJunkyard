@@ -43,6 +43,7 @@ const YTThumb = lazy(() => import('./features/ytThumb/pages/YTThumb'));
 const ManualBudget = lazy(() => import('./features/manualBudget/pages/ManualBudgetWithQuery'));
 const ExpenseReport = lazy(() => import('./features/expenseReport/pages/ExpenseReport'));
 const SharedExpenseReport = lazy(() => import('./features/expenseReport/pages/SharedExpenseReport'));
+const WaveSimulation = lazy(() => import('./features/waveSimulation/pages/WaveSimulation'));
 
 export default function App(): React.ReactElement {
   const [mode, setMode] = React.useState<ThemeMode>(() => {
@@ -101,6 +102,7 @@ export default function App(): React.ReactElement {
               <Route path='/manualbudget' element={<ManualBudget setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
               <Route path='/expensereport' element={<ExpenseReport setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
               <Route path='/share/expense-report/:shareId' element={<SharedExpenseReport mode={mode} setMode={setMode as ThemeProps['setMode']} />} />
+              <Route path='/waves' element={<WaveSimulation setMode={toggleColorMode as ThemeProps['setMode']} mode={mode} />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
