@@ -29,19 +29,128 @@ import {
 import { ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  VERTEX SHADER — Gerstner waves with Jacobian for foam detection
-// ═══════════════════════════════════════════════════════════════════════════════
+const WAVE_COUNT = 8;
+const WIND_DIRECTION = new THREE.Vector2(1, 0.35).normalize();
+const SKY_SUN_POSITION = new THREE.Vector3(140, 26, 78);
+const SUN_DIRECTION = SKY_SUN_POSITION.clone().normalize();
+
+const MAIN_LIGHT_POSITION: [number, number, number] = [
+    SUN_DIRECTION.x * 70,
+    SUN_DIRECTION.y * 70,
+    SUN_DIRECTION.z * 70,
+];
+
+const FILL_LIGHT_POSITION: [number, number, number] = [
+    -SUN_DIRECTION.x * 62,
+    Math.max(8, -SUN_DIRECTION.y * 62 + 16),
+    -SUN_DIRECTION.z * 62,
+];
+
+const pseudoRandom = (seed: number): number => {
+    const x = Math.sin(seed * 12.9898 + seed * seed * 78.233) * 43758.5453123;
+    return x - Math.floor(x);
+};
+
+const rotate2D = (vector: THREE.Vector2, angle: number): THREE.Vector2 => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return new THREE.Vector2(vector.x * c - vector.y * s, vector.x * s + vector.y * c);
+};
+
+const buildWaveSpectrum = (count: number, windDirection: THREE.Vector2) => {
+    const waveA: THREE.Vector4[] = [];
+    const waveB: THREE.Vector4[] = [];
+    const crossSwellDirection = rotate2D(windDirection, -Math.PI / 3.0).normalize();
+
+    for (let i = 0; i < count; i += 1) {
+        const t = i / (count - 1);
+        const wavelength = THREE.MathUtils.lerp(26, 1.4, Math.pow(t, 0.74));
+        const peak = Math.exp(-Math.pow((t - 0.28) / 0.27, 2.0));
+        const amplitude = THREE.MathUtils.lerp(1.08, 0.08, Math.pow(t, 0.62)) * (0.5 + peak * 0.5);
+
+        const spread = THREE.MathUtils.lerp(0.08, 0.86, Math.pow(t, 1.02));
+        const directionalBlend = THREE.MathUtils.clamp(0.42 - Math.abs(t - 0.28) * 2.0, 0, 0.42);
+        const baseDirection = windDirection.clone().lerp(crossSwellDirection, directionalBlend).normalize();
+        const jitter = (pseudoRandom(11.7 + i * 17.03) - 0.5) * spread;
+
+        const direction = rotate2D(baseDirection, jitter).normalize();
+        const directionalDamping = Math.pow(
+            THREE.MathUtils.clamp(direction.dot(windDirection) * 0.5 + 0.5, 0, 1),
+            THREE.MathUtils.lerp(3.8, 1.7, t)
+        );
+
+        const speedScale = THREE.MathUtils.lerp(1.2, 0.8, t) * THREE.MathUtils.lerp(0.95, 1.07, pseudoRandom(8.2 + i * 5.12));
+        const steepness = THREE.MathUtils.lerp(0.55, 1.0, Math.pow(t, 0.7));
+        const phase = pseudoRandom(92.0 + i * 13.17) * Math.PI * 2.0;
+
+        waveA.push(new THREE.Vector4(direction.x, direction.y, amplitude * THREE.MathUtils.lerp(0.45, 1.0, directionalDamping), wavelength));
+        waveB.push(new THREE.Vector4(speedScale, steepness, phase, spread));
+    }
+
+    return { waveA, waveB };
+};
+
+const formatFloat = (value: number) => value.toFixed(6);
+const WAVE_SPECTRUM = buildWaveSpectrum(WAVE_COUNT, WIND_DIRECTION);
+
+const WAVE_VERTEX_SNIPPET = WAVE_SPECTRUM.waveA.map((a, index) => {
+    const b = WAVE_SPECTRUM.waveB[index];
+    return `
+    {
+        vec2 dir = normalize(vec2(${formatFloat(a.x)}, ${formatFloat(a.y)}));
+        float amp = ${formatFloat(a.z)} * uWaveAmplitude;
+        float wavelength = ${formatFloat(a.w)};
+        float speedScale = ${formatFloat(b.x)};
+        float steepness = ${formatFloat(b.y)};
+        float phaseOffset = ${formatFloat(b.z)};
+        float spread = ${formatFloat(b.w)};
+
+        float directionalBoost = mix(0.84, 1.16, clamp(dot(dir, uWindDirection) * 0.5 + 0.5, 0.0, 1.0));
+        float envelope = 0.88 + 0.28 * sin(dot(xz, dir * (0.012 + spread * 0.015)) + uTime * 0.1 + ${formatFloat((index + 1) * 1.371)});
+        amp *= gust * directionalBoost * envelope;
+
+        float k = 6.28318530718 / wavelength;
+        float omega = sqrt(9.81 * k) * speedScale * uWindSpeed;
+        float phase = k * dot(dir, xz) - omega * uTime + phaseOffset;
+        float s = sin(phase);
+        float c = cos(phase);
+
+        float q = min(1.0, (uChoppiness * steepness) / max(k * amp * ${formatFloat(WAVE_COUNT)}, 0.0001));
+        float ak = amp * k;
+        float waveTerm = q * ak * s;
+
+        displacement.x += dir.x * q * amp * c;
+        displacement.y += amp * s;
+        displacement.z += dir.y * q * amp * c;
+
+        dPdX.x += -dir.x * dir.x * waveTerm;
+        dPdX.y += dir.x * ak * c;
+        dPdX.z += -dir.x * dir.y * waveTerm;
+
+        dPdZ.x += -dir.x * dir.y * waveTerm;
+        dPdZ.y += dir.y * ak * c;
+        dPdZ.z += -dir.y * dir.y * waveTerm;
+
+        crestAccum += max(0.0, s) * ak;
+    }`;
+}).join('\n');
 
 const oceanVertexShader = /* glsl */ `
 uniform float uTime;
+uniform float uWaveAmplitude;
+uniform float uChoppiness;
+uniform float uWindSpeed;
+uniform vec2 uWindDirection;
 
 varying vec3 vWorldPosition;
 varying vec3 vNormal;
 varying float vElevation;
-varying float vJacobian;   // Jacobian determinant — <0 means wave is folding/breaking
+varying float vJacobian;
+varying float vDepthFade;
+varying float vBreaking;
+varying float vSlope;
+varying float vFoamTrail;
 
-// ── noise ──
 float hash2D(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
 }
@@ -49,278 +158,214 @@ float valueNoise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
     vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash2D(i), b = hash2D(i + vec2(1,0));
-    float c = hash2D(i + vec2(0,1)), d = hash2D(i + vec2(1,1));
-    return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+    float a = hash2D(i);
+    float b = hash2D(i + vec2(1.0, 0.0));
+    float c = hash2D(i + vec2(0.0, 1.0));
+    float d = hash2D(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
-float fbm(vec2 p, int oct) {
-    float v = 0.0, a = 0.5, f = 1.0;
-    for (int i = 0; i < 6; i++) {
-        if (i >= oct) break;
-        v += a * valueNoise(p * f);
-        a *= 0.5; f *= 2.0;
+float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+        v += a * valueNoise(p);
+        p *= 2.0;
+        a *= 0.5;
     }
     return v;
 }
 
-// ── Gerstner wave: returns displacement AND partial derivatives for Jacobian ──
-// dx/dx0, dz/dz0 partials are needed to compute the Jacobian determinant
-struct WaveResult {
-    vec3 displacement;
-    float dxdx; // partial derivative dx/dx0
-    float dzdz; // partial derivative dz/dz0
-    float dxdz; // cross partial
-    float dzdx; // cross partial
-};
-
-WaveResult gerstnerWave(vec2 p, vec2 dir, float steepness, float wavelength, float speed) {
-    WaveResult r;
-    float k = 6.28318 / wavelength;
-    float c = sqrt(9.81 / k);
-    float f = k * (dot(dir, p) - c * speed * uTime);
-    float a = steepness / k;
-    float sinF = sin(f);
-    float cosF = cos(f);
-
-    r.displacement = vec3(
-        dir.x * a * cosF,
-        a * sinF,
-        dir.y * a * cosF
-    );
-
-    // Partial derivatives of the displaced position w.r.t. original position
-    // These form the Jacobian matrix of the Gerstner transformation
-    r.dxdx = -dir.x * dir.x * steepness * sinF;
-    r.dzdz = -dir.y * dir.y * steepness * sinF;
-    r.dxdz = -dir.x * dir.y * steepness * sinF;
-    r.dzdx = r.dxdz;
-
-    return r;
-}
-
 void main() {
-    vec3 pos = position;
-    vec2 p = pos.xz;
+    vec3 displaced = position;
+    vec2 xz = position.xz;
+    vec2 crossWind = vec2(-uWindDirection.y, uWindDirection.x);
 
-    // Accumulate Gerstner waves — 8 waves for richer detail
-    // Also accumulate Jacobian partial derivatives
-    float J_dxdx = 1.0, J_dzdz = 1.0, J_dxdz = 0.0, J_dzdx = 0.0;
-    vec3 totalDisp = vec3(0.0);
+    float gustField = fbm(xz * 0.006 + uWindDirection * (uTime * 0.045 * uWindSpeed));
+    gustField += fbm(xz * 0.017 + crossWind * 3.7 - uWindDirection * (uTime * 0.07 * uWindSpeed)) * 0.5;
+    float gust = mix(0.74, 1.25, clamp(gustField, 0.0, 1.0));
 
-    // Wave 1 — dominant swell (high steepness for breaking)
-    WaveResult w1 = gerstnerWave(p, normalize(vec2(1.0, 0.6)),  0.42, 14.0, 1.0);
-    // Wave 2 — secondary swell
-    WaveResult w2 = gerstnerWave(p, normalize(vec2(0.7, -0.4)), 0.35, 9.0,  1.15);
-    // Wave 3 — cross swell
-    WaveResult w3 = gerstnerWave(p, normalize(vec2(-0.3, 1.0)), 0.28, 7.0,  0.9);
-    // Wave 4 — medium chop
-    WaveResult w4 = gerstnerWave(p, normalize(vec2(0.9, 0.2)),  0.20, 4.5,  1.5);
-    // Wave 5 — angled chop
-    WaveResult w5 = gerstnerWave(p, normalize(vec2(-0.6, 0.8)), 0.16, 3.0,  1.8);
-    // Wave 6 — fine ripples
-    WaveResult w6 = gerstnerWave(p, normalize(vec2(0.4, -0.9)), 0.10, 2.0,  2.2);
-    // Wave 7 — micro detail
-    WaveResult w7 = gerstnerWave(p, normalize(vec2(-0.8, -0.3)),0.06, 1.3,  2.8);
-    // Wave 8 — finest ripples
-    WaveResult w8 = gerstnerWave(p, normalize(vec2(0.2, 0.95)), 0.04, 0.8,  3.2);
+    vec3 displacement = vec3(0.0);
+    vec3 dPdX = vec3(1.0, 0.0, 0.0);
+    vec3 dPdZ = vec3(0.0, 0.0, 1.0);
+    float crestAccum = 0.0;
 
-    totalDisp = w1.displacement + w2.displacement + w3.displacement + w4.displacement
-              + w5.displacement + w6.displacement + w7.displacement + w8.displacement;
+${WAVE_VERTEX_SNIPPET}
 
-    // Accumulate Jacobian partials (additive since displacement is additive)
-    J_dxdx += w1.dxdx + w2.dxdx + w3.dxdx + w4.dxdx + w5.dxdx + w6.dxdx + w7.dxdx + w8.dxdx;
-    J_dzdz += w1.dzdz + w2.dzdz + w3.dzdz + w4.dzdz + w5.dzdz + w6.dzdz + w7.dzdz + w8.dzdz;
-    J_dxdz += w1.dxdz + w2.dxdz + w3.dxdz + w4.dxdz + w5.dxdz + w6.dxdz + w7.dxdz + w8.dxdz;
-    J_dzdx += w1.dzdx + w2.dzdx + w3.dzdx + w4.dzdx + w5.dzdx + w6.dzdx + w7.dzdx + w8.dzdx;
+    float capillary = (fbm(xz * 0.22 + vec2(uTime * 0.25, -uTime * 0.19)) - 0.5) * 0.14;
+    displacement.y += capillary;
+    displaced += displacement;
 
-    // Jacobian determinant: J = dxdx*dzdz - dxdz*dzdx
-    // When J <= 0, the wave surface is folding over itself (breaking!)
-    float jacobian = J_dxdx * J_dzdz - J_dxdz * J_dzdx;
+    vec3 normal = normalize(cross(dPdZ, dPdX));
+    float jacobian = dPdX.x * dPdZ.z - dPdZ.x * dPdX.z;
+    float slope = clamp(1.0 - normal.y, 0.0, 1.0);
 
-    // Add FBM noise for organic variation
-    float noiseY = (fbm(p * 0.06 + uTime * 0.05, 5) - 0.5) * 1.2;
-    noiseY += (fbm(p * 0.12 - uTime * 0.03, 4) - 0.5) * 0.5;
-    totalDisp.y += noiseY;
-    totalDisp.x += (fbm(p * 0.1 + vec2(50.0, 0.0) + uTime * 0.02, 3) - 0.5) * 0.3;
-    totalDisp.z += (fbm(p * 0.1 + vec2(0.0, 50.0) - uTime * 0.02, 3) - 0.5) * 0.3;
-
-    pos += totalDisp;
-
-    vElevation = totalDisp.y;
+    vWorldPosition = (modelMatrix * vec4(displaced, 1.0)).xyz;
+    vNormal = normal;
+    vElevation = displacement.y;
     vJacobian = jacobian;
-    vWorldPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
+    vSlope = slope;
+    vBreaking = clamp(crestAccum * ${formatFloat(1 / WAVE_COUNT)} * 1.4, 0.0, 1.0);
+    float trailField = fbm(vec2(dot(xz, uWindDirection) * 0.08, dot(xz, crossWind) * 0.33) + vec2(uTime * 0.38, 0.0));
+    vFoamTrail = smoothstep(0.56, 0.88, trailField) * smoothstep(0.18, 0.72, slope);
 
-    // Compute normals via finite differences
-    float eps = 0.15;
-    vec3 posR = position + vec3(eps, 0.0, 0.0);
-    vec3 posU = position + vec3(0.0, 0.0, eps);
+    float camDist = length((modelViewMatrix * vec4(displaced, 1.0)).xyz);
+    vDepthFade = smoothstep(12.0, 130.0, camDist);
 
-    vec3 dR = w1.displacement + w2.displacement + w3.displacement + w4.displacement
-            + w5.displacement + w6.displacement + w7.displacement + w8.displacement;
-    vec3 dU = dR; // approximate — recompute for accuracy
-
-    // Recompute for offset positions
-    vec3 dispR = gerstnerWave(posR.xz, normalize(vec2(1.0,0.6)), 0.42,14.0,1.0).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(0.7,-0.4)),0.35,9.0,1.15).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(-0.3,1.0)),0.28,7.0,0.9).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(0.9,0.2)), 0.20,4.5,1.5).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(-0.6,0.8)),0.16,3.0,1.8).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(0.4,-0.9)),0.10,2.0,2.2).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(-0.8,-0.3)),0.06,1.3,2.8).displacement
-               + gerstnerWave(posR.xz, normalize(vec2(0.2,0.95)),0.04,0.8,3.2).displacement;
-    dispR.y += (fbm(posR.xz * 0.06 + uTime * 0.05, 5) - 0.5) * 1.2;
-    dispR.y += (fbm(posR.xz * 0.12 - uTime * 0.03, 4) - 0.5) * 0.5;
-
-    vec3 dispU = gerstnerWave(posU.xz, normalize(vec2(1.0,0.6)), 0.42,14.0,1.0).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(0.7,-0.4)),0.35,9.0,1.15).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(-0.3,1.0)),0.28,7.0,0.9).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(0.9,0.2)), 0.20,4.5,1.5).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(-0.6,0.8)),0.16,3.0,1.8).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(0.4,-0.9)),0.10,2.0,2.2).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(-0.8,-0.3)),0.06,1.3,2.8).displacement
-               + gerstnerWave(posU.xz, normalize(vec2(0.2,0.95)),0.04,0.8,3.2).displacement;
-    dispU.y += (fbm(posU.xz * 0.06 + uTime * 0.05, 5) - 0.5) * 1.2;
-    dispU.y += (fbm(posU.xz * 0.12 - uTime * 0.03, 4) - 0.5) * 0.5;
-
-    vec3 tangent = normalize((posR + dispR) - (position + totalDisp));
-    vec3 bitangent = normalize((posU + dispU) - (position + totalDisp));
-    vNormal = normalize(cross(bitangent, tangent));
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
 }
 `;
-
-// ═══════════════════════════════════════════════════════════════════════════════
-//  FRAGMENT SHADER — Jacobian foam, whitecaps, SSS, Fresnel
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const oceanFragmentShader = /* glsl */ `
 uniform vec3 uDeepColor;
 uniform vec3 uShallowColor;
 uniform vec3 uSkyColor;
 uniform vec3 uSunDirection;
+uniform vec3 uFoamTint;
+uniform vec2 uWindDirection;
 uniform float uTime;
 
 varying vec3 vWorldPosition;
 varying vec3 vNormal;
 varying float vElevation;
 varying float vJacobian;
+varying float vDepthFade;
+varying float vBreaking;
+varying float vSlope;
+varying float vFoamTrail;
 
-// ── noise ──
 float hash2D(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
 }
 float valueNoise(vec2 p) {
-    vec2 i = floor(p); vec2 f = fract(p);
+    vec2 i = floor(p);
+    vec2 f = fract(p);
     vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = hash2D(i), b = hash2D(i + vec2(1,0));
-    float c = hash2D(i + vec2(0,1)), d = hash2D(i + vec2(1,1));
-    return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+    float a = hash2D(i);
+    float b = hash2D(i + vec2(1.0, 0.0));
+    float c = hash2D(i + vec2(0.0, 1.0));
+    float d = hash2D(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 float fbm(vec2 p) {
-    float v = 0.0, a = 0.5;
-    for (int i = 0; i < 5; i++) { v += a * valueNoise(p); p *= 2.0; a *= 0.5; }
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+        v += a * valueNoise(p);
+        p *= 2.0;
+        a *= 0.5;
+    }
     return v;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+float distributionGGX(float NdotH, float roughness) {
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+    float denom = NdotH * NdotH * (alpha2 - 1.0) + 1.0;
+    return alpha2 / max(3.14159265 * denom * denom, 0.0001);
+}
+float geometrySchlickGGX(float NdotX, float roughness) {
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+    return NdotX / max(NdotX * (1.0 - k) + k, 0.0001);
+}
+float geometrySmith(float NdotV, float NdotL, float roughness) {
+    return geometrySchlickGGX(NdotV, roughness) * geometrySchlickGGX(NdotL, roughness);
 }
 
 void main() {
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    vec3 sunDir = normalize(uSunDirection);
+    vec2 uv = vWorldPosition.xz;
+    vec2 crossWind = vec2(-uWindDirection.y, uWindDirection.x);
 
-    // ── Fresnel (Schlick approximation, water IOR ~1.33) ──
-    float cosTheta = max(dot(viewDir, normal), 0.0);
-    float F0 = 0.02;
-    float fresnel = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    float detailFade = 1.0 - vDepthFade;
+    float detailStrength = mix(0.03, 0.14, detailFade);
+    vec3 detail1 = vec3(
+        fbm(uv * 1.8 + uTime * vec2(0.16, 0.07)) - 0.5,
+        1.0,
+        fbm(uv * 1.8 + vec2(44.0, -22.0) - uTime * vec2(0.11, -0.09)) - 0.5
+    );
+    vec3 detail2 = vec3(
+        fbm(uv * 5.1 - uTime * vec2(0.27, -0.2)) - 0.5,
+        1.0,
+        fbm(uv * 5.1 + vec2(-83.0, 62.0) + uTime * vec2(-0.24, 0.23)) - 0.5
+    );
+    normal = normalize(normal + detail1 * detailStrength + detail2 * detailStrength * 0.55);
 
-    // ── Water body color ──
-    float depthFactor = smoothstep(-2.5, 3.0, vElevation);
+    float NdotV = saturate(dot(normal, viewDir));
+    float NdotL = saturate(dot(normal, sunDir));
+    float F0 = 0.0204;
+    float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0);
+
+    float depthFactor = smoothstep(-2.8, 2.6, vElevation);
     vec3 waterColor = mix(uDeepColor, uShallowColor, depthFactor);
-    // Murky mid-depth tint
-    vec3 murkColor = vec3(0.03, 0.09, 0.08);
-    float murkFactor = smoothstep(-1.5, 0.5, vElevation) * (1.0 - smoothstep(0.5, 2.5, vElevation));
-    waterColor = mix(waterColor, murkColor, murkFactor * 0.35);
+    float opticalDepth = max(0.2, -vElevation + 1.2 + vSlope * 1.3);
+    vec3 absorption = exp(-vec3(0.42, 0.11, 0.045) * opticalDepth);
+    waterColor *= absorption;
 
-    // ── Lighting ──
-    float diffuse = max(dot(normal, uSunDirection), 0.0) * 0.5 + 0.5;
-    vec3 halfDir = normalize(uSunDirection + viewDir);
-    float spec1 = pow(max(dot(normal, halfDir), 0.0), 512.0);
-    float spec2 = pow(max(dot(normal, halfDir), 0.0), 32.0);
-    vec3 specular = vec3(1.0, 0.95, 0.85) * spec1 * 3.5
-                  + vec3(0.5, 0.65, 0.8) * spec2 * 0.3;
+    vec3 halfDir = normalize(viewDir + sunDir);
+    float roughness = mix(0.13, 0.05, detailFade);
+    float NdotH = saturate(dot(normal, halfDir));
+    float D = distributionGGX(NdotH, roughness);
+    float G = geometrySmith(NdotV, NdotL, roughness);
+    float specularTerm = (D * G * fresnel) / max(4.0 * max(NdotV, 0.001) * max(NdotL, 0.001), 0.001);
+    vec3 specular = vec3(1.0, 0.97, 0.92) * specularTerm * (1.9 + detailFade);
 
-    // ── Sky reflection ──
+    float glintNoise = fbm(vec2(dot(uv, uWindDirection) * 34.0, dot(uv, crossWind) * 10.0) + vec2(uTime * 0.65, -uTime * 0.18));
+    float glintMask = smoothstep(0.74, 0.96, glintNoise + detailFade * 0.12);
+    float glint = pow(saturate(dot(reflect(-sunDir, normal), viewDir)), 160.0) * glintMask * detailFade;
+    specular += vec3(1.0, 0.99, 0.94) * glint * 2.1;
+
     vec3 reflectDir = reflect(-viewDir, normal);
-    float skyMix = smoothstep(-0.1, 0.5, reflectDir.y);
-    vec3 envColor = mix(vec3(0.08, 0.18, 0.28), uSkyColor, skyMix);
+    float skyMix = smoothstep(-0.25, 0.6, reflectDir.y);
+    vec3 envColor = mix(vec3(0.04, 0.11, 0.19), uSkyColor, skyMix);
+    envColor += vec3(1.0, 0.83, 0.58) * pow(saturate(dot(reflectDir, sunDir)), 128.0) * 1.2;
 
-    // ═══════════════════════════════════════════════════
-    //  JACOBIAN-BASED FOAM — where waves fold and break
-    // ═══════════════════════════════════════════════════
-    vec2 foamUV = vWorldPosition.xz;
+    float jacobianFoam = 1.0 - smoothstep(-0.18, 0.62, vJacobian);
+    float crestFoam = smoothstep(0.26, 0.92, vBreaking);
+    float slopeFoam = smoothstep(0.24, 0.8, vSlope);
+    float foamNoise = fbm(uv * 2.3 + vec2(uTime * 0.12, -uTime * 0.06));
+    float windAligned = fbm(vec2(dot(uv, uWindDirection) * 1.9, dot(uv, crossWind) * 6.5) + vec2(uTime * 0.38, 0.0));
+    float trailFoam = smoothstep(0.58, 0.86, windAligned) * vFoamTrail;
 
-    // Jacobian foam: J < threshold means wave surface is compressing/folding
-    // Lower Jacobian = more intense breaking
-    float jacobianFoam = 1.0 - smoothstep(-0.3, 0.8, vJacobian);
-    // Add noise breakup so foam isn't a solid sheet
-    float foamNoise1 = fbm(foamUV * 1.2 + uTime * 0.12);
-    float foamNoise2 = fbm(foamUV * 3.5 - uTime * 0.08);
-    float foamNoise3 = fbm(foamUV * 8.0 + vec2(uTime * 0.05, -uTime * 0.03));
+    float totalFoam = jacobianFoam * 0.72 + crestFoam * 0.62 + slopeFoam * 0.23;
+    totalFoam *= smoothstep(0.24, 0.72, foamNoise + 0.22);
+    totalFoam = clamp(totalFoam + trailFoam * 0.75, 0.0, 1.0);
+    totalFoam *= mix(1.0, 0.48, vDepthFade);
+    vec3 foamColor = mix(uFoamTint, vec3(0.98, 0.99, 1.0), saturate(totalFoam * 1.2));
+    vec3 litFoam = foamColor * (0.58 + 0.42 * NdotL);
 
-    // Main breaking foam — patchy, noisy, concentrated at folding areas
-    float breakingFoam = jacobianFoam * smoothstep(0.25, 0.55, foamNoise1);
-    breakingFoam *= (0.6 + 0.4 * foamNoise2); // texture variation
-    // Fine bubble detail (halftone-like)
-    breakingFoam *= smoothstep(0.15, 0.5, foamNoise3);
+    float forwardScatter = pow(saturate(dot(viewDir, -sunDir + normal * 0.45)), 2.6);
+    float horizonScatter = pow(1.0 - NdotV, 2.2);
+    vec3 subsurface = vec3(0.03, 0.28, 0.24) * forwardScatter * (0.44 + 0.56 * vSlope);
+    subsurface += vec3(0.015, 0.09, 0.12) * horizonScatter * (1.0 - fresnel);
 
-    // Crest whitecaps — even where Jacobian hasn't gone negative
-    float crestFoam = smoothstep(0.8, 2.2, vElevation);
-    crestFoam *= smoothstep(0.3, 0.6, foamNoise1) * smoothstep(0.2, 0.5, foamNoise2);
-
-    // Foam trailing streaks (wind-blown)
-    float streakNoise = fbm(foamUV * 5.0 + vec2(uTime * 0.06, 0.0));
-    float streaks = smoothstep(0.3, 1.5, vElevation) * smoothstep(0.58, 0.78, streakNoise) * 0.35;
-
-    // Combine all foam sources
-    float totalFoam = max(breakingFoam, max(crestFoam, streaks));
-    totalFoam = clamp(totalFoam, 0.0, 1.0);
-
-    // Foam color — slightly warm off-white, brighter where foam is densest
-    vec3 foamColor = mix(vec3(0.82, 0.88, 0.90), vec3(0.95, 0.97, 0.98), totalFoam);
-    vec3 litFoam = foamColor * (diffuse * 0.4 + 0.6);
-
-    // ── Sub-surface scattering ──
-    float sss = pow(max(dot(viewDir, -uSunDirection + normal * 0.5), 0.0), 3.0);
-    vec3 sssColor = vec3(0.0, 0.5, 0.4) * sss * 0.4;
-    // Extra SSS on thin wave crests (light shining through)
-    float crestThinness = smoothstep(0.5, 2.0, vElevation) * (1.0 - totalFoam);
-    sssColor += vec3(0.05, 0.35, 0.25) * crestThinness * 0.3;
-
-    // ── Composite ──
-    vec3 color = waterColor * diffuse;
-    color = mix(color, envColor, fresnel * 0.55);
+    vec3 baseDiffuse = waterColor * (0.28 + 0.72 * NdotL);
+    vec3 color = mix(baseDiffuse, envColor, fresnel * 0.8);
     color += specular;
-    color += sssColor;
-    color = mix(color, litFoam, totalFoam * 0.9);
+    color += subsurface;
+    color = mix(color, litFoam, totalFoam * 0.92);
 
-    // Horizon distance fog
     float dist = length(vWorldPosition - cameraPosition);
-    float fogFactor = smoothstep(40.0, 160.0, dist);
-    vec3 fogColor = vec3(0.62, 0.75, 0.83);
-    color = mix(color, fogColor, fogFactor * 0.7);
+    float distFog = 1.0 - exp(-dist * 0.0108);
+    float heightFog = exp(-max(vWorldPosition.y, 0.0) * 0.27);
+    float fogAmount = distFog * heightFog;
+    float sunAlignment = saturate(dot(normalize(vWorldPosition - cameraPosition), sunDir));
+    vec3 fogColor = mix(vec3(0.5, 0.62, 0.74), vec3(0.91, 0.75, 0.56), pow(sunAlignment, 5.0));
+    color = mix(color, fogColor, fogAmount * (0.58 + 0.28 * horizonScatter));
 
     gl_FragColor = vec4(color, 1.0);
 }
 `;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-//  React components
-// ═══════════════════════════════════════════════════════════════════════════════
-
 const OceanMesh: React.FC = () => {
     const materialRef = useRef<THREE.ShaderMaterial>(null);
 
     const geometry = useMemo(() => {
-        const geo = new THREE.PlaneGeometry(500, 500, 512, 512);
+        const geo = new THREE.PlaneGeometry(900, 900, 320, 320);
         geo.rotateX(-Math.PI / 2);
         return geo;
     }, []);
@@ -328,18 +373,27 @@ const OceanMesh: React.FC = () => {
     const uniforms = useMemo(
         () => ({
             uTime: { value: 0 },
-            uDeepColor: { value: new THREE.Color('#002040') },
-            uShallowColor: { value: new THREE.Color('#006090') },
-            uSkyColor: { value: new THREE.Color('#87ceeb') },
-            uSunDirection: { value: new THREE.Vector3(0.6, 0.35, 0.7).normalize() },
+            uWaveAmplitude: { value: 1.0 },
+            uChoppiness: { value: 1.0 },
+            uWindSpeed: { value: 1.0 },
+            uWindDirection: { value: WIND_DIRECTION.clone() },
+            uDeepColor: { value: new THREE.Color('#001a33') },
+            uShallowColor: { value: new THREE.Color('#0d7aa7') },
+            uSkyColor: { value: new THREE.Color('#91c7f5') },
+            uSunDirection: { value: SUN_DIRECTION.clone() },
+            uFoamTint: { value: new THREE.Color('#a9c4cf') },
         }),
         []
     );
 
     useFrame(({ clock }) => {
-        if (materialRef.current) {
-            materialRef.current.uniforms.uTime.value = clock.getElapsedTime();
+        if (!materialRef.current) {
+            return;
         }
+
+        const shaderUniforms = materialRef.current.uniforms;
+        shaderUniforms.uTime.value = clock.getElapsedTime();
+        shaderUniforms.uSunDirection.value.copy(SUN_DIRECTION);
     });
 
     return (
@@ -349,7 +403,7 @@ const OceanMesh: React.FC = () => {
                 vertexShader={oceanVertexShader}
                 fragmentShader={oceanFragmentShader}
                 uniforms={uniforms}
-                side={THREE.DoubleSide}
+                side={THREE.FrontSide}
             />
         </mesh>
     );
@@ -357,10 +411,10 @@ const OceanMesh: React.FC = () => {
 
 const Lighting: React.FC = () => (
     <>
-        <directionalLight position={[20, 15, 15]} intensity={3.0} color="#ffe0a0" />
-        <directionalLight position={[-15, 8, -20]} intensity={0.8} color="#6eb5ff" />
-        <hemisphereLight args={['#b1e1ff', '#002244', 0.5]} />
-        <ambientLight intensity={0.15} />
+        <directionalLight position={MAIN_LIGHT_POSITION} intensity={3.2} color="#ffd6a1" />
+        <directionalLight position={FILL_LIGHT_POSITION} intensity={0.8} color="#7bbfff" />
+        <hemisphereLight args={['#d5ecff', '#001b33', 0.58]} />
+        <ambientLight intensity={0.12} />
     </>
 );
 
@@ -369,13 +423,13 @@ const OceanScene: React.FC = () => {
         <>
             <Sky
                 distance={450000}
-                sunPosition={[100, 15, 80]}
-                inclination={0.49}
-                azimuth={0.25}
-                turbidity={10}
-                rayleigh={2.5}
-                mieCoefficient={0.005}
-                mieDirectionalG={0.85}
+                sunPosition={[SKY_SUN_POSITION.x, SKY_SUN_POSITION.y, SKY_SUN_POSITION.z]}
+                inclination={0.48}
+                azimuth={0.24}
+                turbidity={7}
+                rayleigh={2.8}
+                mieCoefficient={0.004}
+                mieDirectionalG={0.9}
             />
 
             <Lighting />
@@ -383,28 +437,30 @@ const OceanScene: React.FC = () => {
 
             <OrbitControls
                 autoRotate
-                autoRotateSpeed={0.25}
+                autoRotateSpeed={0.2}
                 enableZoom={true}
                 enablePan={false}
-                maxPolarAngle={Math.PI / 2.3}
-                minPolarAngle={Math.PI / 5}
+                enableDamping
+                dampingFactor={0.045}
+                maxPolarAngle={Math.PI / 2.2}
+                minPolarAngle={Math.PI / 5.2}
                 minDistance={6}
-                maxDistance={45}
+                maxDistance={55}
                 target={[0, 0, 0]}
             />
 
             <EffectComposer>
                 <Bloom
-                    intensity={0.7}
-                    luminanceThreshold={0.7}
-                    luminanceSmoothing={0.9}
+                    intensity={0.62}
+                    luminanceThreshold={0.82}
+                    luminanceSmoothing={0.93}
                     mipmapBlur
                 />
-                <Vignette eskil={false} offset={0.1} darkness={0.35} />
+                <Vignette eskil={false} offset={0.09} darkness={0.3} />
                 <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
             </EffectComposer>
 
-            <fog attach="fog" args={['#0a2535', 30, 90]} />
+            <fog attach="fog" args={['#081f30', 28, 135]} />
         </>
     );
 };
