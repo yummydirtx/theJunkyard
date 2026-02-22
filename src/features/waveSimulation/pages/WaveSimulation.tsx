@@ -214,13 +214,23 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
                         top: { xs: 84, sm: 92 },
                         right: { xs: 12, sm: 18 },
                         zIndex: 12,
-                        width: { xs: 238, sm: 284 },
+                        width: { xs: menuOpen ? 238 : 74, sm: 284 },
                         borderRadius: 2,
                         border: '1px solid rgba(255,255,255,0.22)',
                         bgcolor: 'rgba(9, 18, 28, 0.28)',
                         backdropFilter: 'blur(10px)',
                         boxShadow: '0 12px 30px rgba(0,0,0,0.25)',
                         pointerEvents: 'auto',
+                        overflow: 'hidden',
+                        transformOrigin: 'top right',
+                        willChange: 'width',
+                        transition: (theme) =>
+                            theme.transitions.create('width', {
+                                duration: menuOpen
+                                    ? theme.transitions.duration.enteringScreen
+                                    : theme.transitions.duration.leavingScreen,
+                                easing: menuOpen ? theme.transitions.easing.easeOut : theme.transitions.easing.sharp,
+                            }),
                     }}
                 >
                     <Box
@@ -228,13 +238,20 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            px: 1.25,
-                            py: 0.75,
+                            px: { xs: 0.55, sm: 1.25 },
+                            py: { xs: 0.5, sm: 0.75 },
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
                             <TuneRoundedIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.9)' }} />
-                            <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontWeight: 600, fontSize: '0.86rem' }}>
+                            <Typography
+                                sx={{
+                                    display: { xs: 'none', sm: 'block' },
+                                    color: 'rgba(255,255,255,0.92)',
+                                    fontWeight: 600,
+                                    fontSize: '0.86rem',
+                                }}
+                            >
                                 Quality
                             </Typography>
                         </Box>
