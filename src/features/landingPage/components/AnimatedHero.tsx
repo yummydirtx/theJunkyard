@@ -60,11 +60,24 @@ const fadeIn = keyframes`
   to { opacity: 1; }
 `;
 
-const HERO_IDLE_ROTATION_SPEED = 0.2;
 const HERO_MAX_MANUAL_ROTATION_SPEED = 1.6;
 const STICK_KNOB_RADIUS_PX = 18;
 const FIXED_POLAR_ANGLE = Math.PI / 2.45;
 const HERO_CAMERA_DISTANCE = 17;
+const HERO_SUN_VECTOR_X = 140;
+const HERO_SUN_VECTOR_Z = 78;
+const HERO_SUN_VECTOR_LENGTH_XZ = Math.hypot(HERO_SUN_VECTOR_X, HERO_SUN_VECTOR_Z);
+const HERO_CAMERA_HORIZONTAL_DISTANCE = HERO_CAMERA_DISTANCE * Math.sin(FIXED_POLAR_ANGLE);
+const HERO_INITIAL_AZIMUTH_OFFSET_RAD = (6 * Math.PI) / 180;
+const HERO_CAMERA_BASE_X = (-HERO_SUN_VECTOR_X / HERO_SUN_VECTOR_LENGTH_XZ) * HERO_CAMERA_HORIZONTAL_DISTANCE;
+const HERO_CAMERA_BASE_Z = (-HERO_SUN_VECTOR_Z / HERO_SUN_VECTOR_LENGTH_XZ) * HERO_CAMERA_HORIZONTAL_DISTANCE;
+const HERO_CAMERA_START_X =
+  HERO_CAMERA_BASE_X * Math.cos(HERO_INITIAL_AZIMUTH_OFFSET_RAD)
+  - HERO_CAMERA_BASE_Z * Math.sin(HERO_INITIAL_AZIMUTH_OFFSET_RAD);
+const HERO_CAMERA_START_Y = HERO_CAMERA_DISTANCE * Math.cos(FIXED_POLAR_ANGLE);
+const HERO_CAMERA_START_Z =
+  HERO_CAMERA_BASE_X * Math.sin(HERO_INITIAL_AZIMUTH_OFFSET_RAD)
+  + HERO_CAMERA_BASE_Z * Math.cos(HERO_INITIAL_AZIMUTH_OFFSET_RAD);
 
 const AnimatedHero: React.FC = () => {
   const [displayText, setDisplayText] = useState('');
@@ -84,13 +97,10 @@ const AnimatedHero: React.FC = () => {
     };
   }, []);
   const heroRotationSpeed = useMemo(() => {
-    if (isStickDragging) {
-      const deadzoneAppliedRatio = Math.abs(stickRatio) < 0.03 ? 0 : stickRatio;
-      return deadzoneAppliedRatio * HERO_MAX_MANUAL_ROTATION_SPEED;
-    }
-
-    return HERO_IDLE_ROTATION_SPEED;
-  }, [isStickDragging, stickRatio]);
+    const deadzoneAppliedRatio = Math.abs(stickRatio) < 0.03 ? 0 : stickRatio;
+    return deadzoneAppliedRatio * HERO_MAX_MANUAL_ROTATION_SPEED;
+  }, [stickRatio]);
+  const isJoystickRotationActive = Math.abs(heroRotationSpeed) > 0.001;
 
   const updateStickFromClientX = useCallback((clientX: number) => {
     const track = stickTrackRef.current;
@@ -168,7 +178,7 @@ const AnimatedHero: React.FC = () => {
   const waveBackground = useMemo(
     () => (
       <Canvas
-        camera={{ position: [0, 3, HERO_CAMERA_DISTANCE], fov: 60, near: 0.1, far: 200 }}
+        camera={{ position: [HERO_CAMERA_START_X, HERO_CAMERA_START_Y, HERO_CAMERA_START_Z], fov: 60, near: 0.1, far: 200 }}
         gl={{
           antialias: false,
           powerPreference: 'high-performance',
@@ -183,7 +193,7 @@ const AnimatedHero: React.FC = () => {
           tuningRef={tuningRef}
           postTuning={postTuning}
           controls={{
-            autoRotate: true,
+            autoRotate: isJoystickRotationActive,
             autoRotateSpeed: heroRotationSpeed,
             enableZoom: false,
             enablePan: false,
@@ -196,7 +206,7 @@ const AnimatedHero: React.FC = () => {
         />
       </Canvas>
     ),
-    [heroRotationSpeed, postTuning]
+    [heroRotationSpeed, isJoystickRotationActive, postTuning]
   );
 
   return (
