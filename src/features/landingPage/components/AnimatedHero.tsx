@@ -23,12 +23,13 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import CodeIcon from '@mui/icons-material/Code';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ProfilePic from '../../../assets/profilepic.jpeg';
 import OceanScene, {
+  type OceanQuality,
   type OceanPostTuning,
   type OceanTuning,
   getOceanTuningFromQuality,
@@ -60,7 +61,7 @@ const fadeIn = keyframes`
   to { opacity: 1; }
 `;
 
-const HERO_MAX_MANUAL_ROTATION_SPEED = 1.6;
+const HERO_MAX_MANUAL_ROTATION_SPEED = 6.4;
 const STICK_KNOB_RADIUS_PX = 18;
 const FIXED_POLAR_ANGLE = Math.PI / 2.45;
 const HERO_CAMERA_DISTANCE = 17;
@@ -78,6 +79,78 @@ const HERO_CAMERA_START_Y = HERO_CAMERA_DISTANCE * Math.cos(FIXED_POLAR_ANGLE);
 const HERO_CAMERA_START_Z =
   HERO_CAMERA_BASE_X * Math.sin(HERO_INITIAL_AZIMUTH_OFFSET_RAD)
   + HERO_CAMERA_BASE_Z * Math.cos(HERO_INITIAL_AZIMUTH_OFFSET_RAD);
+const HERO_QUALITY_ORDER: OceanQuality[] = ['ultra', 'balanced', 'low'];
+const HERO_LOW_FPS_THRESHOLD = 30;
+const HERO_FPS_SAMPLE_SECONDS = 1.6;
+const HERO_FPS_WARMUP_SECONDS = 2.4;
+const HERO_FPS_DEGRADE_COOLDOWN_SECONDS = 2.2;
+
+const getHeroPostTuningFromQuality = (quality: OceanQuality): OceanPostTuning => {
+  const sourceQuality = quality === 'low' ? 'low' : 'balanced';
+  const tuning = getOceanTuningFromQuality(sourceQuality);
+  return {
+    bloomIntensity: tuning.bloomIntensity,
+    bloomThreshold: tuning.bloomThreshold,
+    bloomSmoothing: tuning.bloomSmoothing,
+  };
+};
+
+interface HeroFpsMonitorProps {
+  quality: OceanQuality;
+  onSubThirtyFps: () => void;
+}
+
+const HeroFpsMonitor: React.FC<HeroFpsMonitorProps> = ({ quality, onSubThirtyFps }) => {
+  const sampleElapsedRef = useRef(0);
+  const sampleFramesRef = useRef(0);
+  const warmupElapsedRef = useRef(0);
+  const cooldownElapsedRef = useRef(HERO_FPS_DEGRADE_COOLDOWN_SECONDS);
+
+  useEffect(() => {
+    sampleElapsedRef.current = 0;
+    sampleFramesRef.current = 0;
+    cooldownElapsedRef.current = HERO_FPS_DEGRADE_COOLDOWN_SECONDS;
+  }, [quality]);
+
+  useFrame((_state, delta) => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+      sampleElapsedRef.current = 0;
+      sampleFramesRef.current = 0;
+      return;
+    }
+
+    if (!Number.isFinite(delta) || delta <= 0 || delta > 0.25) {
+      sampleElapsedRef.current = 0;
+      sampleFramesRef.current = 0;
+      return;
+    }
+
+    warmupElapsedRef.current += delta;
+    cooldownElapsedRef.current += delta;
+    sampleElapsedRef.current += delta;
+    sampleFramesRef.current += 1;
+
+    if (sampleElapsedRef.current < HERO_FPS_SAMPLE_SECONDS) {
+      return;
+    }
+
+    const fps = sampleFramesRef.current / sampleElapsedRef.current;
+    const canDowngrade =
+      quality !== 'low'
+      && warmupElapsedRef.current >= HERO_FPS_WARMUP_SECONDS
+      && cooldownElapsedRef.current >= HERO_FPS_DEGRADE_COOLDOWN_SECONDS;
+
+    if (canDowngrade && fps < HERO_LOW_FPS_THRESHOLD) {
+      onSubThirtyFps();
+      cooldownElapsedRef.current = 0;
+    }
+
+    sampleElapsedRef.current = 0;
+    sampleFramesRef.current = 0;
+  });
+
+  return null;
+};
 
 const AnimatedHero: React.FC = () => {
   const [displayText, setDisplayText] = useState('');
@@ -85,22 +158,54 @@ const AnimatedHero: React.FC = () => {
   const [showCursor, setShowCursor] = useState(true);
   const [stickRatio, setStickRatio] = useState(0);
   const [isStickDragging, setIsStickDragging] = useState(false);
-  const tuningRef = useRef<OceanTuning>(getOceanTuningFromQuality('low'));
+  const [quality, setQuality] = useState<OceanQuality>('ultra');
+  const tuningRef = useRef<OceanTuning>(getOceanTuningFromQuality('ultra'));
   const stickTrackRef = useRef<HTMLDivElement | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
-  const postTuning = useMemo<OceanPostTuning>(() => {
-    const tuning = tuningRef.current;
-    return {
-      bloomIntensity: tuning.bloomIntensity,
-      bloomThreshold: tuning.bloomThreshold,
-      bloomSmoothing: tuning.bloomSmoothing,
-    };
+  const [postTuning, setPostTuning] = useState<OceanPostTuning>(() => getHeroPostTuningFromQuality('ultra'));
+  const reduceHeroQuality = useCallback(() => {
+    setQuality((currentQuality) => {
+      const currentIndex = HERO_QUALITY_ORDER.indexOf(currentQuality);
+      if (currentIndex < 0 || currentIndex >= HERO_QUALITY_ORDER.length - 1) {
+        return currentQuality;
+      }
+      return HERO_QUALITY_ORDER[currentIndex + 1];
+    });
   }, []);
+  const canvasSettings = useMemo(() => {
+    if (quality === 'low') {
+      return {
+        dpr: [0.55, 0.85] as [number, number],
+        antialias: false,
+        toneMapping: 0,
+      };
+    }
+
+    if (quality === 'ultra') {
+      return {
+        dpr: [0.95, 1.35] as [number, number],
+        antialias: true,
+        toneMapping: 0,
+      };
+    }
+
+    return {
+      dpr: [0.75, 1.1] as [number, number],
+      antialias: false,
+      toneMapping: 0,
+    };
+  }, [quality]);
   const heroRotationSpeed = useMemo(() => {
     const deadzoneAppliedRatio = Math.abs(stickRatio) < 0.03 ? 0 : stickRatio;
     return deadzoneAppliedRatio * HERO_MAX_MANUAL_ROTATION_SPEED;
   }, [stickRatio]);
   const isJoystickRotationActive = Math.abs(heroRotationSpeed) > 0.001;
+
+  useEffect(() => {
+    const nextTuning = getOceanTuningFromQuality(quality);
+    tuningRef.current = nextTuning;
+    setPostTuning(getHeroPostTuningFromQuality(quality));
+  }, [quality]);
 
   const updateStickFromClientX = useCallback((clientX: number) => {
     const track = stickTrackRef.current;
@@ -180,18 +285,19 @@ const AnimatedHero: React.FC = () => {
       <Canvas
         camera={{ position: [HERO_CAMERA_START_X, HERO_CAMERA_START_Y, HERO_CAMERA_START_Z], fov: 60, near: 0.1, far: 200 }}
         gl={{
-          antialias: false,
+          antialias: canvasSettings.antialias,
           powerPreference: 'high-performance',
-          toneMapping: 0,
+          toneMapping: canvasSettings.toneMapping,
           outputColorSpace: 'srgb',
         }}
-        dpr={[0.55, 0.85]}
+        dpr={canvasSettings.dpr}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
         <OceanScene
-          quality="low"
+          quality={quality}
           tuningRef={tuningRef}
           postTuning={postTuning}
+          enablePostProcessing={false}
           controls={{
             autoRotate: isJoystickRotationActive,
             autoRotateSpeed: heroRotationSpeed,
@@ -204,9 +310,10 @@ const AnimatedHero: React.FC = () => {
             maxDistance: HERO_CAMERA_DISTANCE,
           }}
         />
+        <HeroFpsMonitor quality={quality} onSubThirtyFps={reduceHeroQuality} />
       </Canvas>
     ),
-    [heroRotationSpeed, isJoystickRotationActive, postTuning]
+    [canvasSettings, heroRotationSpeed, isJoystickRotationActive, postTuning, quality, reduceHeroQuality]
   );
 
   return (

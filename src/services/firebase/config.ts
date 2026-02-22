@@ -47,7 +47,7 @@ if (import.meta.env.VITE_RECAPTCHA_API_KEY) {
     provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_API_KEY),
     isTokenAutoRefreshEnabled: true // Enables automatic token refresh for Firebase App Check.
   });
-} else {
+} else if (import.meta.env.PROD) {
   console.warn('App Check not initialized: VITE_RECAPTCHA_API_KEY environment variable not set');
 }
 

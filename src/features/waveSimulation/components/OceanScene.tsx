@@ -585,9 +585,16 @@ interface OceanSceneProps {
     tuningRef: React.MutableRefObject<OceanTuning>;
     postTuning: OceanPostTuning;
     controls?: OceanControlsConfig;
+    enablePostProcessing?: boolean;
 }
 
-const OceanScene: React.FC<OceanSceneProps> = ({ quality, tuningRef, postTuning, controls }) => {
+const OceanScene: React.FC<OceanSceneProps> = ({
+    quality,
+    tuningRef,
+    postTuning,
+    controls,
+    enablePostProcessing = true,
+}) => {
     const controlsConfig = { ...DEFAULT_CONTROLS_CONFIG, ...controls };
 
     return (
@@ -623,7 +630,7 @@ const OceanScene: React.FC<OceanSceneProps> = ({ quality, tuningRef, postTuning,
                 target={[0, 0, 0]}
             />
 
-            {(quality !== 'low' || postTuning.bloomIntensity > 0.01) && (
+            {enablePostProcessing && (quality !== 'low' || postTuning.bloomIntensity > 0.01) && (
                 <EffectComposer multisampling={0}>
                     {postTuning.bloomIntensity > 0 && (
                         <Bloom
