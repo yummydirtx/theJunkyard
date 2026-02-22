@@ -50,6 +50,22 @@ export interface OceanPostTuning {
     bloomSmoothing: number;
 }
 
+export interface OceanControlsConfig {
+    autoRotate?: boolean;
+    autoRotateSpeed?: number;
+    enableZoom?: boolean;
+    enablePan?: boolean;
+    enableRotate?: boolean;
+    enableDamping?: boolean;
+    dampingFactor?: number;
+    minPolarAngle?: number;
+    maxPolarAngle?: number;
+    minAzimuthAngle?: number;
+    maxAzimuthAngle?: number;
+    minDistance?: number;
+    maxDistance?: number;
+}
+
 interface OceanQualityPreset extends OceanTuning {
     segments: number;
 }
@@ -127,6 +143,22 @@ const FILL_LIGHT_POSITION: [number, number, number] = [
     Math.max(8, -SUN_DIRECTION.y * 62 + 16),
     -SUN_DIRECTION.z * 62,
 ];
+
+const DEFAULT_CONTROLS_CONFIG: Required<OceanControlsConfig> = {
+    autoRotate: true,
+    autoRotateSpeed: 0.2,
+    enableZoom: true,
+    enablePan: false,
+    enableRotate: true,
+    enableDamping: true,
+    dampingFactor: 0.045,
+    maxPolarAngle: Math.PI / 2.2,
+    minPolarAngle: Math.PI / 5.2,
+    minAzimuthAngle: -Infinity,
+    maxAzimuthAngle: Infinity,
+    minDistance: 6,
+    maxDistance: 55,
+};
 
 const pseudoRandom = (seed: number): number => {
     const x = Math.sin(seed * 12.9898 + seed * seed * 78.233) * 43758.5453123;
@@ -552,9 +584,12 @@ interface OceanSceneProps {
     quality: OceanQuality;
     tuningRef: React.MutableRefObject<OceanTuning>;
     postTuning: OceanPostTuning;
+    controls?: OceanControlsConfig;
 }
 
-const OceanScene: React.FC<OceanSceneProps> = ({ quality, tuningRef, postTuning }) => {
+const OceanScene: React.FC<OceanSceneProps> = ({ quality, tuningRef, postTuning, controls }) => {
+    const controlsConfig = { ...DEFAULT_CONTROLS_CONFIG, ...controls };
+
     return (
         <>
             <Sky
@@ -572,16 +607,19 @@ const OceanScene: React.FC<OceanSceneProps> = ({ quality, tuningRef, postTuning 
             <OceanMesh key={quality} quality={quality} tuningRef={tuningRef} />
 
             <OrbitControls
-                autoRotate
-                autoRotateSpeed={0.2}
-                enableZoom={true}
-                enablePan={false}
-                enableDamping
-                dampingFactor={0.045}
-                maxPolarAngle={Math.PI / 2.2}
-                minPolarAngle={Math.PI / 5.2}
-                minDistance={6}
-                maxDistance={55}
+                autoRotate={controlsConfig.autoRotate}
+                autoRotateSpeed={controlsConfig.autoRotateSpeed}
+                enableZoom={controlsConfig.enableZoom}
+                enablePan={controlsConfig.enablePan}
+                enableRotate={controlsConfig.enableRotate}
+                enableDamping={controlsConfig.enableDamping}
+                dampingFactor={controlsConfig.dampingFactor}
+                maxPolarAngle={controlsConfig.maxPolarAngle}
+                minPolarAngle={controlsConfig.minPolarAngle}
+                minAzimuthAngle={controlsConfig.minAzimuthAngle}
+                maxAzimuthAngle={controlsConfig.maxAzimuthAngle}
+                minDistance={controlsConfig.minDistance}
+                maxDistance={controlsConfig.maxDistance}
                 target={[0, 0, 0]}
             />
 

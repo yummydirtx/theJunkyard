@@ -17,27 +17,26 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THEJUNKYARD OR THE USE OR OTHER DEALINGS IN THEJUNKYARD.
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { alpha, keyframes } from '@mui/material';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import { Canvas } from '@react-three/fiber';
 import CodeIcon from '@mui/icons-material/Code';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ProfilePic from '../../../assets/profilepic.jpeg';
+import OceanScene, {
+  type OceanPostTuning,
+  type OceanTuning,
+  getOceanTuningFromQuality,
+} from '../../waveSimulation/components/OceanScene';
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(5deg); }
-`;
-
-const gradientShift = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 `;
 
 const fadeInUp = keyframes`
@@ -56,10 +55,88 @@ const pulse = keyframes`
   50% { opacity: 0.8; transform: scale(1.05); }
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const HERO_IDLE_ROTATION_SPEED = 0.2;
+const HERO_MAX_MANUAL_ROTATION_SPEED = 1.6;
+const STICK_KNOB_RADIUS_PX = 18;
+const FIXED_POLAR_ANGLE = Math.PI / 2.45;
+const HERO_CAMERA_DISTANCE = 17;
+
 const AnimatedHero: React.FC = () => {
   const [displayText, setDisplayText] = useState('');
   const fullText = "Welcome to the Junkyard";
   const [showCursor, setShowCursor] = useState(true);
+  const [stickRatio, setStickRatio] = useState(0);
+  const [isStickDragging, setIsStickDragging] = useState(false);
+  const tuningRef = useRef<OceanTuning>(getOceanTuningFromQuality('low'));
+  const stickTrackRef = useRef<HTMLDivElement | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const postTuning = useMemo<OceanPostTuning>(() => {
+    const tuning = tuningRef.current;
+    return {
+      bloomIntensity: tuning.bloomIntensity,
+      bloomThreshold: tuning.bloomThreshold,
+      bloomSmoothing: tuning.bloomSmoothing,
+    };
+  }, []);
+  const heroRotationSpeed = useMemo(() => {
+    if (isStickDragging) {
+      const deadzoneAppliedRatio = Math.abs(stickRatio) < 0.03 ? 0 : stickRatio;
+      return deadzoneAppliedRatio * HERO_MAX_MANUAL_ROTATION_SPEED;
+    }
+
+    return HERO_IDLE_ROTATION_SPEED;
+  }, [isStickDragging, stickRatio]);
+
+  const updateStickFromClientX = useCallback((clientX: number) => {
+    const track = stickTrackRef.current;
+    if (!track) {
+      return;
+    }
+
+    const rect = track.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const maxOffset = Math.max(rect.width / 2 - STICK_KNOB_RADIUS_PX, 1);
+    const clampedOffset = Math.min(maxOffset, Math.max(-maxOffset, clientX - centerX));
+    setStickRatio(clampedOffset / maxOffset);
+  }, []);
+
+  const resetStick = useCallback(() => {
+    activePointerIdRef.current = null;
+    setIsStickDragging(false);
+    setStickRatio(0);
+  }, []);
+
+  const handleStickPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    activePointerIdRef.current = event.pointerId;
+    setIsStickDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateStickFromClientX(event.clientX);
+  }, [updateStickFromClientX]);
+
+  const handleStickPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    updateStickFromClientX(event.clientX);
+  }, [updateStickFromClientX]);
+
+  const handleStickPointerEnd = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    resetStick();
+  }, [resetStick]);
 
   useEffect(() => {
     let index = 0;
@@ -88,6 +165,40 @@ const AnimatedHero: React.FC = () => {
     { icon: <AutoAwesomeIcon fontSize="small" />, label: 'Cloud & AI' },
   ];
 
+  const waveBackground = useMemo(
+    () => (
+      <Canvas
+        camera={{ position: [0, 3, HERO_CAMERA_DISTANCE], fov: 60, near: 0.1, far: 200 }}
+        gl={{
+          antialias: false,
+          powerPreference: 'high-performance',
+          toneMapping: 0,
+          outputColorSpace: 'srgb',
+        }}
+        dpr={[0.55, 0.85]}
+        style={{ width: '100%', height: '100%', display: 'block' }}
+      >
+        <OceanScene
+          quality="low"
+          tuningRef={tuningRef}
+          postTuning={postTuning}
+          controls={{
+            autoRotate: true,
+            autoRotateSpeed: heroRotationSpeed,
+            enableZoom: false,
+            enablePan: false,
+            enableRotate: false,
+            minPolarAngle: FIXED_POLAR_ANGLE,
+            maxPolarAngle: FIXED_POLAR_ANGLE,
+            minDistance: HERO_CAMERA_DISTANCE,
+            maxDistance: HERO_CAMERA_DISTANCE,
+          }}
+        />
+      </Canvas>
+    ),
+    [heroRotationSpeed, postTuning]
+  );
+
   return (
     <Box
       id="hero"
@@ -100,14 +211,31 @@ const AnimatedHero: React.FC = () => {
         alignItems: 'center',
         pt: { xs: 8, md: 10 },
         pb: { xs: 4, md: 0 },
-        background: (theme) =>
-          theme.palette.mode === 'light'
-            ? 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)'
-            : 'linear-gradient(-45deg, #1a237e, #4a148c, #0d47a1, #006064)',
-        backgroundSize: '400% 400%',
-        animation: `${gradientShift} 15s ease infinite`,
+        backgroundColor: '#061628',
       }}
     >
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      >
+        {waveBackground}
+      </Box>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          background:
+            'linear-gradient(180deg, rgba(2, 10, 18, 0.38) 0%, rgba(5, 14, 25, 0.48) 45%, rgba(4, 9, 15, 0.65) 100%)',
+        }}
+      />
+
       {/* Floating geometric shapes */}
       {[...Array(5)].map((_, i) => (
         <Box
@@ -131,7 +259,7 @@ const AnimatedHero: React.FC = () => {
       <Container
         sx={{
           position: 'relative',
-          zIndex: 1,
+          zIndex: 2,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -277,22 +405,88 @@ const AnimatedHero: React.FC = () => {
           ))}
         </Box>
 
-        {/* CTA Text */}
+      </Container>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          left: '50%',
+          bottom: { xs: 20, md: 24 },
+          transform: 'translateX(-50%)',
+          zIndex: 3,
+          width: { xs: 220, sm: 280 },
+          px: 1.25,
+          py: 0.85,
+          borderRadius: 999,
+          border: '1px solid rgba(255, 255, 255, 0.24)',
+          bgcolor: 'rgba(7, 18, 30, 0.52)',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.25)',
+          userSelect: 'none',
+          animation: `${fadeIn} 1s ease-out`,
+          animationDelay: '0.6s',
+          animationFillMode: 'backwards',
+        }}
+      >
         <Typography
           sx={{
-            fontSize: { xs: '0.9rem', md: '1rem' },
-            color: 'rgba(255, 255, 255, 0.9)',
-            fontWeight: 500,
+            fontSize: '0.72rem',
+            color: 'rgba(233, 245, 255, 0.82)',
             textAlign: 'center',
-            animation: `${fadeInUp} 1s ease-out`,
-            animationDelay: '0.6s',
-            animationFillMode: 'backwards',
-            mt: 2,
+            mb: 0.7,
+            letterSpacing: '0.02em',
+            textTransform: 'uppercase',
           }}
         >
-          Currently seeking internships for Summer 2026
+          Camera Drift
         </Typography>
-      </Container>
+        <Box
+          ref={stickTrackRef}
+          onPointerDown={handleStickPointerDown}
+          onPointerMove={handleStickPointerMove}
+          onPointerUp={handleStickPointerEnd}
+          onPointerCancel={handleStickPointerEnd}
+          onLostPointerCapture={handleStickPointerEnd}
+          sx={{
+            position: 'relative',
+            height: 28,
+            borderRadius: 999,
+            background: 'linear-gradient(90deg, rgba(255, 132, 132, 0.22), rgba(255, 255, 255, 0.2), rgba(136, 208, 255, 0.26))',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            cursor: 'ew-resize',
+            touchAction: 'pan-y',
+          }}
+          aria-label="Horizontal camera control"
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: 2,
+              height: 14,
+              bgcolor: 'rgba(255,255,255,0.35)',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: STICK_KNOB_RADIUS_PX * 2,
+              height: STICK_KNOB_RADIUS_PX * 2,
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.85)',
+              background:
+                'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(166, 222, 255, 0.5) 65%, rgba(97, 174, 225, 0.5) 100%)',
+              boxShadow: '0 0 0 4px rgba(168, 226, 255, 0.16), 0 8px 18px rgba(0, 0, 0, 0.28)',
+              transform: `translate(calc(-50% + ${stickRatio * 90}px), -50%)`,
+              transition: isStickDragging ? 'none' : 'transform 180ms ease-out',
+            }}
+          />
+        </Box>
+      </Box>
     </Box>
   );
 };
