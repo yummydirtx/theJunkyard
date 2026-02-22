@@ -26,6 +26,8 @@ import Button from '@mui/material/Button';
 import Slider from '@mui/material/Slider';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
@@ -89,6 +91,12 @@ const PARAMETER_CONFIG: Array<{
 const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
     useTitle('theJunkyard: Wave Simulation');
     const [menuOpen, setMenuOpen] = useState(false);
+    const [postProcessingEnabled, setPostProcessingEnabled] = useState<boolean>(() => {
+        if (typeof window === 'undefined') {
+            return true;
+        }
+        return window.localStorage.getItem('wave-post-processing') !== 'off';
+    });
     const [quality, setQuality] = useState<OceanQuality>(() => {
         if (typeof window === 'undefined') {
             return 'balanced';
@@ -123,6 +131,10 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
     }, [quality]);
 
     useEffect(() => {
+        window.localStorage.setItem('wave-post-processing', postProcessingEnabled ? 'on' : 'off');
+    }, [postProcessingEnabled]);
+
+    useEffect(() => {
         const nextTuning = getOceanTuningFromQuality(quality);
         setDraftTuning(nextTuning);
         tuningRef.current = nextTuning;
@@ -154,22 +166,22 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
             return {
                 dpr: [0.65, 0.9] as [number, number],
                 antialias: false,
-                toneMapping: postTuning.bloomIntensity > 0.01 ? 0 : THREE.ACESFilmicToneMapping,
+                toneMapping: postProcessingEnabled && postTuning.bloomIntensity > 0.01 ? 0 : THREE.ACESFilmicToneMapping,
             };
         }
         if (quality === 'ultra') {
             return {
                 dpr: [0.95, 1.35] as [number, number],
                 antialias: true,
-                toneMapping: 0,
+                toneMapping: postProcessingEnabled ? 0 : THREE.ACESFilmicToneMapping,
             };
         }
         return {
             dpr: [0.75, 1.1] as [number, number],
             antialias: false,
-            toneMapping: 0,
+            toneMapping: postProcessingEnabled ? 0 : THREE.ACESFilmicToneMapping,
         };
-    }, [quality, postTuning.bloomIntensity]);
+    }, [postProcessingEnabled, quality, postTuning.bloomIntensity]);
 
     const canvasView = useMemo(
         () => (
@@ -184,10 +196,15 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
                 dpr={canvasSettings.dpr}
                 style={{ width: '100%', height: '100%', display: 'block' }}
             >
-                <OceanScene quality={quality} tuningRef={tuningRef} postTuning={postTuning} />
+                <OceanScene
+                    quality={quality}
+                    tuningRef={tuningRef}
+                    postTuning={postTuning}
+                    enablePostProcessing={postProcessingEnabled}
+                />
             </Canvas>
         ),
-        [canvasSettings, quality, postTuning]
+        [canvasSettings, postProcessingEnabled, quality, postTuning]
     );
 
     return (
@@ -266,7 +283,15 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
                     </Box>
 
                     <Collapse in={menuOpen}>
-                        <Box sx={{ px: 1.25, pb: 1.25 }}>
+                        <Box
+                            sx={{
+                                px: 1.25,
+                                pb: 1.25,
+                                maxHeight: { xs: 'calc(100vh - 170px)', sm: 'calc(100vh - 190px)' },
+                                overflowY: 'auto',
+                                overscrollBehavior: 'contain',
+                            }}
+                        >
                             <ToggleButtonGroup
                                 value={quality}
                                 exclusive
@@ -313,6 +338,27 @@ const WaveSimulation: React.FC<WaveSimulationProps> = ({ mode, setMode }) => {
                             </Typography>
 
                             <Divider sx={{ my: 1.2, borderColor: 'rgba(255,255,255,0.16)' }} />
+
+                            <FormControlLabel
+                                sx={{
+                                    m: 0,
+                                    mb: 0.65,
+                                    '& .MuiFormControlLabel-label': {
+                                        color: 'rgba(232,243,255,0.9)',
+                                        fontSize: '0.74rem',
+                                        fontWeight: 600,
+                                        letterSpacing: '0.01em',
+                                    },
+                                }}
+                                control={(
+                                    <Switch
+                                        checked={postProcessingEnabled}
+                                        onChange={(_event, checked) => setPostProcessingEnabled(checked)}
+                                        size="small"
+                                    />
+                                )}
+                                label="Enable Post Processing"
+                            />
 
                             <Stack spacing={0.95}>
                                 {PARAMETER_CONFIG.map((param) => {
